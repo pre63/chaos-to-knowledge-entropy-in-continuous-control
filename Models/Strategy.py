@@ -13,6 +13,6 @@ def sampling_strategy(entropy, sampling_coef, min_samples=0, max_samples=128):
     samples = max_samples if normalized_entropy <= abs(sampling_coef) else min_samples
 
   # print summary of the strategy variables
-  print(f"Entropy: {entropy:.4f}, Normalized Entropy: {normalized_entropy:.4f}, coefficient: {sampling_coef}, Samples: {samples}")
+  # print(f"Entropy: {entropy:.4f}, Normalized Entropy: {normalized_entropy:.4f}, coefficient: {sampling_coef}, Samples: {samples}")
 
   return samples
