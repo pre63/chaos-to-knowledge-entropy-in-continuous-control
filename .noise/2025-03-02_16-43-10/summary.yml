@@ -1,0 +1,13 @@
+best_entropy_config:
+  config: obs_uniform (-1.00)+reward_uniform (-1.00)
+  model: PPO
+  reduction: 0.09919357299805753
+best_reward_config:
+  config: action_uniform (0.26)
+  improvement: 0.17532857259114554
+  model: PPO
+models_tested:
+- PPO
+num_runs: 5
+run_date: 2025-03-02_16-43-10
+total_timesteps: 10000
