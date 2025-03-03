@@ -1,0 +1,34 @@
+component_combinations:
+- - obs
+- - reward
+- - action
+- - obs
+  - reward
+- - obs
+  - action
+- - reward
+  - action
+- - obs
+  - reward
+  - action
+dry_run: false
+env_name: Humanoid-v5
+max_level: 1
+min_level: -1
+noise_configs:
+  action:
+  - gaussian
+  - uniform
+  - laplace
+  obs:
+  - gaussian
+  - uniform
+  - laplace
+  reward:
+  - gaussian
+  - uniform
+  - laplace
+  - bernoulli
+num_runs: 5
+steps: 20
+total_timesteps: 10000
