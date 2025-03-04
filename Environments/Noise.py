@@ -253,9 +253,9 @@ if __name__ == "__main__":
   dry_run = False
   env_name = "Humanoid-v5"
   total_timesteps = 100000
-  steps = 20
-  min_level = -1
-  max_level = 1
+  steps = 3
+  min_level = -0.25
+  max_level = 0.5
   num_runs = 5
 
   run_date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -276,9 +276,8 @@ if __name__ == "__main__":
   VALID_NOISE_CONFIGS = config.get(
     "noise_configs",
     {
-      "obs": ["gaussian", "uniform", "laplace"],
-      "reward": ["gaussian", "uniform", "laplace", "bernoulli"],
-      "action": ["gaussian", "uniform", "laplace"],
+      "reward": ["uniform"],
+      "action": ["uniform"],
     },
   )
 
