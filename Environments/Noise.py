@@ -281,7 +281,8 @@ if __name__ == "__main__":
     },
   )
 
-  ALL_COMPONENTS = config.get("components", ["obs", "reward", "action"])
+  ALL_COMPONENTS = config.get("components", 
+                              ["reward", "action"])
 
   all_configs_results = []
   summary = {
@@ -331,19 +332,19 @@ if __name__ == "__main__":
     print(f"Baseline completed and saved for {model_class.__name__}")
 
     if not dry_run:
-      # Single-component tests
-      for component, noise_types in VALID_NOISE_CONFIGS.items():
-        for noise_type in noise_types:
-          configs = generate_step_configs([component], noise_type, steps, min_level, max_level)
-          training_data = []
-          for config_list in configs:
-            env = EntropyInjectionWrapper(env_base, noise_configs=config_list)
-            avg_rewards, avg_entropies = run_training(model_class, env, model_hyperparameters[env_name], total_timesteps, num_runs, dry_run)
-            label = f"{config_list[0]['component']}_{config_list[0]['type']} ({config_list[0]['entropy_level']:.2f})"
-            training_data.append({"label": label, "rewards": avg_rewards, "entropies": avg_entropies, "model": model_class.__name__})
-            print(f"Averaged {num_runs} runs for {component} with {noise_type}: {label}")
-          all_results.append({"noise_type": f"{component}_{noise_type}", "training_data": training_data})
-          save_partial_results(run_date, model_class.__name__, total_timesteps, num_runs, f"{component}_{noise_type}", training_data)
+      # # Single-component tests
+      # for component, noise_types in VALID_NOISE_CONFIGS.items():
+      #   for noise_type in noise_types:
+      #     configs = generate_step_configs([component], noise_type, steps, min_level, max_level)
+      #     training_data = []
+      #     for config_list in configs:
+      #       env = EntropyInjectionWrapper(env_base, noise_configs=config_list)
+      #       avg_rewards, avg_entropies = run_training(model_class, env, model_hyperparameters[env_name], total_timesteps, num_runs, dry_run)
+      #       label = f"{config_list[0]['component']}_{config_list[0]['type']} ({config_list[0]['entropy_level']:.2f})"
+      #       training_data.append({"label": label, "rewards": avg_rewards, "entropies": avg_entropies, "model": model_class.__name__})
+      #       print(f"Averaged {num_runs} runs for {component} with {noise_type}: {label}")
+      #     all_results.append({"noise_type": f"{component}_{noise_type}", "training_data": training_data})
+      #     save_partial_results(run_date, model_class.__name__, total_timesteps, num_runs, f"{component}_{noise_type}", training_data)
 
       # Combination tests
       component_combinations = get_all_combinations(ALL_COMPONENTS)
