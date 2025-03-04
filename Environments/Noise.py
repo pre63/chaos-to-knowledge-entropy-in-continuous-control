@@ -225,7 +225,7 @@ if __name__ == "__main__":
   # Default values
   dry_run = False
   env_name = "Humanoid-v5"
-  total_timesteps = 10000
+  total_timesteps = 100000
   steps = 5
   min_level = -0.25
   max_level = 0.5
