@@ -176,4 +176,7 @@ trpoer:
 	make train model=trpoer env=Pendulum-v1 envs=1 n_jobs=4
 
 noise:
-	@. .venv/bin/activate; python -m Environments.Noise
+	@. .venv/bin/activate; CUDA_VISIBLE_DEVICES="" python -m Environments.Noise
+
+noise-plot:
+	@. .venv/bin/activate; python -m Environments.NoisePlot
