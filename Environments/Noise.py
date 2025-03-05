@@ -150,45 +150,112 @@ def run_training(model_class, env, config, total_timesteps, num_runs, dry_run=Fa
   return np.mean(padded_rewards, axis=0).tolist(), np.mean(padded_entropies, axis=0).tolist()
 
 
-def smooth_data(training_data, window_size=3):
+def smooth_data(training_data, window_size=50, pad_mode="edge"):
   smoothed_data = []
+
+  # Ensure window_size is positive and odd for symmetry
+  window_size = max(1, window_size)
+  if window_size % 2 == 0:
+    window_size += 1  # Make it odd for centered smoothing
+
   for data in training_data:
-    padded_rewards = np.pad(data["rewards"], (0, max(0, window_size - len(data["rewards"]))), mode="constant")
-    padded_entropies = np.pad(data["entropies"], (0, max(0, window_size - len(data["entropies"]))), mode="constant")
-    smoothed_rewards = (
-      uniform_filter1d(padded_rewards, size=window_size, mode="nearest")[: len(data["rewards"])] if len(data["rewards"]) > 1 else data["rewards"]
-    )
-    smoothed_entropies = (
-      uniform_filter1d(padded_entropies, size=window_size, mode="nearest")[: len(data["entropies"])] if len(data["entropies"]) > 1 else data["entropies"]
-    )
+    # Convert to numpy arrays for processing
+    rewards = np.array(data["rewards"])
+    entropies = np.array(data["entropies"])
+
+    # Skip smoothing for very short sequences
+    if len(rewards) <= 1:
+      smoothed_rewards = rewards
+    else:
+      # Pad symmetrically to avoid edge artifacts
+      pad_size = window_size // 2
+      padded_rewards = np.pad(rewards, (pad_size, pad_size), mode=pad_mode)
+      smoothed_rewards = uniform_filter1d(padded_rewards, size=window_size, mode="nearest")[pad_size : pad_size + len(rewards)]
+
+    if len(entropies) <= 1:
+      smoothed_entropies = entropies
+    else:
+      pad_size = window_size // 2
+      padded_entropies = np.pad(entropies, (pad_size, pad_size), mode=pad_mode)
+      smoothed_entropies = uniform_filter1d(padded_entropies, size=window_size, mode="nearest")[pad_size : pad_size + len(entropies)]
+
+    # Append smoothed data as a new dict
     smoothed_data.append({"label": data["label"], "rewards": smoothed_rewards.tolist(), "entropies": smoothed_entropies.tolist(), "model": data["model"]})
+
   return smoothed_data
 
 
 def plot_results(smoothed_results, run_date, model_name, total_timesteps, num_runs):
   fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1, figsize=(12, 10), sharex=True)
   colors = ["b", "g", "r", "c", "m", "y", "k"]
+  markers = ["o", "s", "^", "v", "*", "+", "x"]
+
+  # Create mappings of labels to markers and colors
+  label_to_marker = {}
+  label_to_color = {}
+  marker_idx = 0
+  color_idx = 0
+
+  # Assign markers and colors independently to each unique label
   for result in smoothed_results:
-    for i, data in enumerate(result["smoothed_data"]):
-      x = np.arange(len(data["rewards"]))
-      ax1.plot(x, data["rewards"], label=data["label"], color=colors[i % len(colors)], linewidth=2)
-      entropies_len = len(data["entropies"])
-      padded_entropies = np.pad(data["entropies"], (0, len(x) - entropies_len), mode="edge") if entropies_len < len(x) else data["entropies"][: len(x)]
-      ax2.plot(x, padded_entropies, label=data["label"], color=colors[i % len(colors)], linewidth=2)
+    for data in result["smoothed_data"]:
+      if data["label"] not in label_to_marker:
+        # Assign marker and color with separate cycling
+        label_to_marker[data["label"]] = markers[marker_idx % len(markers)]
+        label_to_color[data["label"]] = colors[color_idx % len(colors)]
+        marker_idx += 1  # Increment marker independently
+        color_idx = (color_idx + 2) % len(colors)  # Offset color increment (e.g., skip 2)
+
+  # Plot each dataset with its assigned marker and color
+  for result in smoothed_results:
+    for data in result["smoothed_data"]:
+      label = data["label"]
+      marker = label_to_marker[label]
+      color = label_to_color[label]
+
+      # Get rewards and x-axis, with safety check
+      rewards = data["rewards"]
+      if not rewards:  # Handle empty rewards
+        print(f"Warning: Empty rewards for label '{label}'")
+        continue
+      x = np.arange(len(rewards))
+
+      # Set markevery safely
+      mark_every = max(1, len(x) // 10) if len(x) > 0 else 1
+
+      # Plot rewards with markers
+      ax1.plot(x, data["rewards"], label=label, color=color, marker=marker, linewidth=2, markersize=8, markevery=mark_every)
+
+      # Handle entropies with padding if needed
+      entropies = data["entropies"]
+      if not entropies:  # Handle empty entropies
+        print(f"Warning: Empty entropies for label '{label}'")
+        continue
+      entropies_len = len(entropies)
+      padded_entropies = np.pad(entropies, (0, len(x) - entropies_len), mode="edge") if entropies_len < len(x) else entropies[: len(x)]
+      # Plot entropies with markers
+      ax2.plot(x, padded_entropies, label=label, color=color, marker=marker, linewidth=2, markersize=8, markevery=mark_every)
+
+  # Configure axes
   ax1.set_title(f"Reward+Action Noise - Rewards (Avg of {num_runs} Runs)")
   ax1.set_ylabel("Mean Reward")
   ax1.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
   ax1.grid(True)
+
   ax2.set_title(f"Reward+Action Noise - Entropy (Avg of {num_runs} Runs)")
   ax2.set_xlabel("Rollout")
   ax2.set_ylabel("Entropy")
   ax2.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
   ax2.grid(True)
+
   plt.tight_layout()
+
+  # Save the plot
   os.makedirs(f".noise/{run_date}", exist_ok=True)
   plot_path = f".noise/{run_date}/{model_name}_{total_timesteps}_reward_action_{num_runs}_runs.png"
   plt.savefig(plot_path)
   plt.close()
+
   return plot_path
 
 
@@ -226,8 +293,8 @@ if __name__ == "__main__":
   dry_run = False
   env_name = "Humanoid-v5"
   total_timesteps = 100000
-  steps = 5
-  min_level = -0.25
+  steps = 6
+  min_level = -0.5
   max_level = 0.5
   num_runs = 5
 
@@ -235,7 +302,7 @@ if __name__ == "__main__":
   config = load_config_from_env()
 
   # Override defaults with config
-  models = config.get("models", [TRPOR, PPO, TRPO])
+  models = config.get("models", [TRPOR, PPO, TRPO, TRPOER, GenTRPO])
   dry_run = config.get("dry_run", dry_run)
   env_name = config.get("env_name", env_name)
   total_timesteps = config.get("total_timesteps", total_timesteps)
