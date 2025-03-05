@@ -302,7 +302,7 @@ if __name__ == "__main__":
   config = load_config_from_env()
 
   # Override defaults with config
-  models = config.get("models", [TRPOR, PPO, TRPO, TRPOER, GenTRPO])
+  models = config.get("models", [GenTRPO]) #, [TRPOR, PPO, TRPO, TRPOER, GenTRPO]
   dry_run = config.get("dry_run", dry_run)
   env_name = config.get("env_name", env_name)
   total_timesteps = config.get("total_timesteps", total_timesteps)
