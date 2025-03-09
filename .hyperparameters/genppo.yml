@@ -1,0 +1,45 @@
+Pendulum-v1:
+  policy: 'MlpPolicy'
+  n_timesteps: 100000
+  reward_threshold: -3.0
+
+LunarLanderContinuous-v3:
+  policy: 'MlpPolicy'
+  n_timesteps: 100000
+  reward_threshold: 195
+
+Ant-v5:
+  policy: 'MlpPolicy'
+  n_timesteps: 100000
+  reward_threshold: 1000
+
+Humanoid-v5:
+  policy: 'MlpPolicy'
+  n_steps: 512
+  gamma: 0.95
+  learning_rate: 0.03648542602737527
+  n_critic_updates: 20
+  cg_max_steps: 5
+  target_kl: 0.03
+  gae_lambda: 0.95
+  batch_size: 2048
+  net_arch: medium
+  activation_fn: tanh
+  entropy_coef: -0.59
+  sampling_coef: -0.69
+  buffer_capacity: 30000
+  epsilon: 0.15000000000000002
+  orthogonal_init: 0
+  n_timesteps: 600000
+  n_envs: 6
+  normalize_advantage: 1
+
+InvertedDoublePendulum-v5:
+  policy: 'MlpPolicy'
+  n_timesteps: 100000
+  reward_threshold: 410
+
+RocketLander-v0:
+  policy: 'MlpPolicy'
+  n_timesteps: 100000
+  reward_threshold: -3.0
