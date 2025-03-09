@@ -333,7 +333,7 @@ class GenPPO(PPO):
 
   def train(self) -> None:
     """
-        Update policy using the currently gathered rollout buffer, augmented with generative replay samples.
+        Update policy using the currently gathered rollout buffer.
         """
     # Switch to train mode (this affects batch norm / dropout)
     self.policy.set_training_mode(True)
@@ -400,13 +400,13 @@ class GenPPO(PPO):
 
     # Train for n_epochs epochs
     continue_training = True
+
+    # train for n_epochs epochs
     for epoch in range(self.n_epochs):
       approx_kl_divs = []
-      # Shuffle indices for minibatches
-      indices = th.randperm(len(on_policy_obs))
       for start_idx in range(0, len(on_policy_obs), self.batch_size):
         end_idx = min(start_idx + self.batch_size, len(on_policy_obs))
-        batch_indices = indices[start_idx:end_idx]
+        batch_indices = th.arange(start_idx, end_idx)
 
         obs_batch = on_policy_obs[batch_indices]
         actions_batch = on_policy_actions[batch_indices]
@@ -431,24 +431,32 @@ class GenPPO(PPO):
         clip_fractions.append(clip_fraction)
 
         if self.clip_range_vf is None:
+          # No clipping
           values_pred = values
         else:
           # Clip the difference between old and new value
+          # NOTE: this depends on the reward scaling
           values_pred = returns_batch + th.clamp(values - returns_batch, -clip_range_vf, clip_range_vf)
+
+        # Value loss using the TD(gae_lambda) target
         value_loss = F.mse_loss(returns_batch, values_pred)
         value_losses.append(value_loss.item())
 
-        # Entropy loss
+        # Entropy loss favor exploration
         if entropy is None:
+          # Approximate entropy when no analytical form
           entropy_loss = -th.mean(-log_prob)
         else:
           entropy_loss = -th.mean(entropy)
+
         entropy_losses.append(entropy_loss.item())
 
-        # Total loss with entropy regularization
-        loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss - self.entropy_coef * entropy.mean()
+        loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
 
-        # Calculate approximate KL divergence
+        # Calculate approximate form of reverse KL Divergence for early stopping
+        # see issue #417: https://github.com/DLR-RM/stable-baselines3/issues/417
+        # and discussion in PR #419: https://github.com/DLR-RM/stable-baselines3/pull/419
+        # and Schulman blog: http://joschu.net/blog/kl-approx.html
         with th.no_grad():
           log_ratio = log_prob - old_log_prob_batch
           approx_kl_div = th.mean((th.exp(log_ratio) - 1) - log_ratio).cpu().numpy()
@@ -463,6 +471,8 @@ class GenPPO(PPO):
         # Optimization step
         self.policy.optimizer.zero_grad()
         loss.backward()
+
+        # Clip grad norm
         th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
         self.policy.optimizer.step()
 
@@ -480,6 +490,9 @@ class GenPPO(PPO):
     self.logger.record("train/clip_fraction", np.mean(clip_fractions))
     self.logger.record("train/loss", loss.item())
     self.logger.record("train/explained_variance", explained_var)
+    if hasattr(self.policy, "log_std"):
+      self.logger.record("train/std", th.exp(self.policy.log_std).mean().item())
+
     self.logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
     self.logger.record("train/clip_range", clip_range)
     if self.clip_range_vf is not None:
