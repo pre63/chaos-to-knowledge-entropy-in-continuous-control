@@ -9,7 +9,7 @@ from Models.EnTRPO.EnTRPO import EnTRPO, EnTRPOHigh, EnTRPOLow, sample_entrpo_pa
 from Models.Experimental.TRPOQ.TRPOQ import TRPOQ, sample_trpoq_params
 from Models.Experimental.TRPOQ.TRPOQ2 import TRPOQ2, sample_trpoq2_params
 from Models.Experimental.TRPOQ.TRPOQH import TRPOQH, TRPOQHO, sample_trpoqh_params, sample_trpoqho_params
-from Models.GenTRPO.GenTRPO import GenTRPO, sample_gentrpo_params
+from Models.GenTRPO.GenTRPO import GenTRPO, GenPPO, sample_gentrpo_params, sample_genppo_params
 from Models.SB3 import PPO, TRPO, sample_ppo_params, sample_trpo_params
 from Models.TRPOER.TRPOER import TRPOER, sample_trpoer_params
 from Models.TRPOR.TRPOR import TRPOR, sample_trpor_params
@@ -28,6 +28,7 @@ models = {
   "trpo": {"model": TRPO, "sample": sample_trpo_params},
   "ppo": {"model": PPO, "sample": sample_ppo_params},
   "gentrpo": {"model": GenTRPO, "sample": sample_gentrpo_params},
+  "genppo": {"model": GenPPO, "sample": sample_genppo_params},
   "trpoer": {"model": TRPOER, "sample": sample_trpoer_params},
 }
 
