@@ -1,0 +1,33 @@
+Humanoid-v5:
+  trial_number: 12
+  value: 356.7680322
+  params:
+    n_steps: 256
+    gamma: 0.95
+    learning_rate: 0.000501569672032473
+    clip_range: 0.1
+    gae_lambda: 0.95
+    batch_size: 128
+    net_arch: small
+    activation_fn: tanh
+    entropy_coef: 0.04
+    sampling_coef: 0.30000000000000004
+    buffer_capacity: 40000
+    n_timesteps: 100000
+  comment: 'Best trial details: _number=12, state=2, _values=[356.7680322], _datetime_start=2025-03-09
+    07:49:23.196544, datetime_complete=2025-03-09 07:49:31.851715, _params={''n_steps'':
+    256, ''gamma'': 0.95, ''learning_rate'': 0.000501569672032473, ''clip_range'':
+    0.1, ''gae_lambda'': 0.95, ''batch_size'': 128, ''net_arch'': ''small'', ''activation_fn'':
+    ''tanh'', ''entropy_coef'': 0.04, ''sampling_coef'': 0.30000000000000004, ''buffer_capacity'':
+    40000, ''n_timesteps'': 100000}, _user_attrs={}, _system_attrs={''completed_rung_0'':
+    356.7680322}, intermediate_values={1: 356.7680322}, _distributions={''n_steps'':
+    CategoricalDistribution(choices=(64, 128, 256, 512, 1024)), ''gamma'': CategoricalDistribution(choices=(0.9,
+    0.95, 0.99)), ''learning_rate'': FloatDistribution(high=0.001, log=True, low=1e-05,
+    step=None), ''clip_range'': CategoricalDistribution(choices=(0.1, 0.2, 0.3)),
+    ''gae_lambda'': CategoricalDistribution(choices=(0.9, 0.95, 0.99)), ''batch_size'':
+    CategoricalDistribution(choices=(32, 64, 128, 256)), ''net_arch'': CategoricalDistribution(choices=(''small'',
+    ''medium'')), ''activation_fn'': CategoricalDistribution(choices=(''tanh'', ''relu'')),
+    ''entropy_coef'': FloatDistribution(high=0.1, log=False, low=0.0, step=0.01),
+    ''sampling_coef'': FloatDistribution(high=1.0, log=False, low=0.1, step=0.1),
+    ''buffer_capacity'': IntDistribution(high=50000, log=False, low=5000, step=5000),
+    ''n_timesteps'': CategoricalDistribution(choices=(100000,))}, _trial_id=12'

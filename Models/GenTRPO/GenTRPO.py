@@ -503,7 +503,7 @@ def sample_genppo_params(trial, n_actions, n_envs, additional_args):
   n_steps = trial.suggest_categorical("n_steps", [64, 128, 256, 512, 1024])
   gamma = trial.suggest_categorical("gamma", [0.9, 0.95, 0.99])
   learning_rate = trial.suggest_float("learning_rate", 1e-5, 1e-3, log=True)
-  n_epochs = trial.suggest_categorical("n_epochs", [3, 5, 10])
+  n_epochs = 10
   clip_range = trial.suggest_categorical("clip_range", [0.1, 0.2, 0.3])
   gae_lambda = trial.suggest_categorical("gae_lambda", [0.9, 0.95, 0.99])
   batch_size = trial.suggest_categorical("batch_size", [32, 64, 128, 256])
@@ -517,8 +517,12 @@ def sample_genppo_params(trial, n_actions, n_envs, additional_args):
   sampling_coef = trial.suggest_float("sampling_coef", 0.1, 1.0, step=0.1)
   buffer_capacity = trial.suggest_int("buffer_capacity", 5000, 50000, step=5000)
 
+  # always 100000 timesteps
+  n_timesteps = trial.suggest_categorical("n_timesteps", [100000])
+
   return {
     "policy": "MlpPolicy",
+    "n_timesteps": n_timesteps,
     "n_steps": n_steps,
     "batch_size": batch_size,
     "gamma": gamma,
