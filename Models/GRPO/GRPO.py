@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 import torch as th
 from gymnasium import spaces
@@ -5,9 +7,9 @@ from stable_baselines3.common.buffers import RolloutBuffer
 from stable_baselines3.common.utils import explained_variance
 from torch import nn
 from torch.nn import functional as F
-import random
-from Models.Strategy import sampling_strategy  # Assuming this is defined elsewhere
+
 from Models.SB3 import PPO  # Assuming this is defined elsewhere
+from Models.Strategy import sampling_strategy  # Assuming this is defined elsewhere
 
 # ForwardDynamicsModel (for relevance scoring in GenGRPO)
 
@@ -18,17 +20,17 @@ class ForwardDynamicsModel(nn.Module):
     self.state_dim = np.prod(observation_space.shape)
     self.action_dim = action_space.shape[0] if isinstance(action_space, spaces.Box) else 1
     self.encoder = nn.Sequential(
-        nn.Linear(self.state_dim, hidden_dim),
-        nn.ReLU(),
-        nn.Linear(hidden_dim, hidden_dim),
-        nn.ReLU(),
+      nn.Linear(self.state_dim, hidden_dim),
+      nn.ReLU(),
+      nn.Linear(hidden_dim, hidden_dim),
+      nn.ReLU(),
     )
     self.forward_model = nn.Sequential(
-        nn.Linear(hidden_dim + self.action_dim, hidden_dim),
-        nn.ReLU(),
-        nn.Linear(hidden_dim, hidden_dim),
-        nn.ReLU(),
-        nn.Linear(hidden_dim, hidden_dim),
+      nn.Linear(hidden_dim + self.action_dim, hidden_dim),
+      nn.ReLU(),
+      nn.Linear(hidden_dim, hidden_dim),
+      nn.ReLU(),
+      nn.Linear(hidden_dim, hidden_dim),
     )
 
   def forward(self, state, action):
@@ -38,6 +40,7 @@ class ForwardDynamicsModel(nn.Module):
     x = th.cat([h_s, action], dim=-1)
     pred_h_next = self.forward_model(x)
     return h_s, pred_h_next
+
 
 # GenerativeReplayBuffer (used by GenGRPO)
 
@@ -89,7 +92,7 @@ class GenerativeReplayBuffer:
         synthetic_rewards = th.tensor(synthetic_rewards, dtype=th.float32)
       synthetic_transitions.append((state, synthetic_actions, synthetic_rewards, synthetic_log_probs))
     self.synthetic_buffer.extend(synthetic_transitions)
-    self.synthetic_buffer = self.synthetic_buffer[-self.synthetic_capacity:]
+    self.synthetic_buffer = self.synthetic_buffer[-self.synthetic_capacity :]
 
   def sample(self, num_samples):
     real_sample_size = num_samples // 2
@@ -98,62 +101,63 @@ class GenerativeReplayBuffer:
     synthetic_sample = random.sample(self.synthetic_buffer, min(synthetic_sample_size, len(self.synthetic_buffer)))
     return real_sample + synthetic_sample
 
+
 # Base GRPO class
 
 
 class GRPO(PPO):
   """
-  Group Relative Policy Optimization for robotic control.
-  - Samples group_size actions per state, steps the environment for each.
-  """
+    Group Relative Policy Optimization for robotic control.
+    - Samples group_size actions per state, steps the environment for each.
+    """
 
   def __init__(
-      self,
-      policy,
-      env,
-      learning_rate=3e-4,
-      n_steps=2048,
-      batch_size=64,
-      n_epochs=10,
-      gamma=0.99,
-      clip_range=0.2,
-      ent_coef=0.0,
-      max_grad_norm=0.5,
-      target_kl=None,
-      group_size=4,
-      verbose=0,
-      device="auto",
-      **kwargs
+    self,
+    policy,
+    env,
+    learning_rate=3e-4,
+    n_steps=2048,
+    batch_size=64,
+    n_epochs=10,
+    gamma=0.99,
+    clip_range=0.2,
+    ent_coef=0.0,
+    max_grad_norm=0.5,
+    target_kl=None,
+    group_size=4,
+    verbose=0,
+    device="auto",
+    **kwargs
   ):
     super().__init__(
-        policy=policy,
-        env=env,
-        learning_rate=learning_rate,
-        n_steps=n_steps,
-        batch_size=batch_size,
-        n_epochs=n_epochs,
-        gamma=gamma,
-        gae_lambda=1.0,
-        clip_range=clip_range,
-        clip_range_vf=None,
-        normalize_advantage=False,
-        ent_coef=ent_coef,
-        vf_coef=0.0,
-        max_grad_norm=max_grad_norm,
-        use_sde=False,
-        target_kl=target_kl,
-        verbose=verbose,
-        device=device,
-        **kwargs
+      policy=policy,
+      env=env,
+      learning_rate=learning_rate,
+      n_steps=n_steps,
+      batch_size=batch_size,
+      n_epochs=n_epochs,
+      gamma=gamma,
+      gae_lambda=1.0,
+      clip_range=clip_range,
+      clip_range_vf=None,
+      normalize_advantage=False,
+      ent_coef=ent_coef,
+      vf_coef=0.0,
+      max_grad_norm=max_grad_norm,
+      use_sde=False,
+      target_kl=target_kl,
+      verbose=verbose,
+      device=device,
+      **kwargs
     )
     self.group_size = group_size
 
   def collect_rollouts(self, env, callback, rollout_buffer, n_rollout_steps):
     """
-    Collect rollouts by stepping the environment group_size times per state.
-    Store each action in the group as a separate buffer entry with repeated observations.
-    Adjust step counting to fit buffer size.
-    """
+        Collect rollouts by stepping the environment group_size times per state.
+        Store each action in the group as a separate buffer entry with repeated observations.
+        Adjust step counting to fit buffer size.
+        """
     assert self._last_obs is not None, "No previous observation"
     n_steps_collected = 0
     rollout_buffer.reset()
@@ -161,54 +165,49 @@ class GRPO(PPO):
     # Adjust for group_size to avoid buffer overflow
     effective_steps = n_rollout_steps // self.group_size
     while n_steps_collected < effective_steps:
-        with th.no_grad():
-            obs_tensor = th.as_tensor(self._last_obs).to(self.device)
-            dist = self.policy.get_distribution(obs_tensor)
-            actions = th.stack([dist.sample() for _ in range(self.group_size)])  # [group_size, action_dim]
-            log_probs = dist.log_prob(actions)  # [group_size]
+      with th.no_grad():
+        obs_tensor = th.as_tensor(self._last_obs).to(self.device)
+        dist = self.policy.get_distribution(obs_tensor)
+        actions = th.stack([dist.sample() for _ in range(self.group_size)])  # [group_size, action_dim]
+        log_probs = dist.log_prob(actions)  # [group_size]
 
-        # Step the environment group_size times from the same state
-        rewards = []
-        next_obs = None
-        dones = []
-        initial_state = self._last_obs.copy()
-        for i, action in enumerate(actions):
-            action_np = action.cpu().numpy()
-            new_obs, reward, done, info = env.step(action_np)
-            rewards.append(reward)
-            dones.append(done)
-            if i < self.group_size - 1:
-                env.reset()
-                env.unwrapped.state = initial_state
-            else:
-                next_obs = new_obs
+      # Step the environment group_size times from the same state
+      rewards = []
+      next_obs = None
+      dones = []
+      initial_state = self._last_obs.copy()
+      for i, action in enumerate(actions):
+        action_np = action.cpu().numpy()
+        new_obs, reward, done, info = env.step(action_np)
+        rewards.append(reward)
+        dones.append(done)
+        if i < self.group_size - 1:
+          env.reset()
+          env.unwrapped.state = initial_state
+        else:
+          next_obs = new_obs
 
-        rewards = np.array(rewards, dtype=np.float32)
-        dones = np.array(dones, dtype=np.bool_)
+      rewards = np.array(rewards, dtype=np.float32)
+      dones = np.array(dones, dtype=np.bool_)
 
-        # Add each action in the group as a separate entry
-        for i in range(self.group_size):
-            self.num_timesteps += env.num_envs
-            dummy_value = th.zeros(1, device=self.device)
-            rollout_buffer.add(
-                self._last_obs,
-                actions[i].cpu().numpy(),
-                rewards[i],
-                self._last_episode_starts if i == 0 else False,
-                dummy_value,
-                log_probs[i]  # Keep as tensor
-            )
+      # Add each action in the group as a separate entry
+      for i in range(self.group_size):
+        self.num_timesteps += env.num_envs
+        dummy_value = th.zeros(1, device=self.device)
+        rollout_buffer.add(
+          self._last_obs, actions[i].cpu().numpy(), rewards[i], self._last_episode_starts if i == 0 else False, dummy_value, log_probs[i]  # Keep as tensor
+        )
 
-        self._last_obs = next_obs
-        self._last_episode_starts = dones[-1]
-        n_steps_collected += 1
+      self._last_obs = next_obs
+      self._last_episode_starts = dones[-1]
+      n_steps_collected += 1
 
     return True
 
   def train(self):
     """
-    Train with group-based advantages using real rewards.
-    """
+        Train with group-based advantages using real rewards.
+        """
     self.policy.set_training_mode(True)
     self._update_learning_rate(self.policy.optimizer)
     clip_range = self.clip_range(self._current_progress_remaining)
@@ -226,9 +225,9 @@ class GRPO(PPO):
     # Ensure data aligns with group_size
     n_states = len(rewards) // self.group_size
     states = states[:n_states]
-    actions = actions[:n_states * self.group_size].reshape(n_states, self.group_size, -1)
-    rewards = rewards[:n_states * self.group_size].reshape(n_states, self.group_size)
-    old_log_probs = old_log_probs[:n_states * self.group_size].reshape(n_states, self.group_size)
+    actions = actions[: n_states * self.group_size].reshape(n_states, self.group_size, -1)
+    rewards = rewards[: n_states * self.group_size].reshape(n_states, self.group_size)
+    old_log_probs = old_log_probs[: n_states * self.group_size].reshape(n_states, self.group_size)
 
     # Compute group-based advantages
     group_means = rewards.mean沿着(dim=1, keepdim=True)
@@ -294,67 +293,65 @@ class GRPO(PPO):
     self.logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
     self.logger.record("train/clip_range", clip_range)
 
+
 # GenGRPO inheriting from GRPO
 
 
 class GenGRPO(GRPO):
   """
-  Generative Group Relative Policy Optimization for robotic control.
-  - Extends GRPO with generative replay.
-  """
+    Generative Group Relative Policy Optimization for robotic control.
+    - Extends GRPO with generative replay.
+    """
 
   def __init__(
-      self,
-      policy,
-      env,
-      learning_rate=3e-4,
-      n_steps=2048,
-      batch_size=64,
-      n_epochs=10,
-      gamma=0.99,
-      clip_range=0.2,
-      ent_coef=0.0,
-      entropy_coef=0.01,
-      sampling_coef=0.5,
-      buffer_capacity=10000,
-      max_grad_norm=0.5,
-      target_kl=None,
-      group_size=4,
-      verbose=0,
-      device="auto",
-      **kwargs
+    self,
+    policy,
+    env,
+    learning_rate=3e-4,
+    n_steps=2048,
+    batch_size=64,
+    n_epochs=10,
+    gamma=0.99,
+    clip_range=0.2,
+    ent_coef=0.0,
+    entropy_coef=0.01,
+    sampling_coef=0.5,
+    buffer_capacity=10000,
+    max_grad_norm=0.5,
+    target_kl=None,
+    group_size=4,
+    verbose=0,
+    device="auto",
+    **kwargs
   ):
     super().__init__(
-        policy=policy,
-        env=env,
-        learning_rate=learning_rate,
-        n_steps=n_steps,
-        batch_size=batch_size,
-        n_epochs=n_epochs,
-        gamma=gamma,
-        clip_range=clip_range,
-        ent_coef=ent_coef,
-        max_grad_norm=max_grad_norm,
-        target_kl=target_kl,
-        group_size=group_size,
-        verbose=verbose,
-        device=device,
-        **kwargs
+      policy=policy,
+      env=env,
+      learning_rate=learning_rate,
+      n_steps=n_steps,
+      batch_size=batch_size,
+      n_epochs=n_epochs,
+      gamma=gamma,
+      clip_range=clip_range,
+      ent_coef=ent_coef,
+      max_grad_norm=max_grad_norm,
+      target_kl=target_kl,
+      group_size=group_size,
+      verbose=verbose,
+      device=device,
+      **kwargs
     )
     self.entropy_coef = entropy_coef
     self.sampling_coef = sampling_coef
-    self.forward_dynamics_model = ForwardDynamicsModel(
-        observation_space=self.observation_space,
-        action_space=self.action_space
-    ).to(self.device)
+    self.forward_dynamics_model = ForwardDynamicsModel(observation_space=self.observation_space, action_space=self.action_space).to(self.device)
     self.replay_buffer = GenerativeReplayBuffer(
-        real_capacity=buffer_capacity,
-        synthetic_capacity=buffer_capacity,
-        relevance_function=self._compute_relevance,
-        generative_model=self.policy,
-        batch_size=batch_size,
-        group_size=group_size,
-        env=env
+      real_capacity=buffer_capacity,
+      synthetic_capacity=buffer_capacity,
+      relevance_function=self._compute_relevance,
+      generative_model=self.policy,
+      batch_size=batch_size,
+      group_size=group_size,
+      env=env,
     )
 
   def _compute_relevance(self, transition):
@@ -366,8 +363,8 @@ class GenGRPO(GRPO):
 
   def train(self):
     """
-    Train with group-based advantages and generative replay, overriding GRPO's train.
-    """
+        Train with group-based advantages and generative replay, overriding GRPO's train.
+        """
     self.policy.set_training_mode(True)
     self._update_learning_rate(self.policy.optimizer)
     clip_range = self.clip_range(self._current_progress_remaining)
@@ -386,20 +383,20 @@ class GenGRPO(GRPO):
     n_states = len(states)
     for i in range(n_states):
       transition = (
-          states[i].cpu(),
-          actions[i * self.group_size:(i + 1) * self.group_size].cpu(),
-          rewards[i * self.group_size:(i + 1) * self.group_size].cpu(),
-          old_log_probs[i * self.group_size:(i + 1) * self.group_size].cpu(),
+        states[i].cpu(),
+        actions[i * self.group_size : (i + 1) * self.group_size].cpu(),
+        rewards[i * self.group_size : (i + 1) * self.group_size].cpu(),
+        old_log_probs[i * self.group_size : (i + 1) * self.group_size].cpu(),
       )
       self.replay_buffer.add_real(transition)
 
     # Generate and sample synthetic data
     self.replay_buffer.generate_synthetic()
     num_replay_samples = sampling_strategy(
-        entropy=self.policy.get_distribution(states).entropy().mean().item(),
-        sampling_coef=self.sampling_coef,
-        min_samples=0,
-        max_samples=self.batch_size // self.group_size
+      entropy=self.policy.get_distribution(states).entropy().mean().item(),
+      sampling_coef=self.sampling_coef,
+      min_samples=0,
+      max_samples=self.batch_size // self.group_size,
     )
     if num_replay_samples > 0:
       replay_samples = self.replay_buffer.sample(num_replay_samples)
@@ -413,9 +410,9 @@ class GenGRPO(GRPO):
     # Ensure data aligns with group_size
     n_states = len(rewards) // self.group_size
     states = states[:n_states]
-    actions = actions[:n_states * self.group_size].reshape(n_states, self.group_size, -1)
-    rewards = rewards[:n_states * self.group_size].reshape(n_states, self.group_size)
-    old_log_probs = old_log_probs[:n_states * self.group_size].reshape(n_states, self.group_size)
+    actions = actions[: n_states * self.group_size].reshape(n_states, self.group_size, -1)
+    rewards = rewards[: n_states * self.group_size].reshape(n_states, self.group_size)
+    old_log_probs = old_log_probs[: n_states * self.group_size].reshape(n_states, self.group_size)
 
     # Compute group-based advantages
     group_means = rewards.mean(dim=1, keepdim=True)
@@ -487,30 +484,11 @@ if __name__ == "__main__":
   env = make_vec_env("Pendulum-v1", n_envs=1)
 
   # Test GRPO
-  grpo_model = GRPO(
-      policy="MlpPolicy",
-      env=env,
-      learning_rate=3e-4,
-      n_steps=2048,
-      batch_size=64,
-      n_epochs=10,
-      clip_range=0.2,
-      group_size=4,
-      verbose=1
-  )
+  grpo_model = GRPO(policy="MlpPolicy", env=env, learning_rate=3e-4, n_steps=2048, batch_size=64, n_epochs=10, clip_range=0.2, group_size=4, verbose=1)
   grpo_model.learn(total_timesteps=100000)
 
   # Test GenGRPO
   gengrpo_model = GenGRPO(
-      policy="MlpPolicy",
-      env=env,
-      learning_rate=3e-4,
-      n_steps=2048,
-      batch_size=64,
-      n_epochs=10,
-      clip_range=0.2,
-      group_size=4,
-      buffer_capacity=10000,
-      verbose=1
+    policy="MlpPolicy", env=env, learning_rate=3e-4, n_steps=2048, batch_size=64, n_epochs=10, clip_range=0.2, group_size=4, buffer_capacity=10000, verbose=1
   )
   gengrpo_model.learn(total_timesteps=100000)
