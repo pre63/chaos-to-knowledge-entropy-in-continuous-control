@@ -9,7 +9,7 @@ import yaml
 from scipy.ndimage import uniform_filter1d  # For smoothing
 from stable_baselines3.common.callbacks import BaseCallback
 
-from Models.GenTRPO.GenTRPO import GenTRPO
+from Models.GenTRPO.GenTRPO import GenPPO, GenTRPO
 from Models.SB3 import PPO, TRPO
 from Models.TRPOER.TRPOER import TRPOER
 from Models.TRPOR.TRPOR import TRPOR
@@ -302,7 +302,7 @@ if __name__ == "__main__":
   config = load_config_from_env()
 
   # Override defaults with config
-  models = config.get("models", [GenTRPO]) #, [TRPOR, PPO, TRPO, TRPOER, GenTRPO]
+  models = config.get("models", [GenPPO])  # , [TRPOR, PPO, TRPO, TRPOER, GenTRPO, GenPPO]
   dry_run = config.get("dry_run", dry_run)
   env_name = config.get("env_name", env_name)
   total_timesteps = config.get("total_timesteps", total_timesteps)
