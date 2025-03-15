@@ -500,25 +500,49 @@ class GenPPO(PPO):
 
 
 def sample_genppo_params(trial, n_actions, n_envs, additional_args):
-  n_steps = trial.suggest_categorical("n_steps", [64, 128, 256, 512, 1024])
-  gamma = trial.suggest_categorical("gamma", [0.9, 0.95, 0.99])
-  learning_rate = trial.suggest_float("learning_rate", 1e-5, 1e-3, log=True)
   n_epochs = 10
   clip_range = trial.suggest_categorical("clip_range", [0.1, 0.2, 0.3])
-  gae_lambda = trial.suggest_categorical("gae_lambda", [0.9, 0.95, 0.99])
-  batch_size = trial.suggest_categorical("batch_size", [32, 64, 128, 256])
+  n_timesteps = trial.suggest_categorical("n_timesteps", [100000])
 
-  net_arch_type = trial.suggest_categorical("net_arch", ["small", "medium"])
-  net_arch = {"small": [64, 64], "medium": [256, 256]}[net_arch_type]
+  n_steps = trial.suggest_categorical("n_steps", [8, 16, 32, 64, 128, 256, 512, 1024, 2048])
+  gamma = trial.suggest_categorical("gamma", [0.8, 0.85, 0.9, 0.95, 0.99])
+  learning_rate = trial.suggest_float("learning_rate", 1e-5, 1, log=True)
+  n_critic_updates = trial.suggest_categorical("n_critic_updates", [5, 10, 20, 25, 30])
+  cg_max_steps = trial.suggest_categorical("cg_max_steps", [5, 10, 20, 25, 30])
+  target_kl = trial.suggest_categorical("target_kl", [0.1, 0.05, 0.03, 0.02, 0.01, 0.005, 0.001])
+  gae_lambda = trial.suggest_categorical("gae_lambda", [0.8, 0.9, 0.92, 0.95, 0.98, 0.99, 1.0])
+
+  batch_size = trial.suggest_categorical("batch_size", [256, 512, 1024, 2048])
+
+  # Activation function selection
   activation_fn_name = trial.suggest_categorical("activation_fn", ["tanh", "relu"])
   activation_fn = {"tanh": nn.Tanh, "relu": nn.ReLU}[activation_fn_name]
 
-  entropy_coef = trial.suggest_float("entropy_coef", 0.0, 0.1, step=0.01)
-  sampling_coef = trial.suggest_float("sampling_coef", 0.1, 1.0, step=0.1)
-  buffer_capacity = trial.suggest_int("buffer_capacity", 5000, 50000, step=5000)
+  # Entropy coefficient for regularization
+  entropy_coef = trial.suggest_float("entropy_coef", -1, 1, step=0.01)
+  sampling_coef = trial.suggest_float("sampling_coef", -1, 1, step=0.01)
 
-  # always 100000 timesteps
-  n_timesteps = trial.suggest_categorical("n_timesteps", [100000])
+  # Replay buffer capacity and reward threshold for buffer clearing
+  buffer_capacity = trial.suggest_int("buffer_capacity", 5000, 100000, step=1000)
+
+  epsilon = trial.suggest_float("epsilon", 0.1, 0.9, step=0.05)
+
+  orthogonal_init = trial.suggest_categorical("orthogonal_init", [True, False])
+
+  n_envs_choice = [2, 4, 6, 8, 10]
+  n_envs = trial.suggest_categorical("n_envs", n_envs_choice)
+
+  normalized_advantage = trial.suggest_categorical("normalize_advantage", [True, False])
+
+  net_arch_type = trial.suggest_categorical("net_arch", ["small", "medium", "large"])
+  net_arch_dict = {
+    "small": {"pi": [64, 64], "vf": [64, 64]},
+    "medium": {"pi": [256, 256], "vf": [256, 256]},
+    "large": {"pi": [400, 300], "vf": [400, 300]},
+  }
+  net_arch = net_arch_dict[net_arch_type]
+  assert isinstance(net_arch["pi"], list) and all(isinstance(x, int) for x in net_arch["pi"]), "Invalid pi architecture"
+  assert isinstance(net_arch["vf"], list) and all(isinstance(x, int) for x in net_arch["vf"]), "Invalid vf architecture"
 
   return {
     "policy": "MlpPolicy",
@@ -533,7 +557,16 @@ def sample_genppo_params(trial, n_actions, n_envs, additional_args):
     "entropy_coef": entropy_coef,
     "sampling_coef": sampling_coef,
     "buffer_capacity": buffer_capacity,
-    "policy_kwargs": dict(net_arch=dict(pi=net_arch, vf=net_arch), activation_fn=activation_fn),
-    "normalize_advantage": True,
+    "normalize_advantage": normalized_advantage,
+    "n_envs": n_envs,
+    "epsilon": epsilon,
+    "target_kl": target_kl,
+    "cg_max_steps": cg_max_steps,
+    "n_critic_updates": n_critic_updates,
+    "policy_kwargs": dict(
+      net_arch=net_arch,
+      activation_fn=activation_fn,
+      ortho_init=orthogonal_init,
+    ),
     **additional_args,
   }

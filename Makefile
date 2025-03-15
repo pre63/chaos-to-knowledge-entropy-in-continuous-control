@@ -28,7 +28,7 @@ board:
 
 ubuntu:
 	@if [ "$(OS)" != "Linux" ]; then \
-		echo "Not a Linux system, skipping Ubuntu setup."; \
+		YPATH=".noise/2025-03-10_07-15-27/GenPPO_100000_reward_action_5_runs.yml;.noise/2025-03-09_07-39-20/GenPPO_100000_reward_action_5_runs.yml;.noise/2025-03-08_10-51-44/GenPPO_100000_reward_action_5_runs.yml;.noise/2025-03-05_18-34-02/GenTRPO_100000_reward_action_5_runs.yml;.noise/2025-03-05_02-24-05/PPO_100000_reward_action_5_runs.yml;.noise/2025-03-05_02-24-05/TRPO_100000_reward_action_5_runs.yml;.noise/2025-03-05_02-24-05/TRPOER_100000_reward_action_5_runs.yml;.noise/2025-03-05_02-24-05/TRPOR_100000_reward_action_5_runs.yml"
 	elif ! command -v lsb_release > /dev/null; then \
 		echo "lsb_release not found, skipping Ubuntu setup."; \
 	elif ! lsb_release -a 2>/dev/null | grep -q "Ubuntu"; then \
@@ -180,3 +180,8 @@ noise:
 
 noise-plot:
 	@. .venv/bin/activate; python -m Environments.NoisePlot
+
+
+
+noise-rel-plot:
+	@. .venv/bin/activate; python -m Environments.RelativePlot 
