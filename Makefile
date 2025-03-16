@@ -169,12 +169,6 @@ eval-all:
 	# $(MAKE) eval model=gentrpo env=Pendulum-v1
 
 
-trpoer:
-	make train model=trpoer env=Humanoid-v5 envs=1 n_jobs=4
-	make train model=trpoer env=Ant-v5 envs=1 n_jobs=4
-	make train model=trpoer env=InvertedDoublePendulum-v5 envs=1 n_jobs=4
-	make train model=trpoer env=Pendulum-v1 envs=1 n_jobs=4
-
 noise:
 	@. .venv/bin/activate; CUDA_VISIBLE_DEVICES="" python -m Environments.Noise
 
@@ -185,3 +179,47 @@ noise-plot:
 
 noise-rel-plot:
 	@. .venv/bin/activate; python -m Environments.RelativePlot 
+
+
+
+
+tune:
+	$(MAKE) train model=trpor env=HalfCheetah-v5 n_jobs=16 optimize=True 
+	$(MAKE) train model=gentrpo env=HalfCheetah-v5 n_jobs=16 optimize=True 
+	$(MAKE) train model=genppo env=HalfCheetah-v5 n_jobs=16 optimize=True 
+
+	$(MAKE) train model=trpor env=Hopper-v5  n_jobs=16 optimize=True 
+	$(MAKE) train model=gentrpo env=Hopper-v5  n_jobs=16 optimize=True 
+	$(MAKE) train model=genppo env=Hopper-v5  n_jobs=16 optimize=True 
+
+	$(MAKE) train model=trpor env=HumanoidStandup-v5 n_jobs=16 optimize=True 
+	$(MAKE) train model=gentrpo env=HumanoidStandup-v5 n_jobs=16 optimize=True 
+	$(MAKE) train model=genppo env=HumanoidStandup-v5 n_jobs=16 optimize=True 
+
+	$(MAKE) train model=trpor env=InvertedPendulum-v5 n_jobs=16 optimize=True 
+	$(MAKE) train model=gentrpo env=InvertedPendulum-v5 n_jobs=16 optimize=True 
+	$(MAKE) train model=genppo env=InvertedPendulum-v5 n_jobs=16 optimize=True 
+
+	$(MAKE) train model=trpor env=Pusher-v5 n_jobs=16 optimize=True 
+	$(MAKE) train model=gentrpo env=Pusher-v5 n_jobs=16 optimize=True 
+	$(MAKE) train model=genppo env=Pusher-v5 n_jobs=16 optimize=True 
+
+	$(MAKE) train model=trpor env=Reacher-v5 n_jobs=16 optimize=True 
+	$(MAKE) train model=gentrpo env=Reacher-v5 n_jobs=16 optimize=True 
+	$(MAKE) train model=genppo env=Reacher-v5 n_jobs=16 optimize=True 
+
+	$(MAKE) train model=trpor env=Swimmer-v5 n_jobs=16 optimize=True 
+	$(MAKE) train model=gentrpo env=Swimmer-v5 n_jobs=16 optimize=True 
+	$(MAKE) train model=genppo env=Swimmer-v5 n_jobs=16 optimize=True 
+
+	$(MAKE) train model=trpor env=Walker2d-v5 n_jobs=16 optimize=True 
+	$(MAKE) train model=gentrpo env=Walker2d-v5 n_jobs=16 optimize=True 
+	$(MAKE) train model=genppo env=Walker2d-v5 n_jobs=16 optimize=True 
+
+	$(MAKE) train model=trpor env=Humanoid-v5 envs=1 n_jobs=16 optimize=True 
+	$(MAKE) train model=gentrpo env=Humanoid-v5 envs=1 n_jobs=16 optimize=True 
+	$(MAKE) train model=genppo env=Humanoid-v5 envs=1 n_jobs=16 optimize=True 
+
+	$(MAKE) train model=trpor env=RocketLander-v0 n_jobs=16 optimize=True 
+	$(MAKE) train model=gentrpo env=RocketLander-v0 n_jobs=16 optimize=True 
+	$(MAKE) train model=genppo env=RocketLander-v0 n_jobs=16 optimize=True 
