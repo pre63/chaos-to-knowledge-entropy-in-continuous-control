@@ -63,7 +63,7 @@ def configure(**params):
     "wandb_tags": [],
     "progress": False,
     "train_eval": False,
-    "n_timesteps": 1000000,
+    "n_timesteps": 100000,
   }
 
   # Update defaults with provided params
