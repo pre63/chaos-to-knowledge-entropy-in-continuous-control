@@ -290,7 +290,18 @@ def load_config_from_env(default_path=".noise/config.yml"):
 
 
 if __name__ == "__main__":
-  env_names = ["HalfCheetah-v5", "Hopper-v5", "HumanoidStandup-v5", "InvertedPendulum-v5", "Pusher-v5", "Reacher-v5", "Swimmer-v5", "Walker2d-v5"]
+  env_names = [
+    "HalfCheetah-v5",
+    "Hopper-v5",
+    "HumanoidStandup-v5",
+    "InvertedPendulum-v5",
+    "Pusher-v5",
+    "Reacher-v5",
+    "Swimmer-v5",
+    "Walker2d-v5",
+    "Humanoid-v5",
+    "RocketLander-v0",
+  ]
 
   # Default values
   dry_run = False
@@ -306,7 +317,7 @@ if __name__ == "__main__":
     config = load_config_from_env()
 
     # Override defaults with config
-    models = config.get("models", [TRPO, PPO, TRPOR])
+    models = config.get("models", [TRPO, PPO, TRPOR, TRPOER, GenTRPO, GenPPO])
     dry_run = config.get("dry_run", dry_run)
     env_name = config.get("env_name", env_name)
     total_timesteps = config.get("total_timesteps", total_timesteps)
