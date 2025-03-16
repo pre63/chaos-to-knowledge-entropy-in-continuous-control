@@ -1,3 +1,53 @@
+HalfCheetah-v5:
+  trial_number: 54
+  value: 959.1457918
+  params:
+    n_steps: 512
+    gamma: 0.99
+    learning_rate: 0.00024617200927099935
+    n_critic_updates: 20
+    cg_max_steps: 5
+    target_kl: 0.005
+    gae_lambda: 0.98
+    batch_size: 1024
+    net_arch: small
+    activation_fn: tanh
+    entropy_coef: -0.43999999999999995
+    sampling_coef: -0.37
+    buffer_capacity: 36000
+    epsilon: 0.30000000000000004
+    orthogonal_init: 0
+    n_timesteps: 100000
+    n_envs: 2
+    normalize_advantage: 0
+    buffer_alpha: 0.1822276249804535
+  comment: 'Best trial details: _number=54, state=1, _values=[959.1457918], _datetime_start=2025-03-16
+    22:39:20.855683, datetime_complete=2025-03-16 22:54:59.148023, _params={''n_steps'':
+    512, ''gamma'': 0.99, ''learning_rate'': 0.00024617200927099935, ''n_critic_updates'':
+    20, ''cg_max_steps'': 5, ''target_kl'': 0.005, ''gae_lambda'': 0.98, ''batch_size'':
+    1024, ''net_arch'': ''small'', ''activation_fn'': ''tanh'', ''entropy_coef'':
+    -0.43999999999999995, ''sampling_coef'': -0.37, ''buffer_capacity'': 36000, ''epsilon'':
+    0.30000000000000004, ''orthogonal_init'': False, ''n_timesteps'': 100000, ''n_envs'':
+    2, ''normalize_advantage'': False, ''buffer_alpha'': 0.1822276249804535}, _user_attrs={},
+    _system_attrs={''completed_rung_0'': 586.9075014}, intermediate_values={1: 586.9075014,
+    2: 959.1457918}, _distributions={''n_steps'': CategoricalDistribution(choices=(8,
+    16, 32, 64, 128, 256, 512, 1024, 2048)), ''gamma'': CategoricalDistribution(choices=(0.8,
+    0.85, 0.9, 0.95, 0.99)), ''learning_rate'': FloatDistribution(high=1.0, log=True,
+    low=1e-05, step=None), ''n_critic_updates'': CategoricalDistribution(choices=(5,
+    10, 20, 25, 30)), ''cg_max_steps'': CategoricalDistribution(choices=(5, 10, 20,
+    25, 30)), ''target_kl'': CategoricalDistribution(choices=(0.1, 0.05, 0.03, 0.02,
+    0.01, 0.005, 0.001)), ''gae_lambda'': CategoricalDistribution(choices=(0.8, 0.9,
+    0.92, 0.95, 0.98, 0.99, 1.0)), ''batch_size'': CategoricalDistribution(choices=(256,
+    512, 1024, 2048)), ''net_arch'': CategoricalDistribution(choices=(''small'', ''medium'',
+    ''large'')), ''activation_fn'': CategoricalDistribution(choices=(''tanh'', ''relu'')),
+    ''entropy_coef'': FloatDistribution(high=1.0, log=False, low=-1.0, step=0.01),
+    ''sampling_coef'': FloatDistribution(high=1.0, log=False, low=-1.0, step=0.01),
+    ''buffer_capacity'': IntDistribution(high=100000, log=False, low=10000, step=1000),
+    ''epsilon'': FloatDistribution(high=0.9, log=False, low=0.1, step=0.05), ''orthogonal_init'':
+    CategoricalDistribution(choices=(True, False)), ''n_timesteps'': CategoricalDistribution(choices=(100000,)),
+    ''n_envs'': CategoricalDistribution(choices=(2, 4, 6, 8, 10)), ''normalize_advantage'':
+    CategoricalDistribution(choices=(True, False)), ''buffer_alpha'': FloatDistribution(high=1.0,
+    log=True, low=0.1, step=None)}, _trial_id=54'
 Humanoid-v5:
   trial_number: 78
   value: 425.2933906
