@@ -2,6 +2,8 @@ SHELL := /bin/bash
 
 OS := $(shell uname -s)
 
+DEVICE=cpu
+
 n_jobs=10 # Default number of jobs to run in parallel
 envs=10 # Default number of environments to train on
 model=trpo # Default model to train
@@ -83,7 +85,7 @@ train:
 	@mkdir -p .logs
 	@mkdir -p .optuna-zoo
 	@mkdir -p ".optuna-zoo/$(model)_$(env)"
-	@. .venv/bin/activate; PYTHONPATH=. python -u Zoo/Train.py --model=$(model) --env=$(env) --optimize=$(optimize) --n_jobs=$(n_jobs) --trials=$(trials) --max_trials=$(max_trials) 2>&1 | tee -a .logs/zoo-$(model)-$(env)-$(shell date +"%Y%m%d").log
+	@. .venv/bin/activate; PYTHONPATH=. python -u Zoo/Train.py --model=$(model) --env=$(env) --optimize=$(optimize) --n_jobs=$(n_jobs) --trials=$(trials) --max_trials=$(max_trials) --device=$(DEVICE) 2>&1 | tee -a .logs/zoo-$(model)-$(env)-$(shell date +"%Y%m%d").log
 
 nightly:
 	@$(MAKE) fix
@@ -123,7 +125,6 @@ list:
 	trials=$(trials); \
 	total_combinations=$$(echo "$$zoologyenvs_count * $$zoology_count * $$trials" | bc); \
 	echo "Total number of combinations: $$total_combinations"
-
 
 eval-all:
 	$(MAKE) eval model=trpoer env=Ant-v5
@@ -168,20 +169,14 @@ eval-all:
 	# $(MAKE) eval model=gentrpo env=InvertedDoublePendulum-v5
 	# $(MAKE) eval model=gentrpo env=Pendulum-v1
 
-
 noise:
 	@. .venv/bin/activate; CUDA_VISIBLE_DEVICES="" python -m Environments.Noise
 
 noise-plot:
 	@. .venv/bin/activate; python -m Environments.NoisePlot
 
-
-
 noise-rel-plot:
 	@. .venv/bin/activate; python -m Environments.RelativePlot 
-
-
-
 
 tune:
 	$(MAKE) train model=trpor env=HalfCheetah-v5 n_jobs=16 optimize=True 
