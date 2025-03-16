@@ -126,49 +126,6 @@ list:
 	total_combinations=$$(echo "$$zoologyenvs_count * $$zoology_count * $$trials" | bc); \
 	echo "Total number of combinations: $$total_combinations"
 
-eval-all:
-	$(MAKE) eval model=trpoer env=Ant-v5
-	$(MAKE) eval model=trpoer env=Humanoid-v5
-	$(MAKE) eval model=trpoer env=InvertedDoublePendulum-v5
-	$(MAKE) eval model=trpoer env=Pendulum-v1
-
-	#$(MAKE) eval model=trpor env=Ant-v5
-	#$(MAKE) eval model=trpor env=Humanoid-v5
-	#$(MAKE) eval model=trpor env=InvertedDoublePendulum-v5
-	#$(MAKE) eval model=trpor env=Pendulum-v1
-
-	# $(MAKE) eval model=ppo env=Ant-v5
-	# $(MAKE) eval model=ppo env=Humanoid-v5
-	# $(MAKE) eval model=ppo env=InvertedDoublePendulum-v5
-	# $(MAKE) eval model=ppo env=Pendulum-v1
-
-	# $(MAKE) eval model=trpo env=Ant-v5
-	# $(MAKE) eval model=trpo env=Humanoid-v5
-	# $(MAKE) eval model=trpo env=InvertedDoublePendulum-v5
-	# $(MAKE) eval model=trpo env=Pendulum-v1
-
-	# $(MAKE) eval model=entrpohigh env=Ant-v5
-	# $(MAKE) eval model=entrpohigh env=Humanoid-v5
-	# $(MAKE) eval model=entrpohigh env=InvertedDoublePendulum-v5
-	# $(MAKE) eval model=entrpohigh env=Pendulum-v1
-
-	# $(MAKE) eval model=entrpolow env=Ant-v5
-	# $(MAKE) eval model=entrpolow env=Humanoid-v5
-	# $(MAKE) eval model=entrpolow env=InvertedDoublePendulum-v5
-	# $(MAKE) eval model=ppo env=Humanoid-v5
-	# $(MAKE) eval model=ppo env=InvertedDoublePendulum-v5
-	# $(MAKE) eval model=entrpolow env=Pendulum-v1
-
-	# $(MAKE) eval model=entrpo env=Ant-v5
-	# $(MAKE) eval model=entrpo env=Humanoid-v5
-	# $(MAKE) eval model=entrpo env=InvertedDoublePendulum-v5
-	# $(MAKE) eval model=entrpo env=Pendulum-v1
-
-	# $(MAKE) eval model=gentrpo env=Ant-v5
-	# $(MAKE) eval model=gentrpo env=Humanoid-v5
-	# $(MAKE) eval model=gentrpo env=InvertedDoublePendulum-v5
-	# $(MAKE) eval model=gentrpo env=Pendulum-v1
-
 noise:
 	@. .venv/bin/activate; CUDA_VISIBLE_DEVICES="" python -m Environments.Noise
 
@@ -179,42 +136,52 @@ noise-rel-plot:
 	@. .venv/bin/activate; python -m Environments.RelativePlot 
 
 tune:
-	$(MAKE) train model=trpor env=HalfCheetah-v5 n_jobs=16 optimize=True 
-	$(MAKE) train model=gentrpo env=HalfCheetah-v5 n_jobs=16 optimize=True 
-	$(MAKE) train model=genppo env=HalfCheetah-v5 n_jobs=16 optimize=True 
+	$(MAKE) train model=trpor env=HalfCheetah-v5 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=trpoer env=HalfCheetah-v5 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=gentrpo env=HalfCheetah-v5 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=genppo env=HalfCheetah-v5 n_jobs=1 DEVICE=cuda optimize=True 
 
-	$(MAKE) train model=trpor env=Hopper-v5  n_jobs=16 optimize=True 
-	$(MAKE) train model=gentrpo env=Hopper-v5  n_jobs=16 optimize=True 
-	$(MAKE) train model=genppo env=Hopper-v5  n_jobs=16 optimize=True 
+	$(MAKE) train model=trpor env=Hopper-v5  n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=trpoer env=Hopper-v5  n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=gentrpo env=Hopper-v5  n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=genppo env=Hopper-v5  n_jobs=1 DEVICE=cuda optimize=True 
 
-	$(MAKE) train model=trpor env=HumanoidStandup-v5 n_jobs=16 optimize=True 
-	$(MAKE) train model=gentrpo env=HumanoidStandup-v5 n_jobs=16 optimize=True 
-	$(MAKE) train model=genppo env=HumanoidStandup-v5 n_jobs=16 optimize=True 
+	$(MAKE) train model=trpor env=HumanoidStandup-v5 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=trpoer env=HumanoidStandup-v5 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=gentrpo env=HumanoidStandup-v5 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=genppo env=HumanoidStandup-v5 n_jobs=1 DEVICE=cuda optimize=True 
 
-	$(MAKE) train model=trpor env=InvertedPendulum-v5 n_jobs=16 optimize=True 
-	$(MAKE) train model=gentrpo env=InvertedPendulum-v5 n_jobs=16 optimize=True 
-	$(MAKE) train model=genppo env=InvertedPendulum-v5 n_jobs=16 optimize=True 
+	$(MAKE) train model=trpor env=InvertedPendulum-v5 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=trpoer env=InvertedPendulum-v5 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=gentrpo env=InvertedPendulum-v5 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=genppo env=InvertedPendulum-v5 n_jobs=1 DEVICE=cuda optimize=True 
 
-	$(MAKE) train model=trpor env=Pusher-v5 n_jobs=16 optimize=True 
-	$(MAKE) train model=gentrpo env=Pusher-v5 n_jobs=16 optimize=True 
-	$(MAKE) train model=genppo env=Pusher-v5 n_jobs=16 optimize=True 
+	$(MAKE) train model=trpor env=Pusher-v5 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=trpoer env=Pusher-v5 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=gentrpo env=Pusher-v5 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=genppo env=Pusher-v5 n_jobs=1 DEVICE=cuda optimize=True 
 
-	$(MAKE) train model=trpor env=Reacher-v5 n_jobs=16 optimize=True 
-	$(MAKE) train model=gentrpo env=Reacher-v5 n_jobs=16 optimize=True 
-	$(MAKE) train model=genppo env=Reacher-v5 n_jobs=16 optimize=True 
+	$(MAKE) train model=trpor env=Reacher-v5 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=trpoer env=Reacher-v5 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=gentrpo env=Reacher-v5 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=genppo env=Reacher-v5 n_jobs=1 DEVICE=cuda optimize=True 
 
-	$(MAKE) train model=trpor env=Swimmer-v5 n_jobs=16 optimize=True 
-	$(MAKE) train model=gentrpo env=Swimmer-v5 n_jobs=16 optimize=True 
-	$(MAKE) train model=genppo env=Swimmer-v5 n_jobs=16 optimize=True 
+	$(MAKE) train model=trpor env=Swimmer-v5 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=trpoer env=Swimmer-v5 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=gentrpo env=Swimmer-v5 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=genppo env=Swimmer-v5 n_jobs=1 DEVICE=cuda optimize=True 
 
-	$(MAKE) train model=trpor env=Walker2d-v5 n_jobs=16 optimize=True 
-	$(MAKE) train model=gentrpo env=Walker2d-v5 n_jobs=16 optimize=True 
-	$(MAKE) train model=genppo env=Walker2d-v5 n_jobs=16 optimize=True 
+	$(MAKE) train model=trpor env=Walker2d-v5 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=trpoer env=Walker2d-v5 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=gentrpo env=Walker2d-v5 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=genppo env=Walker2d-v5 n_jobs=1 DEVICE=cuda optimize=True 
 
-	$(MAKE) train model=trpor env=Humanoid-v5 envs=1 n_jobs=16 optimize=True 
-	$(MAKE) train model=gentrpo env=Humanoid-v5 envs=1 n_jobs=16 optimize=True 
-	$(MAKE) train model=genppo env=Humanoid-v5 envs=1 n_jobs=16 optimize=True 
+	$(MAKE) train model=trpor env=Humanoid-v5 envs=1 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=trpoer env=Humanoid-v5 envs=1 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=gentrpo env=Humanoid-v5 envs=1 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=genppo env=Humanoid-v5 envs=1 n_jobs=1 DEVICE=cuda optimize=True 
 
-	$(MAKE) train model=trpor env=RocketLander-v0 n_jobs=16 optimize=True 
-	$(MAKE) train model=gentrpo env=RocketLander-v0 n_jobs=16 optimize=True 
-	$(MAKE) train model=genppo env=RocketLander-v0 n_jobs=16 optimize=True 
+	$(MAKE) train model=trpor env=RocketLander-v0 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=trpoer env=RocketLander-v0 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=gentrpo env=RocketLander-v0 n_jobs=1 DEVICE=cuda optimize=True 
+	$(MAKE) train model=genppo env=RocketLander-v0 n_jobs=1 DEVICE=cuda optimize=True 
