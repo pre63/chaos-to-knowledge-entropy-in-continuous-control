@@ -223,7 +223,8 @@ def sample_gentrpo_params(trial, n_actions, n_envs, additional_args):
 
   orthogonal_init = trial.suggest_categorical("orthogonal_init", [True, False])
 
-  n_timesteps = trial.suggest_int("n_timesteps", 100000, 1000000, step=100000)
+  n_timesteps = trial.suggest_categorical("n_timesteps", [100000])
+
   n_envs_choice = [2, 4, 6, 8, 10]
   n_envs = trial.suggest_categorical("n_envs", n_envs_choice)
 

@@ -313,11 +313,20 @@ if __name__ == "__main__":
 
   run_date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
+  models = [
+    TRPO,
+    PPO,
+    TRPOR,
+    TRPOER,
+    GenTRPO,
+    GenPPO,
+  ]
+
   for env_name in env_names:
     config = load_config_from_env()
 
     # Override defaults with config
-    models = config.get("models", [TRPO, PPO, TRPOR, TRPOER, GenTRPO, GenPPO])
+    models = config.get("models", models)
     dry_run = config.get("dry_run", dry_run)
     env_name = config.get("env_name", env_name)
     total_timesteps = config.get("total_timesteps", total_timesteps)
