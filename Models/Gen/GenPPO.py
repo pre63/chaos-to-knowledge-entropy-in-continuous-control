@@ -28,6 +28,7 @@ class GenPPO(PPO):
       relevance_function=self._compute_relevance,
       generative_model=self.policy,
       batch_size=batch_size,
+      device=self.device,
     )
 
   def _compute_relevance(self, transition):

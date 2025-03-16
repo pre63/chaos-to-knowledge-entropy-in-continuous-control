@@ -40,7 +40,7 @@ class ForwardDynamicsModel(nn.Module):
 
 
 class GenerativeReplayBuffer:
-  def __init__(self, real_capacity, synthetic_capacity, relevance_function, generative_model, batch_size):
+  def __init__(self, real_capacity, synthetic_capacity, relevance_function, generative_model, batch_size, device):
     self.real_capacity = real_capacity
     self.synthetic_capacity = synthetic_capacity
     self.real_buffer = []
@@ -48,12 +48,10 @@ class GenerativeReplayBuffer:
     self.relevance_function = relevance_function
     self.generative_model = generative_model
     self.batch_size = batch_size
+    self.device = device
 
   def add_real(self, transition):
-    # transition is: (obs, action, returns, advantages, old_log_prob)
     obs, action, returns, advantages, old_log_prob = transition
-
-    # Convert all to tensors if not already
     if not isinstance(obs, th.Tensor):
       obs = th.as_tensor(obs, dtype=th.float32)
     if not isinstance(action, th.Tensor):
@@ -73,15 +71,13 @@ class GenerativeReplayBuffer:
     if len(self.real_buffer) == 0:
       return
 
-    # Sort by relevance
     scored_samples = sorted(self.real_buffer, key=self.relevance_function, reverse=True)
-    # Pick top 10
     sampled_real = scored_samples[:10]
 
     synthetic_transitions = []
     for obs, action, returns, advantages, old_log_prob in sampled_real:
       with th.no_grad():
-        # obs is shape [obs_dim], expand to [1, obs_dim] for get_distribution
+        obs = obs.to(self.device)
         dist = self.generative_model.get_distribution(obs.unsqueeze(0))
         synthetic_action = dist.sample()[0]
       synthetic_transitions.append((obs, synthetic_action, returns, advantages, old_log_prob))
@@ -95,5 +91,15 @@ class GenerativeReplayBuffer:
 
     real_sample = random.sample(self.real_buffer, min(real_sample_size, len(self.real_buffer)))
     synthetic_sample = random.sample(self.synthetic_buffer, min(synthetic_sample_size, len(self.synthetic_buffer)))
+
+    real_sample = [
+      (obs.to(self.device), action.to(self.device), returns.to(self.device), advantages.to(self.device), old_log_prob.to(self.device))
+      for obs, action, returns, advantages, old_log_prob in real_sample
+    ]
+
+    synthetic_sample = [
+      (obs.to(self.device), action.to(self.device), returns.to(self.device), advantages.to(self.device), old_log_prob.to(self.device))
+      for obs, action, returns, advantages, old_log_prob in synthetic_sample
+    ]
 
     return real_sample + synthetic_sample

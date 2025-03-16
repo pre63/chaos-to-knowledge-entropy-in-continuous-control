@@ -33,3 +33,4 @@ results/results.png
 *.fls
 
 .noise
+ppo_humanoid_conv1d_test.zip
