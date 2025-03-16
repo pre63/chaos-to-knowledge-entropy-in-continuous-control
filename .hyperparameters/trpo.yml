@@ -104,3 +104,36 @@ RocketLander-v0:
   net_arch: small
   activation_fn: relu
 
+
+HalfCheetah-v5:
+  policy: 'MlpPolicy'
+  n_timesteps: 100000
+
+Hopper-v5: 
+  policy: 'MlpPolicy'
+  n_timesteps: 100000
+
+HumanoidStandup-v5:
+  policy: 'MlpPolicy'
+  n_timesteps: 100000
+
+InvertedPendulum-v5:
+  policy: 'MlpPolicy'
+  n_timesteps: 100000
+
+Pusher-v5:
+  policy: 'MlpPolicy'
+  n_timesteps: 100000
+
+Reacher-v5:
+  policy: 'MlpPolicy'
+  n_timesteps: 100000
+
+Swimmer-v5:
+  policy: 'MlpPolicy'
+  n_timesteps: 100000
+
+Walker2d-v5:
+  policy: 'MlpPolicy'
+  n_timesteps: 100000
+

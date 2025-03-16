@@ -218,9 +218,6 @@ def sample_gentrpo_params(trial, n_actions, n_envs, additional_args):
   entropy_coef = trial.suggest_float("entropy_coef", -1, 1, step=0.01)
   sampling_coef = trial.suggest_float("sampling_coef", -1, 1, step=0.01)
 
-  # Replay buffer capacity and reward threshold for buffer clearing
-  buffer_capacity = trial.suggest_int("buffer_capacity", 10000, 100000, step=1000)
-
   epsilon = trial.suggest_float("epsilon", 0.1, 0.9, step=0.05)
 
   orthogonal_init = trial.suggest_categorical("orthogonal_init", [True, False])
@@ -247,7 +244,6 @@ def sample_gentrpo_params(trial, n_actions, n_envs, additional_args):
     "target_kl": target_kl,
     "learning_rate": learning_rate,
     "gae_lambda": gae_lambda,
-    "buffer_capacity": buffer_capacity,
     "policy_kwargs": dict(
       net_arch=net_arch,
       activation_fn=activation_fn,
