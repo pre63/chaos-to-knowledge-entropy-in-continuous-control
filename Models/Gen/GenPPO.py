@@ -228,9 +228,6 @@ def sample_genppo_params(trial, n_actions, n_envs, additional_args):
   entropy_coef = trial.suggest_float("entropy_coef", -1, 1, step=0.01)
   sampling_coef = trial.suggest_float("sampling_coef", -1, 1, step=0.01)
 
-  # Replay buffer capacity and reward threshold for buffer clearing
-  buffer_capacity = trial.suggest_int("buffer_capacity", 5000, 100000, step=1000)
-
   epsilon = trial.suggest_float("epsilon", 0.1, 0.9, step=0.05)
 
   orthogonal_init = trial.suggest_categorical("orthogonal_init", [True, False])
@@ -262,7 +259,6 @@ def sample_genppo_params(trial, n_actions, n_envs, additional_args):
     "gae_lambda": gae_lambda,
     "entropy_coef": entropy_coef,
     "sampling_coef": sampling_coef,
-    "buffer_capacity": buffer_capacity,
     "normalize_advantage": normalized_advantage,
     "n_envs": n_envs,
     "epsilon": epsilon,
