@@ -40,9 +40,9 @@ class GenTRPO(TRPO):
     )
 
   def _compute_relevance(self, transition):
-    # transition is (obs, action, returns, advantages, old_log_prob)
     obs, action, _, _, _ = transition
-    # Unsqueeze to shape [1, obs_dim] or [1, ...] so forward_dynamics_model can handle batch dimension
+    obs = obs.to(self.device)
+    action = action.to(self.device)
     with th.no_grad():
       h_s, pred_h_next = self.forward_dynamics_model(obs.unsqueeze(0), action.unsqueeze(0))
     curiosity_score = 0.5 * th.norm(pred_h_next - h_s, p=2).item() ** 2

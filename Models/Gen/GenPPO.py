@@ -32,6 +32,8 @@ class GenPPO(PPO):
 
   def _compute_relevance(self, transition):
     obs, action, _, _, _ = transition
+    obs = obs.to(self.device)
+    action = action.to(self.device)
     with th.no_grad():
       h_s, pred_h_next = self.forward_dynamics_model(obs.unsqueeze(0), action.unsqueeze(0))
     curiosity_score = 0.5 * th.norm(pred_h_next - h_s, p=2).item() ** 2
