@@ -1,33 +1,33 @@
 HalfCheetah-v5:
-  trial_number: 44
-  value: 97.52461720000001
+  trial_number: 37
+  value: 769.4943016
   params:
-    n_steps: 256
+    n_steps: 16
     gamma: 0.95
-    learning_rate: 0.1695074057997661
-    n_critic_updates: 5
-    cg_max_steps: 5
-    target_kl: 0.03
-    gae_lambda: 0.8
-    batch_size: 256
-    net_arch: medium
+    learning_rate: 0.0006115378553216117
+    n_critic_updates: 25
+    cg_max_steps: 10
+    target_kl: 0.02
+    gae_lambda: 1
+    batch_size: 1024
+    net_arch: large
     activation_fn: tanh
-    entropy_coef: -0.08999999999999997
-    sampling_coef: -0.74
-    epsilon: 0.65
-    orthogonal_init: 0
+    entropy_coef: 0.49
+    sampling_coef: 0.14000000000000012
+    epsilon: 0.7000000000000001
+    orthogonal_init: 1
     n_timesteps: 100000
     n_envs: 8
-    normalize_advantage: 0
-  comment: 'Best trial details: _number=44, state=1, _values=[97.52461720000001],
-    _datetime_start=2025-03-16 21:22:08.779360, datetime_complete=2025-03-16 22:01:17.705798,
-    _params={''n_steps'': 256, ''gamma'': 0.95, ''learning_rate'': 0.1695074057997661,
-    ''n_critic_updates'': 5, ''cg_max_steps'': 5, ''target_kl'': 0.03, ''gae_lambda'':
-    0.8, ''batch_size'': 256, ''net_arch'': ''medium'', ''activation_fn'': ''tanh'',
-    ''entropy_coef'': -0.08999999999999997, ''sampling_coef'': -0.74, ''epsilon'':
-    0.65, ''orthogonal_init'': False, ''n_timesteps'': 100000, ''n_envs'': 8, ''normalize_advantage'':
-    False}, _user_attrs={}, _system_attrs={''completed_rung_0'': 23.962211200000002},
-    intermediate_values={1: 23.962211200000002, 2: 97.52461720000001}, _distributions={''n_steps'':
+    normalize_advantage: 1
+  comment: 'Best trial details: _number=37, state=1, _values=[769.4943016], _datetime_start=2025-03-16
+    20:56:29.669133, datetime_complete=2025-03-17 05:55:14.837352, _params={''n_steps'':
+    16, ''gamma'': 0.95, ''learning_rate'': 0.0006115378553216117, ''n_critic_updates'':
+    25, ''cg_max_steps'': 10, ''target_kl'': 0.02, ''gae_lambda'': 1.0, ''batch_size'':
+    1024, ''net_arch'': ''large'', ''activation_fn'': ''tanh'', ''entropy_coef'':
+    0.49, ''sampling_coef'': 0.14000000000000012, ''epsilon'': 0.7000000000000001,
+    ''orthogonal_init'': True, ''n_timesteps'': 100000, ''n_envs'': 8, ''normalize_advantage'':
+    True}, _user_attrs={}, _system_attrs={''completed_rung_0'': 209.48079719999996},
+    intermediate_values={1: 209.48079719999996, 2: 769.4943016}, _distributions={''n_steps'':
     CategoricalDistribution(choices=(8, 16, 32, 64, 128, 256, 512, 1024, 2048)), ''gamma'':
     CategoricalDistribution(choices=(0.8, 0.85, 0.9, 0.95, 0.99)), ''learning_rate'':
     FloatDistribution(high=1.0, log=True, low=1e-05, step=None), ''n_critic_updates'':
@@ -42,7 +42,7 @@ HalfCheetah-v5:
     ''epsilon'': FloatDistribution(high=0.9, log=False, low=0.1, step=0.05), ''orthogonal_init'':
     CategoricalDistribution(choices=(True, False)), ''n_timesteps'': CategoricalDistribution(choices=(100000,)),
     ''n_envs'': CategoricalDistribution(choices=(2, 4, 6, 8, 10)), ''normalize_advantage'':
-    CategoricalDistribution(choices=(True, False))}, _trial_id=44'
+    CategoricalDistribution(choices=(True, False))}, _trial_id=37'
 Humanoid-v5:
   trial_number: 457
   value: 549.3199836
