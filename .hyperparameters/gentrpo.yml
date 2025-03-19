@@ -27,7 +27,7 @@ Humanoid-v5:
   activation_fn: tanh
   entropy_coef: -0.59
   sampling_coef: -0.69
-  buffer_capacity: 30000
+  buffer_capacity: 10000
   epsilon: 0.15000000000000002
   orthogonal_init: 0
   n_timesteps: 600000
@@ -47,6 +47,22 @@ RocketLander-v0:
 HalfCheetah-v5:
   policy: 'MlpPolicy'
   n_timesteps: 100000
+  n_steps: 16
+  gamma: 0.95
+  learning_rate: 0.0006115378553216117
+  n_critic_updates: 25
+  cg_max_steps: 10
+  target_kl: 0.02
+  gae_lambda: 1
+  batch_size: 1024
+  net_arch: large
+  activation_fn: tanh
+  entropy_coef: 0.49
+  sampling_coef: 0.14000000000000012
+  epsilon: 0.7000000000000001
+  orthogonal_init: 1
+  n_envs: 8
+  normalize_advantage: 1
 
 Hopper-v5: 
   policy: 'MlpPolicy'
