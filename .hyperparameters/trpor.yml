@@ -1,5 +1,6 @@
 Pendulum-v1:
   policy: 'MlpPolicy'
+  n_timesteps: 700000
   n_steps: 256
   gamma: 0.85
   learning_rate: 0.00723791205999544
@@ -13,7 +14,6 @@ Pendulum-v1:
   ent_coef: 0.0005
   epsilon: 0.8
   orthogonal_init: 0
-  n_timesteps: 700000
   n_envs: 8
 
 #Tuned
@@ -37,6 +37,7 @@ LunarLanderContinuous-v3:
 # Tuned
 Ant-v5:
   policy: 'MlpPolicy'
+  n_timesteps: 100000
   n_steps: 128
   gamma: 0.95
   learning_rate: 0.0005263233376590863
@@ -50,7 +51,6 @@ Ant-v5:
   ent_coef: 0.00030000000000000003
   epsilon: 0.7000000000000001
   orthogonal_init: 1
-  n_timesteps: 900000
   n_envs: 2
 
 # Tuned
@@ -127,6 +127,20 @@ HalfCheetah-v5:
 Hopper-v5: 
   policy: 'MlpPolicy'
   n_timesteps: 100000
+  n_steps: 128
+  gamma: 0.99
+  learning_rate: 0.021556471780474477
+  n_critic_updates: 25
+  cg_max_steps: 25
+  target_kl: 0.005
+  gae_lambda: 0.99
+  batch_size: 512
+  net_arch: medium
+  activation_fn: relu
+  ent_coef: 0.001
+  epsilon: 0.15000000000000002
+  orthogonal_init: 1
+  n_envs: 2
 
 HumanoidStandup-v5:
   policy: 'MlpPolicy'

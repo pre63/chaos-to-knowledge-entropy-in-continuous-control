@@ -114,14 +114,14 @@ noise-rel-plot:
 	@. .venv/bin/activate; python -m Environments.RelativePlot 
 
 tune:
-	$(MAKE) train model=trpor env=HalfCheetah-v5 n_jobs=15 optimize=True 
-	$(MAKE) train model=trpoer env=HalfCheetah-v5 n_jobs=15 optimize=True 
-	$(MAKE) train model=gentrpo env=HalfCheetah-v5 n_jobs=15 optimize=True 
-	$(MAKE) train model=genppo env=HalfCheetah-v5 n_jobs=15 optimize=True 
+	# $(MAKE) train model=trpor env=HalfCheetah-v5 n_jobs=15 optimize=True 
+	# $(MAKE) train model=trpoer env=HalfCheetah-v5 n_jobs=15 optimize=True 
+	# $(MAKE) train model=gentrpo env=HalfCheetah-v5 n_jobs=15 optimize=True 
+	# $(MAKE) train model=genppo env=HalfCheetah-v5 n_jobs=15 optimize=True 
 
-	$(MAKE) train model=trpor env=Hopper-v5  n_jobs=15 optimize=True 
-	$(MAKE) train model=trpoer env=Hopper-v5  n_jobs=15 optimize=True 
-	$(MAKE) train model=gentrpo env=Hopper-v5  n_jobs=15 optimize=True 
+	# $(MAKE) train model=trpor env=Hopper-v5  n_jobs=15 optimize=True 
+	# $(MAKE) train model=trpoer env=Hopper-v5  n_jobs=15 optimize=True 
+	# $(MAKE) train model=gentrpo env=Hopper-v5  n_jobs=15 optimize=True 
 	$(MAKE) train model=genppo env=Hopper-v5  n_jobs=15 optimize=True 
 
 	$(MAKE) train model=trpor env=HumanoidStandup-v5 n_jobs=15 optimize=True 

@@ -12,7 +12,7 @@ Pendulum-v1:
   activation_fn: tanh
   entropy_coef: -0.7
   sampling_coef: -0.6799999999999999
-  buffer_capacity: 36000
+  buffer_capacity: 10000
   epsilon: 0.85
   orthogonal_init: 0
   n_timesteps: 800000
@@ -38,7 +38,7 @@ Ant-v5:
   activation_fn: relu
   entropy_coef: -0.53
   sampling_coef: -0.92
-  buffer_capacity: 41000
+  buffer_capacity: 10000
   epsilon: 0.5
   orthogonal_init: True
   n_timesteps: 1000000
@@ -48,6 +48,7 @@ Ant-v5:
 
 Humanoid-v5:
   policy: "MlpPolicy"
+  n_timesteps: 100000
   n_steps: 64
   gamma: 0.99
   learning_rate: 0.001765494595109263
@@ -63,7 +64,6 @@ Humanoid-v5:
   buffer_capacity: 10000
   epsilon: 0.7000000000000001
   orthogonal_init: 1
-  n_timesteps: 400000
   n_envs: 2
   normalize_advantage: 1
   buffer_alpha: 0.343423270490337
@@ -82,7 +82,7 @@ InvertedDoublePendulum-v5:
   activation_fn: tanh
   entropy_coef: 0.1100000000000001
   sampling_coef: -0.32999999999999996
-  buffer_capacity: 41000
+  buffer_capacity: 10000
   epsilon: 0.6
   orthogonal_init: 0
   n_timesteps: 300000
@@ -120,6 +120,24 @@ HalfCheetah-v5:
 Hopper-v5: 
   policy: 'MlpPolicy'
   n_timesteps: 100000
+  n_steps: 512
+  gamma: 0.99
+  learning_rate: 0.17649784710013225
+  n_critic_updates: 20
+  cg_max_steps: 5
+  target_kl: 0.03
+  gae_lambda: 1
+  batch_size: 2048
+  net_arch: medium
+  activation_fn: relu
+  entropy_coef: -0.45999999999999996
+  sampling_coef: -0.8200000000000001
+  buffer_capacity: 10000
+  epsilon: 0.2
+  orthogonal_init: 1
+  n_envs: 8
+  normalize_advantage: 0
+  buffer_alpha: 0.3037402388348216
 
 HumanoidStandup-v5:
   policy: 'MlpPolicy'

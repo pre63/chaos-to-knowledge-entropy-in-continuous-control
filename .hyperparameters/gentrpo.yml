@@ -15,6 +15,7 @@ Ant-v5:
 
 Humanoid-v5:
   policy: 'MlpPolicy'
+  n_timesteps: 100000
   n_steps: 512
   gamma: 0.95
   learning_rate: 0.03648542602737527
@@ -27,10 +28,9 @@ Humanoid-v5:
   activation_fn: tanh
   entropy_coef: -0.59
   sampling_coef: -0.69
-  buffer_capacity: 10000
+  buffer_capacity: 30000
   epsilon: 0.15000000000000002
   orthogonal_init: 0
-  n_timesteps: 600000
   n_envs: 6
   normalize_advantage: 1
 
@@ -67,6 +67,22 @@ HalfCheetah-v5:
 Hopper-v5: 
   policy: 'MlpPolicy'
   n_timesteps: 100000
+  n_steps: 128
+  gamma: 0.99
+  learning_rate: 0.0008758107610955626
+  n_critic_updates: 30
+  cg_max_steps: 25
+  target_kl: 0.01
+  gae_lambda: 0.92
+  batch_size: 2048
+  net_arch: small
+  activation_fn: relu
+  entropy_coef: -0.22999999999999998
+  sampling_coef: -0.47
+  epsilon: 0.45000000000000007
+  orthogonal_init: 1
+  n_envs: 4
+  normalize_advantage: 1
 
 HumanoidStandup-v5:
   policy: 'MlpPolicy'
