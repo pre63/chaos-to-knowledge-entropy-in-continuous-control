@@ -291,16 +291,17 @@ def load_config_from_env(default_path=".noise/config.yml"):
 
 if __name__ == "__main__":
   env_names = [
+    "Humanoid-v5",
     "HalfCheetah-v5",
     "Hopper-v5",
-    "HumanoidStandup-v5",
-    "InvertedPendulum-v5",
-    "Pusher-v5",
-    "Reacher-v5",
-    "Swimmer-v5",
-    "Walker2d-v5",
-    "Humanoid-v5",
-    "RocketLander-v0",
+    # "HumanoidStandup-v5",
+    # "InvertedPendulum-v5",
+    # "Pusher-v5",
+    # "Reacher-v5",
+    # "Swimmer-v5",
+    # "Walker2d-v5",
+    # "Humanoid-v5",
+    # "RocketLander-v0",
   ]
 
   # Default values
@@ -314,12 +315,12 @@ if __name__ == "__main__":
   run_date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
   models = [
+    # GenTRPO,
     TRPO,
     PPO,
     TRPOR,
     TRPOER,
-    GenTRPO,
-    GenPPO,
+    # GenPPO,
   ]
 
   for env_name in env_names:

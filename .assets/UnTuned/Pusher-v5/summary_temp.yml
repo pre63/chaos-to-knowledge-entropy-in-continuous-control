@@ -1,0 +1,15 @@
+best_entropy_config:
+  config: reward+action_uniform (0.10)
+  model: TRPO
+  reduction: 8.179325100253608
+best_reward_config:
+  config: reward+action_uniform (0.10)
+  improvement: 0.14354938619277036
+  model: TRPOR
+models_tested:
+- TRPO
+- PPO
+- TRPOR
+num_runs: 5
+run_date: 2025-03-15_13-23-13
+total_timesteps: 100000
