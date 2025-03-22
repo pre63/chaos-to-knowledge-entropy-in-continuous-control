@@ -28,7 +28,7 @@ Humanoid-v5:
   activation_fn: tanh
   entropy_coef: -0.59
   sampling_coef: -0.69
-  buffer_capacity: 30000
+  buffer_capacity: 10000
   epsilon: 0.15000000000000002
   orthogonal_init: 0
   n_envs: 6
