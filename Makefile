@@ -122,17 +122,17 @@ tune:
 	# $(MAKE) train model=trpor env=Hopper-v5  n_jobs=15 optimize=True 
 	# $(MAKE) train model=trpoer env=Hopper-v5  n_jobs=15 optimize=True 
 	# $(MAKE) train model=gentrpo env=Hopper-v5  n_jobs=15 optimize=True 
-	$(MAKE) train model=genppo env=Hopper-v5  n_jobs=15 optimize=True 
+	#$(MAKE) train model=genppo env=Hopper-v5  n_jobs=15 optimize=True 
 
-	$(MAKE) train model=trpor env=HumanoidStandup-v5 n_jobs=15 optimize=True 
-	$(MAKE) train model=trpoer env=HumanoidStandup-v5 n_jobs=15 optimize=True 
-	$(MAKE) train model=gentrpo env=HumanoidStandup-v5 n_jobs=15 optimize=True 
-	$(MAKE) train model=genppo env=HumanoidStandup-v5 n_jobs=15 optimize=True 
+	#$(MAKE) train model=trpor env=HumanoidStandup-v5 n_jobs=15 optimize=True 
+	#$(MAKE) train model=trpoer env=HumanoidStandup-v5 n_jobs=15 optimize=True 
+	#$(MAKE) train model=gentrpo env=HumanoidStandup-v5 n_jobs=15 optimize=True 
+	#$(MAKE) train model=genppo env=HumanoidStandup-v5 n_jobs=15 optimize=True 
 
-	$(MAKE) train model=trpor env=InvertedPendulum-v5 n_jobs=15 optimize=True 
-	$(MAKE) train model=trpoer env=InvertedPendulum-v5 n_jobs=15 optimize=True 
-	$(MAKE) train model=gentrpo env=InvertedPendulum-v5 n_jobs=15 optimize=True 
-	$(MAKE) train model=genppo env=InvertedPendulum-v5 n_jobs=15 optimize=True 
+	#$(MAKE) train model=trpor env=InvertedPendulum-v5 n_jobs=15 optimize=True 
+	#$(MAKE) train model=trpoer env=InvertedPendulum-v5 n_jobs=15 optimize=True 
+	#$(MAKE) train model=gentrpo env=InvertedPendulum-v5 n_jobs=15 optimize=True 
+	#$(MAKE) train model=genppo env=InvertedPendulum-v5 n_jobs=15 optimize=True 
 
 	$(MAKE) train model=trpor env=Pusher-v5 n_jobs=15 optimize=True 
 	$(MAKE) train model=trpoer env=Pusher-v5 n_jobs=15 optimize=True 
