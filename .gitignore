@@ -3,6 +3,7 @@
 __pycache__
 
 .venv
+.plots
 .logs
 .eval/**/*monitor.csv
 .eval/**/*.yml

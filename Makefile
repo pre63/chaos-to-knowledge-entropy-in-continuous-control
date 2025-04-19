@@ -110,9 +110,6 @@ noise:
 noise-plot:
 	@. .venv/bin/activate; python -m Environments.NoisePlot
 
-noise-rel-plot:
-	@. .venv/bin/activate; python -m Environments.RelativePlot 
-
 tune:
 	$(MAKE) train model=genppo env=Swimmer-v5 n_jobs=15 optimize=True 
 
@@ -131,3 +128,6 @@ tune:
 	$(MAKE) train model=trpo env=HumanoidStandup-v5 n_jobs=15 optimize=True
 	$(MAKE) train model=trpo env=Reacher-v5 n_jobs=15 optimize=True
 	$(MAKE) train model=trpo env=Swimmer-v5 n_jobs=15 optimize=True
+
+plot:
+  @python Reports/Plot.py --data_dir .noise/2025-04-19_18-19-45 --smooth_window 30 --markers_per_line 4
