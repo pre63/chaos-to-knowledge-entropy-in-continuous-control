@@ -1,139 +1,230 @@
+
+
+# Tuned
+CartPole-v1:
+  n_envs: 2
+  n_timesteps: !!float 1e5
+  policy: 'MlpPolicy'
+  n_steps: 512
+  batch_size: 512
+  cg_damping: !!float 1e-3
+  gae_lambda: 0.98
+  gamma: 0.99
+  learning_rate: !!float 1e-3
+  n_critic_updates: 20
+
+
 # Tuned
 Pendulum-v1:
+  n_envs: 2
+  n_timesteps: !!float 1e5
   policy: 'MlpPolicy'
-  n_timesteps: 100000
-  reward_threshold: -3.0
   n_steps: 1024
   gamma: 0.9
   n_critic_updates: 15
   use_sde: True
   sde_sample_freq: 4
+
+
+# Tuned
+LunarLander-v2:
   n_envs: 2
+  n_timesteps: !!float 2e5
+  policy: 'MlpPolicy'
+  n_steps: 512
+  cg_damping: 0.01
+  gae_lambda: 0.98
+  gamma: 0.99
+  learning_rate: !!float 1e-3
+  n_critic_updates: 15
+
 
 # Tuned
 LunarLanderContinuous-v3:
+  normalize: true
+  n_envs: 2
+  n_timesteps: !!float 1e5
   policy: 'MlpPolicy'
-  n_timesteps: 100000
-  reward_threshold: 195
-  batch_size: 32
-  n_steps: 2048
-  gamma: 0.995
-  learning_rate: 0.0014
-  n_critic_updates: 20
-  cg_max_steps: 25
-  target_kl: 0.01
-  gae_lambda: 0.92
-  net_arch: medium
-  activation_fn: relu
-  n_envs: 8
-
-# Tuned
-Ant-v5:
-  policy: 'MlpPolicy'
-  batch_size: 512
-  n_steps: 2048
-  gamma: 0.99
-  learning_rate: 0.0013931381527875178
-  line_search_shrinking_factor: 0.9
-  n_critic_updates: 20
-  cg_max_steps: 30
-  cg_damping: 0.01
-  target_kl: 0.05
-  gae_lambda: 0.8
-  net_arch: medium
-  log_std_init: -2.32457966159704
-  sde_sample_freq: 256
-  ortho_init: 1
-  activation_fn: relu
-  lr_schedule: linear
-  n_timesteps: 600000
-  n_envs: 6
-
-# Tuned
-Humanoid-v5:
-  policy: 'MlpPolicy'
-  n_timesteps: 100000
-  batch_size: 256
-  n_steps: 32
-  gamma: 0.999
-  learning_rate: 0.07439215571634901
-  n_critic_updates: 20
-  cg_max_steps: 5
-  target_kl: 0.02
-  gae_lambda: 0.92
-  net_arch: small
-  activation_fn: tanh
-  reward_threshold: 450
-  n_envs: 8
-
-# Tuned
-InvertedDoublePendulum-v5:
-  policy: 'MlpPolicy'
-  batch_size: 512
-  n_steps: 128
-  gamma: 0.995
-  learning_rate: 0.000641801789987054
-  line_search_shrinking_factor: 0.8
-  n_critic_updates: 20
-  cg_max_steps: 20
-  cg_damping: 0.2
-  target_kl: 0.005
-  gae_lambda: 0.8
-  net_arch: medium
-  log_std_init: -1.1442557317275153
-  sde_sample_freq: 64
-  ortho_init: 0
-  activation_fn: relu
-  lr_schedule: constant
-  n_timesteps: 200000
-  n_envs: 8
-
-# Tuned
-RocketLander-v0:
-  policy: 'MlpPolicy'
-  n_timesteps: 100000
-  reward_threshold: -3.0
-  batch_size: 32
   n_steps: 1024
-  gamma: 0.999
-  learning_rate: 1.1367854351821837e-05
-  n_critic_updates: 25
-  cg_max_steps: 20
-  target_kl: 0.05
-  gae_lambda: 0.92
-  net_arch: small
-  activation_fn: relu
+  n_critic_updates: 20
 
 
-HalfCheetah-v5:
+# Tuned
+Acrobot-v1:
+  normalize: true
+  n_envs: 2
+  n_timesteps: !!float 1e5
   policy: 'MlpPolicy'
-  n_timesteps: 100000
+  n_steps: 1024
 
-Hopper-v5: 
+
+# Tuned
+MountainCar-v0:
+  normalize: true
+  n_envs: 2
+  n_timesteps: !!float 1e5
   policy: 'MlpPolicy'
-  n_timesteps: 100000
+  n_steps: 1024
+  n_critic_updates: 20
 
-HumanoidStandup-v5:
+
+# Tuned
+MountainCarContinuous-v0:
+  normalize: True
+  n_envs: 2
+  n_timesteps: 50000
   policy: 'MlpPolicy'
-  n_timesteps: 100000
+  use_sde: True
+  sde_sample_freq: 4
 
-InvertedPendulum-v5:
+# === Pybullet Envs ===
+
+
+# Tuned
+HalfCheetahBulletEnv-v0: &pybullet-defaults
+  normalize: true
+  n_envs: 2
+  n_timesteps: !!float 2e6
   policy: 'MlpPolicy'
-  n_timesteps: 100000
+  batch_size: 128
+  n_steps: 1024
+  gamma: 0.99
+  gae_lambda: 0.95
+  sub_sampling_factor: 1
+  cg_max_steps: 25
+  cg_damping: 0.1
+  n_critic_updates: 20
+  learning_rate: !!float 1e-3
 
-Pusher-v5:
+
+# Tuned
+AntBulletEnv-v0:
+  <<: *pybullet-defaults
+
+# To be tuned
+Walker2DBulletEnv-v0:
+  <<: *pybullet-defaults
+  # cg_max_steps: 20
+  # policy_kwargs: "dict(log_std_init=-2,
+  #                      ortho_init=False,
+  #                      activation_fn=nn.ReLU,
+  #                      net_arch=dict(pi=[256, 256], vf=[256, 256])
+  #                      )"
+
+
+# Tuned
+HopperBulletEnv-v0:
+  <<: *pybullet-defaults
+  n_timesteps: !!float 1e6
+
+
+# Tuned
+ReacherBulletEnv-v0:
+  <<: *pybullet-defaults
+  n_timesteps: !!float 3e5
+  policy_kwargs: "dict(log_std_init=-1,
+                       ortho_init=False,
+                       activation_fn=nn.ReLU,
+                       net_arch=dict(pi=[256, 256], vf=[256, 256])
+                       )"
+
+# === Mujoco Envs ===
+
+# Tuned
+Ant-v4: &mujoco-defaults
+  <<: *pybullet-defaults
+  n_timesteps: !!float 1e6
+
+
+# Tuned
+HalfCheetah-v4:
+  <<: *mujoco-defaults
+  target_kl: 0.04
+
+# Tuned
+Hopper-v4:
+  <<: *mujoco-defaults
+
+# Tuned
+Walker2d-v4:
+  <<: *mujoco-defaults
+
+Humanoid-v4:
+  <<: *mujoco-defaults
+  n_timesteps: !!float 2e6
+
+# Tuned
+Swimmer-v4:
+  <<: *mujoco-defaults
+  gamma: 0.9999
+
+
+# Tuned
+BipedalWalker-v3:
+  <<: *mujoco-defaults
+  n_timesteps: !!float 1e6
+
+BipedalWalkerHardcore-v3:
+  <<: *mujoco-defaults
+  n_timesteps: !!float 1e7
+
+# To be tuned
+MinitaurBulletEnv-v0:
+  normalize: true
+  n_envs: 8
+  n_timesteps: !!float 2e6
   policy: 'MlpPolicy'
-  n_timesteps: 100000
+  n_steps: 2048
+  batch_size: 64
+  gae_lambda: 0.95
+  gamma: 0.99
+  learning_rate: 2.5e-4
 
-Reacher-v5:
+
+# To be tuned
+MinitaurBulletDuckEnv-v0:
+  normalize: true
+  n_envs: 8
+  n_timesteps: !!float 2e6
   policy: 'MlpPolicy'
-  n_timesteps: 100000
+  n_steps: 2048
+  batch_size: 64
+  gae_lambda: 0.95
+  gamma: 0.99
+  learning_rate: 2.5e-4
 
-Swimmer-v5:
+# To be tuned
+HumanoidBulletEnv-v0:
+  normalize: true
+  n_envs: 8
+  n_timesteps: !!float 1e7
   policy: 'MlpPolicy'
-  n_timesteps: 100000
+  n_steps: 2048
+  batch_size: 64
+  gae_lambda: 0.95
+  gamma: 0.99
+  learning_rate: 2.5e-4
 
-Walker2d-v5:
+# To be tuned
+InvertedDoublePendulumBulletEnv-v0:
+  normalize: true
+  n_envs: 8
+  n_timesteps: !!float 2e6
   policy: 'MlpPolicy'
-  n_timesteps: 100000
+  n_steps: 2048
+  batch_size: 64
+  gae_lambda: 0.95
+  gamma: 0.99
+  learning_rate: 2.5e-4
 
+# To be tuned
+InvertedPendulumSwingupBulletEnv-v0:
+  normalize: true
+  n_envs: 8
+  n_timesteps: !!float 2e6
+  policy: 'MlpPolicy'
+  n_steps: 2048
+  batch_size: 64
+  gae_lambda: 0.95
+  gamma: 0.99
+  learning_rate: 2.5e-4

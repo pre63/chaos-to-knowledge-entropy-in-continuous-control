@@ -1,43 +1,4 @@
-Pendulum-v1:
-  policy: 'MlpPolicy'
-  n_timesteps: 700000
-  n_steps: 256
-  gamma: 0.85
-  learning_rate: 0.00723791205999544
-  n_critic_updates: 25
-  cg_max_steps: 5
-  target_kl: 0.1
-  gae_lambda: 0.95
-  batch_size: 1024
-  net_arch: medium
-  activation_fn: relu
-  ent_coef: 0.0005
-  epsilon: 0.8
-  orthogonal_init: 0
-  n_envs: 8
-
-#Tuned
-LunarLanderContinuous-v3:
-  policy: 'MlpPolicy'
-  n_timesteps: 100000
-  reward_threshold: 195
-  batch_size: 512
-  n_steps: 2048
-  gamma: 0.99
-  learning_rate: 0.4187816982403694
-  n_critic_updates: 5
-  cg_max_steps: 20
-  target_kl: 0.001
-  gae_lambda: 0.98
-  net_arch: medium
-  activation_fn: tanh
-  ent_coef: 0.0003
-  n_envs: 8
-
-# Tuned
 Ant-v5:
-  policy: 'MlpPolicy'
-  n_timesteps: 100000
   n_steps: 128
   gamma: 0.95
   learning_rate: 0.0005263233376590863
@@ -51,64 +12,11 @@ Ant-v5:
   ent_coef: 0.00030000000000000003
   epsilon: 0.7000000000000001
   orthogonal_init: 1
+  n_timesteps: 900000
   n_envs: 2
-
-# Tuned
-Humanoid-v5:
-  policy: 'MlpPolicy'
-  n_timesteps: 100000
-  reward_threshold: 450
-  n_steps: 256
-  gamma: 0.9999
-  learning_rate: 0.001981986604251018
-  n_critic_updates: 5
-  cg_max_steps: 20
-  target_kl: 0.03
-  gae_lambda: 0.8
-  net_arch: small
-  activation_fn: tanh
-  batch_size: 16
-  ent_coef: 0.0005
-  n_envs: 8
-
-# Tuned
-InvertedDoublePendulum-v5:
-  policy: 'MlpPolicy'
-  n_timesteps: 100000
-  reward_threshold: 410
-  batch_size: 256
-  n_steps: 512
-  gamma: 0.9999
-  learning_rate: 0.026827220473667195
-  n_critic_updates: 25
-  cg_max_steps: 5
-  target_kl: 0.02
-  gae_lambda: 0.95
-  net_arch: small
-  activation_fn: relu
-  ent_coef: 0.0004
-  n_envs: 8
-
-RocketLander-v0:
-  policy: 'MlpPolicy'
-  n_timesteps: 100000
-  reward_threshold: -3.0
-  batch_size: 256
-  n_steps: 1024
-  gamma: 0.9999
-  learning_rate: 0.0005867557808030527
-  n_critic_updates: 20
-  cg_max_steps: 30
-  target_kl: 0.03
-  gae_lambda: 0.98
-  net_arch: small
-  activation_fn: relu
-  ent_coef: 0.0007
-
-
+ 
+ 
 HalfCheetah-v5:
-  policy: 'MlpPolicy'
-  n_timesteps: 100000
   n_steps: 1024
   gamma: 0.99
   learning_rate: 0.0320241574844845
@@ -122,11 +30,10 @@ HalfCheetah-v5:
   ent_coef: 0.0002
   epsilon: 0.75
   orthogonal_init: 0
+  n_timesteps: 1000000
   n_envs: 10
-
-Hopper-v5: 
-  policy: 'MlpPolicy'
-  n_timesteps: 100000
+  
+Hopper-v5:
   n_steps: 128
   gamma: 0.99
   learning_rate: 0.021556471780474477
@@ -140,29 +47,108 @@ Hopper-v5:
   ent_coef: 0.001
   epsilon: 0.15000000000000002
   orthogonal_init: 1
+  n_timesteps: 100000
   n_envs: 2
-
+  
 HumanoidStandup-v5:
-  policy: 'MlpPolicy'
+  n_steps: 1024
+  gamma: 0.99
+  learning_rate: 0.5640419264523907
+  n_critic_updates: 10
+  cg_max_steps: 20
+  target_kl: 0.02
+  gae_lambda: 0.8
+  batch_size: 64
+  net_arch: small
+  activation_fn: relu
+  ent_coef: 0.0006000000000000001
+  epsilon: 0.55
+  orthogonal_init: 0
   n_timesteps: 100000
-
+  n_envs: 6
+  
 InvertedPendulum-v5:
-  policy: 'MlpPolicy'
+  n_steps: 32
+  gamma: 0.99
+  learning_rate: 0.03135100498961887
+  n_critic_updates: 25
+  cg_max_steps: 20
+  target_kl: 0.01
+  gae_lambda: 0.99
+  batch_size: 512
+  net_arch: medium
+  activation_fn: relu
+  ent_coef: 0.0005
+  epsilon: 0.4
+  orthogonal_init: 0
   n_timesteps: 100000
-
+  n_envs: 10
+  
+Pendulum-v1:
+  n_steps: 256
+  gamma: 0.85
+  learning_rate: 0.00723791205999544
+  n_critic_updates: 25
+  cg_max_steps: 5
+  target_kl: 0.1
+  gae_lambda: 0.95
+  batch_size: 1024
+  net_arch: medium
+  activation_fn: relu
+  ent_coef: 0.0005
+  epsilon: 0.8
+  orthogonal_init: 0
+  n_timesteps: 700000
+  n_envs: 8
+  
 Pusher-v5:
-  policy: 'MlpPolicy'
+  n_steps: 256
+  gamma: 0.95
+  learning_rate: 0.0018943618613536006
+  n_critic_updates: 25
+  cg_max_steps: 10
+  target_kl: 0.02
+  gae_lambda: 0.9
+  batch_size: 256
+  net_arch: medium
+  activation_fn: relu
+  ent_coef: 0
+  epsilon: 0.35
+  orthogonal_init: 0
   n_timesteps: 100000
-
+  n_envs: 10
+  
 Reacher-v5:
-  policy: 'MlpPolicy'
+  n_steps: 64
+  gamma: 0.95
+  learning_rate: 0.010095042370969885
+  n_critic_updates: 20
+  cg_max_steps: 30
+  target_kl: 0.01
+  gae_lambda: 1
+  batch_size: 256
+  net_arch: small
+  activation_fn: tanh
+  ent_coef: 0.0007
+  epsilon: 0.85
+  orthogonal_init: 0
   n_timesteps: 100000
-
+  n_envs: 10
+  
 Swimmer-v5:
-  policy: 'MlpPolicy'
+  n_steps: 512
+  gamma: 0.8
+  learning_rate: 0.012867452391265959
+  n_critic_updates: 10
+  cg_max_steps: 25
+  target_kl: 0.01
+  gae_lambda: 0.99
+  batch_size: 8
+  net_arch: medium
+  activation_fn: tanh
+  ent_coef: 0.0007
+  epsilon: 0.1
+  orthogonal_init: 0
   n_timesteps: 100000
-
-Walker2d-v5:
-  policy: 'MlpPolicy'
-  n_timesteps: 100000
-
+  n_envs: 4
+  

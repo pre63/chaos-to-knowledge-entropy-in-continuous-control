@@ -1,103 +1,4 @@
-Pendulum-v1:
-  policy: "MlpPolicy"
-  n_steps: 1024
-  gamma: 0.99
-  learning_rate: 0.14444743075224273
-  n_critic_updates: 20
-  cg_max_steps: 25
-  target_kl: 0.005
-  gae_lambda: 0.8
-  batch_size: 256
-  net_arch: large
-  activation_fn: tanh
-  entropy_coef: -0.7
-  sampling_coef: -0.6799999999999999
-  buffer_capacity: 10000
-  epsilon: 0.85
-  orthogonal_init: 0
-  n_timesteps: 800000
-  n_envs: 2
-  normalize_advantage: 0
-  buffer_alpha: 0.8287087040518522
-
-LunarLanderContinuous-v3:
-  policy: "MlpPolicy"
-  n_timesteps: 100000
-
-Ant-v5:
-  policy: "MlpPolicy"
-  n_steps: 128
-  gamma: 0.99
-  learning_rate: 0.0036433160603024767
-  n_critic_updates: 10
-  cg_max_steps: 30
-  target_kl: 0.001
-  gae_lambda: 0.98
-  batch_size: 256
-  net_arch: medium
-  activation_fn: relu
-  entropy_coef: -0.53
-  sampling_coef: -0.92
-  buffer_capacity: 10000
-  epsilon: 0.5
-  orthogonal_init: True
-  n_timesteps: 1000000
-  n_envs: 6
-  normalize_advantage: False
-  buffer_alpha: 0.6352519916275072
-
-Humanoid-v5:
-  policy: "MlpPolicy"
-  n_timesteps: 100000
-  n_steps: 64
-  gamma: 0.99
-  learning_rate: 0.001765494595109263
-  n_critic_updates: 10
-  cg_max_steps: 20
-  target_kl: 0.05
-  gae_lambda: 0.9
-  batch_size: 256
-  net_arch: large
-  activation_fn: tanh
-  entropy_coef: 0.14000000000000012
-  sampling_coef: -0.9299999999999999
-  buffer_capacity: 10000
-  epsilon: 0.7000000000000001
-  orthogonal_init: 1
-  n_envs: 2
-  normalize_advantage: 1
-  buffer_alpha: 0.343423270490337
-
-InvertedDoublePendulum-v5:
-  policy: "MlpPolicy"
-  n_steps: 128
-  gamma: 0.9
-  learning_rate: 0.03045240184209934
-  n_critic_updates: 10
-  cg_max_steps: 20
-  target_kl: 0.03
-  gae_lambda: 1
-  batch_size: 32
-  net_arch: medium
-  activation_fn: tanh
-  entropy_coef: 0.1100000000000001
-  sampling_coef: -0.32999999999999996
-  buffer_capacity: 10000
-  epsilon: 0.6
-  orthogonal_init: 0
-  n_timesteps: 300000
-  n_envs: 8
-  normalize_advantage: 1
-  buffer_alpha: 0.43451196733389225
-
-RocketLander-v0:
-  policy: "MlpPolicy"
-  n_timesteps: 100000
-
-
 HalfCheetah-v5:
-  policy: 'MlpPolicy'
-  n_timesteps: 100000
   n_steps: 512
   gamma: 0.99
   learning_rate: 0.019585504996402117
@@ -110,16 +11,16 @@ HalfCheetah-v5:
   activation_fn: tanh
   entropy_coef: -0.26
   sampling_coef: -0.42999999999999994
-  buffer_capacity: 10000
+  buffer_capacity: 38000
   epsilon: 0.35
   orthogonal_init: 1
+  n_timesteps: 100000
   n_envs: 2
   normalize_advantage: 0
   buffer_alpha: 0.2554118489002918
-
-Hopper-v5: 
-  policy: 'MlpPolicy'
-  n_timesteps: 100000
+  
+  
+Hopper-v5:
   n_steps: 512
   gamma: 0.99
   learning_rate: 0.17649784710013225
@@ -132,33 +33,137 @@ Hopper-v5:
   activation_fn: relu
   entropy_coef: -0.45999999999999996
   sampling_coef: -0.8200000000000001
-  buffer_capacity: 10000
+  buffer_capacity: 53000
   epsilon: 0.2
   orthogonal_init: 1
+  n_timesteps: 100000
   n_envs: 8
   normalize_advantage: 0
   buffer_alpha: 0.3037402388348216
-
+  
+Humanoid-v5:
+  n_steps: 64
+  gamma: 0.99
+  learning_rate: 0.001765494595109263
+  n_critic_updates: 10
+  cg_max_steps: 20
+  target_kl: 0.05
+  gae_lambda: 0.9
+  batch_size: 256
+  net_arch: large
+  activation_fn: tanh
+  entropy_coef: 0.14000000000000012
+  sampling_coef: -0.9299999999999999
+  buffer_capacity: 84000
+  epsilon: 0.7000000000000001
+  orthogonal_init: 1
+  n_timesteps: 400000
+  n_envs: 2
+  normalize_advantage: 1
+  buffer_alpha: 0.343423270490337
+  
 HumanoidStandup-v5:
-  policy: 'MlpPolicy'
+  n_steps: 8
+  gamma: 0.99
+  learning_rate: 0.061739592177783645
+  n_critic_updates: 20
+  cg_max_steps: 5
+  target_kl: 0.01
+  gae_lambda: 0.98
+  batch_size: 256
+  net_arch: small
+  activation_fn: tanh
+  entropy_coef: 0.7
+  sampling_coef: -0.59
+  buffer_capacity: 81000
+  epsilon: 0.55
+  orthogonal_init: 0
   n_timesteps: 100000
-
+  n_envs: 4
+  normalize_advantage: 0
+  buffer_alpha: 0.47291560915531766
+  
 InvertedPendulum-v5:
-  policy: 'MlpPolicy'
+  n_steps: 16
+  gamma: 0.95
+  learning_rate: 0.046799224103713746
+  n_critic_updates: 30
+  cg_max_steps: 25
+  target_kl: 0.02
+  gae_lambda: 0.92
+  batch_size: 2048
+  net_arch: large
+  activation_fn: tanh
+  entropy_coef: 0.28
+  sampling_coef: -0.19999999999999996
+  buffer_capacity: 28000
+  epsilon: 0.85
+  orthogonal_init: 1
   n_timesteps: 100000
-
+  n_envs: 4
+  normalize_advantage: 1
+  buffer_alpha: 0.14228912226078944
+  
 Pusher-v5:
-  policy: 'MlpPolicy'
+  n_steps: 256
+  gamma: 0.9
+  learning_rate: 0.010664768691436882
+  n_critic_updates: 20
+  cg_max_steps: 20
+  target_kl: 0.005
+  gae_lambda: 0.95
+  batch_size: 256
+  net_arch: medium
+  activation_fn: tanh
+  entropy_coef: -0.030000000000000027
+  sampling_coef: 0.6100000000000001
+  buffer_capacity: 55000
+  epsilon: 0.30000000000000004
+  orthogonal_init: 1
   n_timesteps: 100000
-
+  n_envs: 8
+  normalize_advantage: 1
+  buffer_alpha: 0.642733624992143
+  
 Reacher-v5:
-  policy: 'MlpPolicy'
+  n_steps: 512
+  gamma: 0.85
+  learning_rate: 0.039135691170858335
+  n_critic_updates: 25
+  cg_max_steps: 30
+  target_kl: 0.02
+  gae_lambda: 0.98
+  batch_size: 256
+  net_arch: large
+  activation_fn: tanh
+  entropy_coef: -0.38
+  sampling_coef: 0.3400000000000001
+  buffer_capacity: 93000
+  epsilon: 0.35
+  orthogonal_init: 0
   n_timesteps: 100000
-
+  n_envs: 8
+  normalize_advantage: 1
+  buffer_alpha: 0.39073937367994194
+  
 Swimmer-v5:
-  policy: 'MlpPolicy'
+  n_steps: 8
+  gamma: 0.99
+  learning_rate: 0.0040027915912386886
+  n_critic_updates: 20
+  cg_max_steps: 5
+  target_kl: 0.02
+  gae_lambda: 0.98
+  batch_size: 2048
+  net_arch: small
+  activation_fn: tanh
+  entropy_coef: 0.06000000000000005
+  sampling_coef: -0.04999999999999993
+  buffer_capacity: 33000
+  epsilon: 0.75
+  orthogonal_init: 1
   n_timesteps: 100000
-
-Walker2d-v5:
-  policy: 'MlpPolicy'
-  n_timesteps: 100000
+  n_envs: 6
+  normalize_advantage: 0
+  buffer_alpha: 0.3396413421780375
+  
