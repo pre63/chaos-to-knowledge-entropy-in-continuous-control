@@ -1,22 +1,5 @@
-Ant-v5:
-  n_steps: 128
-  gamma: 0.95
-  learning_rate: 0.0005263233376590863
-  n_critic_updates: 10
-  cg_max_steps: 25
-  target_kl: 0.001
-  gae_lambda: 0.9
-  batch_size: 256
-  net_arch: medium
-  activation_fn: tanh
-  ent_coef: 0.00030000000000000003
-  epsilon: 0.7000000000000001
-  orthogonal_init: 1
-  n_timesteps: 900000
-  n_envs: 2
- 
- 
 HalfCheetah-v5:
+  policy: 'MlpPolicy'
   n_steps: 1024
   gamma: 0.99
   learning_rate: 0.0320241574844845
@@ -34,6 +17,7 @@ HalfCheetah-v5:
   n_envs: 10
   
 Hopper-v5:
+  policy: 'MlpPolicy'
   n_steps: 128
   gamma: 0.99
   learning_rate: 0.021556471780474477
@@ -51,6 +35,7 @@ Hopper-v5:
   n_envs: 2
   
 HumanoidStandup-v5:
+  policy: 'MlpPolicy'
   n_steps: 1024
   gamma: 0.99
   learning_rate: 0.5640419264523907
@@ -68,6 +53,7 @@ HumanoidStandup-v5:
   n_envs: 6
   
 InvertedPendulum-v5:
+  policy: 'MlpPolicy'
   n_steps: 32
   gamma: 0.99
   learning_rate: 0.03135100498961887
@@ -102,6 +88,7 @@ Pendulum-v1:
   n_envs: 8
   
 Pusher-v5:
+  policy: 'MlpPolicy'
   n_steps: 256
   gamma: 0.95
   learning_rate: 0.0018943618613536006
@@ -119,6 +106,7 @@ Pusher-v5:
   n_envs: 10
   
 Reacher-v5:
+  policy: 'MlpPolicy'
   n_steps: 64
   gamma: 0.95
   learning_rate: 0.010095042370969885
@@ -136,6 +124,7 @@ Reacher-v5:
   n_envs: 10
   
 Swimmer-v5:
+  policy: 'MlpPolicy'
   n_steps: 512
   gamma: 0.8
   learning_rate: 0.012867452391265959

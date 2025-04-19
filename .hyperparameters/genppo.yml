@@ -1,4 +1,5 @@
 HalfCheetah-v5:
+  policy: 'MlpPolicy'
   clip_range: 0.2
   n_timesteps: 100000
   n_steps: 8
@@ -19,6 +20,7 @@ HalfCheetah-v5:
   net_arch: large
 
 Hopper-v5:
+  policy: 'MlpPolicy'
   clip_range: 0.3
   n_timesteps: 100000
   n_steps: 32
@@ -39,6 +41,7 @@ Hopper-v5:
   net_arch: large
 
 Humanoid-v5:
+  policy: 'MlpPolicy'
   clip_range: 0.2
   n_timesteps: 100000
   n_steps: 32
@@ -60,6 +63,7 @@ Humanoid-v5:
   normalize_advantage: 1
 
 HumanoidStandup-v5:
+  policy: 'MlpPolicy'
   clip_range: 0.2
   n_timesteps: 100000
   n_steps: 256
@@ -80,6 +84,7 @@ HumanoidStandup-v5:
   net_arch: small
 
 InvertedPendulum-v5:
+  policy: 'MlpPolicy'
   clip_range: 0.3
   n_timesteps: 100000
   n_steps: 256
@@ -100,6 +105,7 @@ InvertedPendulum-v5:
   net_arch: large
 
 Pusher-v5:
+  policy: 'MlpPolicy'
   clip_range: 0.1
   n_timesteps: 100000
   n_steps: 128
@@ -120,6 +126,7 @@ Pusher-v5:
   net_arch: medium
 
 Reacher-v5:
+  policy: 'MlpPolicy'
   clip_range: 0.1
   n_timesteps: 100000
   n_steps: 8

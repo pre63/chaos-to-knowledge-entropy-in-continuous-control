@@ -1,4 +1,5 @@
 HalfCheetah-v5:
+  policy: 'MlpPolicy'
   n_steps: 512
   gamma: 0.99
   learning_rate: 0.019585504996402117
@@ -21,6 +22,7 @@ HalfCheetah-v5:
   
   
 Hopper-v5:
+  policy: 'MlpPolicy'
   n_steps: 512
   gamma: 0.99
   learning_rate: 0.17649784710013225
@@ -42,6 +44,7 @@ Hopper-v5:
   buffer_alpha: 0.3037402388348216
   
 Humanoid-v5:
+  policy: 'MlpPolicy'
   n_steps: 64
   gamma: 0.99
   learning_rate: 0.001765494595109263
@@ -63,6 +66,7 @@ Humanoid-v5:
   buffer_alpha: 0.343423270490337
   
 HumanoidStandup-v5:
+  policy: 'MlpPolicy'
   n_steps: 8
   gamma: 0.99
   learning_rate: 0.061739592177783645
@@ -84,6 +88,7 @@ HumanoidStandup-v5:
   buffer_alpha: 0.47291560915531766
   
 InvertedPendulum-v5:
+  policy: 'MlpPolicy'
   n_steps: 16
   gamma: 0.95
   learning_rate: 0.046799224103713746
@@ -105,6 +110,7 @@ InvertedPendulum-v5:
   buffer_alpha: 0.14228912226078944
   
 Pusher-v5:
+  policy: 'MlpPolicy'
   n_steps: 256
   gamma: 0.9
   learning_rate: 0.010664768691436882
@@ -126,6 +132,7 @@ Pusher-v5:
   buffer_alpha: 0.642733624992143
   
 Reacher-v5:
+  policy: 'MlpPolicy'
   n_steps: 512
   gamma: 0.85
   learning_rate: 0.039135691170858335
@@ -147,6 +154,7 @@ Reacher-v5:
   buffer_alpha: 0.39073937367994194
   
 Swimmer-v5:
+  policy: 'MlpPolicy'
   n_steps: 8
   gamma: 0.99
   learning_rate: 0.0040027915912386886
