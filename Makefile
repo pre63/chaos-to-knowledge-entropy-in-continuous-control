@@ -130,4 +130,4 @@ tune:
 	$(MAKE) train model=trpo env=Swimmer-v5 n_jobs=15 optimize=True
 
 plot:
-  @python Reports/Plot.py --data_dir .noise/2025-04-19_18-19-45 --smooth_window 30 --markers_per_line 4
+	@python Reports/Plot.py --data_dir .noise/2025-04-19_18-19-45 --smooth_window 30 --markers_per_line 4
