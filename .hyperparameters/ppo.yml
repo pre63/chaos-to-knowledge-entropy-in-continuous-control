@@ -396,7 +396,7 @@ CarRacing-v2:
 
 
 # === Mujoco Envs ===
-# HalfCheetah-v4: &mujoco-defaults
+# HalfCheetah-v5: &mujoco-defaults
 #   normalize: true
 #   n_timesteps: !!float 1e6
 #   policy: 'MlpPolicy'
@@ -433,7 +433,7 @@ Swimmer-v4:
 # Tuned
 # 10 mujoco envs
 
-HalfCheetah-v4:
+HalfCheetah-v5:
   normalize: true
   n_envs: 1
   policy: 'MlpPolicy'

@@ -137,7 +137,7 @@ Ant-v4: &mujoco-defaults
 
 
 # Tuned
-HalfCheetah-v4:
+HalfCheetah-v5:
   <<: *mujoco-defaults
   target_kl: 0.04
 
