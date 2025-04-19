@@ -139,3 +139,6 @@ Reacher-v5:
   normalize_advantage: 1
   net_arch: medium
 
+Swimmer-v5:
+  policy: 'MlpPolicy'
+  n_timesteps: 100000
