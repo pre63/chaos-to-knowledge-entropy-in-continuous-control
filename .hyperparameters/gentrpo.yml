@@ -1,52 +1,4 @@
-Pendulum-v1:
-  policy: 'MlpPolicy'
-  n_timesteps: 100000
-  reward_threshold: -3.0
-
-LunarLanderContinuous-v3:
-  policy: 'MlpPolicy'
-  n_timesteps: 100000
-  reward_threshold: 195
-
-Ant-v5:
-  policy: 'MlpPolicy'
-  n_timesteps: 100000
-  reward_threshold: 1000
-
-Humanoid-v5:
-  policy: 'MlpPolicy'
-  n_timesteps: 100000
-  n_steps: 512
-  gamma: 0.95
-  learning_rate: 0.03648542602737527
-  n_critic_updates: 20
-  cg_max_steps: 5
-  target_kl: 0.03
-  gae_lambda: 0.95
-  batch_size: 2048
-  net_arch: medium
-  activation_fn: tanh
-  entropy_coef: -0.59
-  sampling_coef: -0.69
-  buffer_capacity: 10000
-  epsilon: 0.15000000000000002
-  orthogonal_init: 0
-  n_envs: 6
-  normalize_advantage: 1
-
-InvertedDoublePendulum-v5:
-  policy: 'MlpPolicy'
-  n_timesteps: 100000
-  reward_threshold: 410
-
-RocketLander-v0:
-  policy: 'MlpPolicy'
-  n_timesteps: 100000
-  reward_threshold: -3.0
-
 HalfCheetah-v5:
-  policy: 'MlpPolicy'
-  n_timesteps: 100000
   n_steps: 16
   gamma: 0.95
   learning_rate: 0.0006115378553216117
@@ -61,12 +13,11 @@ HalfCheetah-v5:
   sampling_coef: 0.14000000000000012
   epsilon: 0.7000000000000001
   orthogonal_init: 1
+  n_timesteps: 100000
   n_envs: 8
   normalize_advantage: 1
 
-Hopper-v5: 
-  policy: 'MlpPolicy'
-  n_timesteps: 100000
+Hopper-v5:
   n_steps: 128
   gamma: 0.99
   learning_rate: 0.0008758107610955626
@@ -81,30 +32,122 @@ Hopper-v5:
   sampling_coef: -0.47
   epsilon: 0.45000000000000007
   orthogonal_init: 1
+  n_timesteps: 100000
   n_envs: 4
   normalize_advantage: 1
 
+Humanoid-v5:
+  n_steps: 512
+  gamma: 0.95
+  learning_rate: 0.03648542602737527
+  n_critic_updates: 20
+  cg_max_steps: 5
+  target_kl: 0.03
+  gae_lambda: 0.95
+  batch_size: 2048
+  net_arch: medium
+  activation_fn: tanh
+  entropy_coef: -0.59
+  sampling_coef: -0.69
+  buffer_capacity: 30000
+  epsilon: 0.15000000000000002
+  orthogonal_init: 0
+  n_timesteps: 600000
+  n_envs: 6
+  normalize_advantage: 1
+
 HumanoidStandup-v5:
-  policy: 'MlpPolicy'
+  n_steps: 8
+  gamma: 0.8
+  learning_rate: 0.11959944479404305
+  n_critic_updates: 30
+  cg_max_steps: 5
+  target_kl: 0.1
+  gae_lambda: 1
+  batch_size: 2048
+  net_arch: large
+  activation_fn: tanh
+  entropy_coef: 0.24
+  sampling_coef: -0.5
+  epsilon: 0.75
+  orthogonal_init: 1
   n_timesteps: 100000
+  n_envs: 4
+  normalize_advantage: 0
 
 InvertedPendulum-v5:
-  policy: 'MlpPolicy'
+  n_steps: 1024
+  gamma: 0.99
+  learning_rate: 0.0004370180574646787
+  n_critic_updates: 30
+  cg_max_steps: 30
+  target_kl: 0.03
+  gae_lambda: 0.95
+  batch_size: 256
+  net_arch: large
+  activation_fn: tanh
+  entropy_coef: -0.81
+  sampling_coef: -0.27
+  epsilon: 0.15000000000000002
+  orthogonal_init: 0
   n_timesteps: 100000
+  n_envs: 8
+  normalize_advantage: 1
 
 Pusher-v5:
-  policy: 'MlpPolicy'
+  n_steps: 2048
+  gamma: 0.99
+  learning_rate: 0.210764857425124
+  n_critic_updates: 5
+  cg_max_steps: 20
+  target_kl: 0.001
+  gae_lambda: 0.99
+  batch_size: 256
+  net_arch: medium
+  activation_fn: tanh
+  entropy_coef: -0.27
+  sampling_coef: 0.8200000000000001
+  epsilon: 0.8
+  orthogonal_init: 1
   n_timesteps: 100000
+  n_envs: 8
+  normalize_advantage: 0
 
 Reacher-v5:
-  policy: 'MlpPolicy'
+  n_steps: 128
+  gamma: 0.99
+  learning_rate: 0.00012594774291951552
+  n_critic_updates: 25
+  cg_max_steps: 20
+  target_kl: 0.001
+  gae_lambda: 0.98
+  batch_size: 512
+  net_arch: medium
+  activation_fn: relu
+  entropy_coef: -0.53
+  sampling_coef: -0.17999999999999994
+  epsilon: 0.55
+  orthogonal_init: 1
   n_timesteps: 100000
-
+  n_envs: 6
+  normalize_advantage: 0
+ 
 Swimmer-v5:
-  policy: 'MlpPolicy'
+  n_steps: 8
+  gamma: 0.85
+  learning_rate: 0.004229441548231101
+  n_critic_updates: 10
+  cg_max_steps: 20
+  target_kl: 0.1
+  gae_lambda: 0.92
+  batch_size: 2048
+  net_arch: large
+  activation_fn: tanh
+  entropy_coef: -0.64
+  sampling_coef: -0.040000000000000036
+  epsilon: 0.5
+  orthogonal_init: 0
   n_timesteps: 100000
-
-Walker2d-v5:
-  policy: 'MlpPolicy'
-  n_timesteps: 100000
-
+  n_envs: 2
+  normalize_advantage: 1
+ 
