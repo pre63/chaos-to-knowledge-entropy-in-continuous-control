@@ -311,8 +311,8 @@ if __name__ == "__main__":
   run_date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
   models = [
-    PPO,
-    TRPO,
+    # PPO,
+    # TRPO,
     TRPOR,
     TRPOER,
     GenTRPO,
