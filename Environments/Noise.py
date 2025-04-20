@@ -311,7 +311,7 @@ if __name__ == "__main__":
     # TRPOR
     # ("HalfCheetah-v5", TRPOR),
     ("Hopper-v5", TRPOR),
-    # ("Humanoid-v5", TRPOR),
+    # ("Humanoid-v5", TRPOR), missing hyperparameters
     ("HumanoidStandup-v5", TRPOR),
     ("Pusher-v5", TRPOR),
     ("Reacher-v5", TRPOR),
@@ -403,6 +403,11 @@ if __name__ == "__main__":
     env_base = gym.make(env_name, render_mode=None)
 
     # Baseline run
+    # continu if model_hyperparameters[env_name] none
+    if model_hyperparameters[env_name] is None:
+      print(f"No hyperparameters found for {model_class.__name__} on {env_name}. Skipping.")
+      continue
+    
     baseline_rewards, baseline_entropies = run_training(model_class, env_base, model_hyperparameters[env_name], total_timesteps, num_runs, dry_run)
     baseline_data = [{"label": "Baseline", "rewards": baseline_rewards, "entropies": baseline_entropies, "model": model_class.__name__}]
     all_results.append({"noise_type": "none", "training_data": baseline_data})
