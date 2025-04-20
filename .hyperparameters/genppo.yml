@@ -149,3 +149,20 @@ Reacher-v5:
 Swimmer-v5:
   policy: 'MlpPolicy'
   n_timesteps: 100000
+  clip_range: 0.2
+  n_steps: 2048
+  gamma: 0.95
+  learning_rate: 0.0011563514520150898
+  n_critic_updates: 10
+  cg_max_steps: 5
+  target_kl: 0.03
+  gae_lambda: 0.8
+  batch_size: 1024
+  activation_fn: relu
+  entropy_coef: -0.25
+  sampling_coef: -0.5700000000000001
+  epsilon: 0.30000000000000004
+  orthogonal_init: 1
+  n_envs: 2
+  normalize_advantage: 0
+  net_arch: medium
