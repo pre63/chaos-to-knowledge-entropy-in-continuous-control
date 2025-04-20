@@ -111,8 +111,6 @@ noise-plot:
 	@. .venv/bin/activate; python -m Environments.NoisePlot
 
 tune:
-	$(MAKE) train model=genppo env=Swimmer-v5 n_jobs=15 optimize=True 
-
 	#PPO for HalfCheetah-v5 Hopper-v5 Humanoid-v5 HumanoidStandup-v5 Reacher-v5 Swimmer-v5
 	$(MAKE) train model=ppo env=HalfCheetah-v5 n_jobs=15 optimize=True
 	$(MAKE) train model=ppo env=Hopper-v5 n_jobs=15 optimize=True
@@ -131,4 +129,18 @@ tune:
 
 plot:
 	@rm -rf .plots
-	@python Reports/Plot.py --data_dir .noise/2025-04-19_18-19-45 --smooth_window 30 --markers_per_line 4
+	@python Reports/Plot.py --data_dir .noise/final --smooth_window 30 --markers_per_line 4
+
+
+.PHONY: run
+run:
+	@while true; do \
+		. .venv/bin/activate; CUDA_VISIBLE_DEVICES="" python -m Environments.Noise; \
+		if [ $$? -eq 0 ]; then \
+			echo "All variants completed. Exiting."; \
+			break; \
+		else \
+			echo "Some variants remain. Restarting..."; \
+			sleep 1; \
+		fi \
+	done

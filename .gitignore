@@ -3,7 +3,6 @@
 __pycache__
 
 .venv
-.plots
 .logs
 .eval/**/*monitor.csv
 .eval/**/*.yml
@@ -33,5 +32,4 @@ results/results.png
 *.fdb_latexmk
 *.fls
 
-.noise
 ppo_humanoid_conv1d_test.zip
