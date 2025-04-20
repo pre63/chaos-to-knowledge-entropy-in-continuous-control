@@ -133,6 +133,7 @@ def run_training(model_class, env, config, total_timesteps, num_runs, dry_run=Fa
   run_rewards = []
   run_entropies = []
   for run in range(num_runs):
+    print(f"Running {model_class.__name__} on {env.spec.id} - Run {run + 1}/{num_runs}")
     callback = TrainingDataCallback(verbose=1)
     model_config = config.copy()
     model_config["env"] = env
