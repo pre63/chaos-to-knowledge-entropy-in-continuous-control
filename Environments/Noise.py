@@ -31,7 +31,6 @@ class TrainingDataCallback(BaseCallback):
       if rewards.size > 0:
         mean_reward = np.mean(rewards)
         self.rewards.append(mean_reward)
-        print(f"Rollout end: Mean reward = {mean_reward}")
 
       for rollout_data in self.model.rollout_buffer.get(batch_size=None):
         observations = rollout_data.observations
