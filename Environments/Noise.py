@@ -311,7 +311,7 @@ if __name__ == "__main__":
     # TRPOR
     # ("HalfCheetah-v5", TRPOR),
     ("Hopper-v5", TRPOR),
-    ("Humanoid-v5", TRPOR),
+    # ("Humanoid-v5", TRPOR),
     ("HumanoidStandup-v5", TRPOR),
     ("Pusher-v5", TRPOR),
     ("Reacher-v5", TRPOR),
