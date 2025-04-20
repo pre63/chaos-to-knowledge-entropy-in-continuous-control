@@ -348,6 +348,14 @@ if __name__ == "__main__":
     ("Swimmer-v5", GenPPO),
   ]
 
+  # Check for INVERSE environment variable; presence triggers reversal
+  inverse_flag = os.getenv("INVERSE") is not None
+  if inverse_flag:
+    env_model_configs = env_model_configs[::-1]
+    print("INVERSE flag detected. Model list reversed.")
+  else:
+    print("No INVERSE flag detected. Using default model list order.")
+
   # Configuration values
   dry_run = False
   total_timesteps = 100000
