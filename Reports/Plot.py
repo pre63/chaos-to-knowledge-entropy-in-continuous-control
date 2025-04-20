@@ -212,7 +212,7 @@ def plot_algo_across_envs(data, algo, environments, output_dir, smooth_window=5,
         if i == 0:
           handles.append(line)
           labels.append(format_label(run["label"]))
-      ax_returns.set_title(f"{algo} - {env}", fontsize=10)
+      ax_returns.set_title(f"{env}", fontsize=10)
       # Set y-label only on first cell of each row
       if i == 0:
         ax_returns.set_ylabel("Rewards", fontsize=6)
@@ -264,7 +264,6 @@ def plot_algo_across_envs(data, algo, environments, output_dir, smooth_window=5,
   # Add single legend at the bottom as a horizontal row
   if handles:
     fig.legend(handles, labels, loc="lower center", bbox_to_anchor=(0.5, -0.05), ncol=len(labels), fontsize=8)
-  fig.suptitle(f"{algo}: Rewards and Entropy vs Steps Across Environments", fontsize=10)
   plt.tight_layout(rect=[0, 0.05, 1, 0.95])  # Adjust for legend and note space
   os.makedirs(output_dir, exist_ok=True)
   fig.savefig(os.path.join(output_dir, f"{algo}_rewards_entropy_vs_steps.png"), dpi=300, bbox_inches="tight")
@@ -350,7 +349,7 @@ def plot_env_all_algos(data, env, algorithms, output_dir, smooth_window=5, marke
         if i == 0:
           handles.append(line)
           labels.append(format_label(run["label"]))
-      ax_returns.set_title(f"{algo} in {env}", fontsize=10)
+      ax_returns.set_title(f"{algo}", fontsize=10)
       # Set y-label only on first cell of each row
       if i == 0:
         ax_returns.set_ylabel("Rewards", fontsize=6)
@@ -402,7 +401,6 @@ def plot_env_all_algos(data, env, algorithms, output_dir, smooth_window=5, marke
   # Add single legend at the bottom as a horizontal row
   if handles:
     fig.legend(handles, labels, loc="lower center", bbox_to_anchor=(0.5, -0.05), ncol=len(labels), fontsize=8)
-  fig.suptitle(f"Rewards and Entropy vs Steps for Algorithms in {env}", fontsize=10)
   plt.tight_layout(rect=[0, 0.05, 1, 0.95])  # Adjust for legend and note space
   os.makedirs(output_dir, exist_ok=True)
   fig.savefig(os.path.join(output_dir, f"{env}_rewards_entropy_vs_steps_all_algos.png"), dpi=300, bbox_inches="tight")
