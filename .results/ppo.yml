@@ -357,3 +357,43 @@ Reacher-v5:
     ''relu'')), ''n_timesteps'': IntDistribution(high=1000000, log=False, low=100000,
     step=100000), ''n_envs'': CategoricalDistribution(choices=(2, 4, 6, 8, 10))},
     _trial_id=123'
+Swimmer-v5:
+  trial_number: 65
+  value: 35.1545626
+  params:
+    batch_size: 512
+    n_steps: 256
+    gamma: 0.999
+    learning_rate: 4.42013827608134e-05
+    ent_coef: 2.7462399856123295e-05
+    clip_range: 0.4
+    n_epochs: 1
+    gae_lambda: 0.8
+    max_grad_norm: 0.9
+    vf_coef: 0.16250911908696952
+    net_arch: medium
+    activation_fn: tanh
+    n_timesteps: 1000000
+    n_envs: 2
+  comment: 'Best trial details: _number=65, state=2, _values=[35.1545626], _datetime_start=2025-04-22
+    00:11:01.803891, datetime_complete=2025-04-22 00:55:07.623200, _params={''batch_size'':
+    512, ''n_steps'': 256, ''gamma'': 0.999, ''learning_rate'': 4.42013827608134e-05,
+    ''ent_coef'': 2.7462399856123295e-05, ''clip_range'': 0.4, ''n_epochs'': 1, ''gae_lambda'':
+    0.8, ''max_grad_norm'': 0.9, ''vf_coef'': 0.16250911908696952, ''net_arch'': ''medium'',
+    ''activation_fn'': ''tanh'', ''n_timesteps'': 1000000, ''n_envs'': 2}, _user_attrs={},
+    _system_attrs={''completed_rung_0'': 42.4329216, ''completed_rung_1'': 35.1545626},
+    intermediate_values={1: 42.4329216, 2: 33.1384122, 3: 39.3193256, 4: 35.1545626},
+    _distributions={''batch_size'': CategoricalDistribution(choices=(8, 16, 32, 64,
+    128, 256, 512)), ''n_steps'': CategoricalDistribution(choices=(8, 16, 32, 64,
+    128, 256, 512, 1024, 2048)), ''gamma'': CategoricalDistribution(choices=(0.9,
+    0.95, 0.98, 0.99, 0.995, 0.999, 0.9999)), ''learning_rate'': FloatDistribution(high=1.0,
+    log=True, low=1e-05, step=None), ''ent_coef'': FloatDistribution(high=0.1, log=True,
+    low=1e-08, step=None), ''clip_range'': CategoricalDistribution(choices=(0.1, 0.2,
+    0.3, 0.4)), ''n_epochs'': CategoricalDistribution(choices=(1, 5, 10, 20)), ''gae_lambda'':
+    CategoricalDistribution(choices=(0.8, 0.9, 0.92, 0.95, 0.98, 0.99, 1.0)), ''max_grad_norm'':
+    CategoricalDistribution(choices=(0.3, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 2, 5)), ''vf_coef'':
+    FloatDistribution(high=1.0, log=False, low=0.0, step=None), ''net_arch'': CategoricalDistribution(choices=(''tiny'',
+    ''small'', ''medium'')), ''activation_fn'': CategoricalDistribution(choices=(''tanh'',
+    ''relu'')), ''n_timesteps'': IntDistribution(high=1000000, log=False, low=100000,
+    step=100000), ''n_envs'': CategoricalDistribution(choices=(2, 4, 6, 8, 10))},
+    _trial_id=65'
