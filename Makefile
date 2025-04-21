@@ -134,13 +134,9 @@ plot:
 
 .PHONY: run
 run:
-	@while true; do \
-		. .venv/bin/activate; CUDA_VISIBLE_DEVICES="" python -m Environments.Noise; \
-		if [ $$? -eq 0 ]; then \
-			echo "All variants completed. Exiting."; \
-			break; \
-		else \
-			echo "Some variants remain. Restarting..."; \
-			sleep 1; \
-		fi \
-	done
+	@$(MAKE) noise MODEL=trpor
+	@$(MAKE) noise MODEL=trpoer
+	@$(MAKE) noise MODEL=genppo
+	@$(MAKE) noise MODEL=gentrpo
+	@$(MAKE) noise MODEL=ppo
+	@$(MAKE) noise MODEL=trpo

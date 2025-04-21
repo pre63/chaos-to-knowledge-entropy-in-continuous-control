@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 from itertools import chain, combinations
 
+import filelock  # Added for file locking
 import gymnasium as gym
 import matplotlib.pyplot as plt
 import numpy as np
@@ -30,8 +31,7 @@ class TrainingDataCallback(BaseCallback):
     if hasattr(self.model, "rollout_buffer"):
       rewards = self.model.rollout_buffer.rewards
       if rewards.size > 0:
-        mean_reward = np.mean(rewards)
-        self.rewards.append(mean_reward)
+        self.rewards.append(np.mean(rewards))
 
       for rollout_data in self.model.rollout_buffer.get(batch_size=None):
         observations = rollout_data.observations
@@ -130,37 +130,115 @@ def generate_step_configs(components, noise_type, steps, min_level=-1.0, max_lev
   return configs
 
 
-def run_training(model_class, env, config, total_timesteps, num_runs, output_path, env_name, noise_key, model_name, dry_run=False):
-  run_rewards = []
-  run_entropies = []
-  result_path = f"{output_path}/{env_name}/{model_name}_{total_timesteps}_reward_action_{num_runs}_runs.yml"
+def load_raw_runs(raw_path, noise_key):
+  runs = []
+  if os.path.exists(raw_path):
+    try:
+      with open(raw_path, "r") as file:
+        raw_data = yaml.safe_load(file) or []
+        for entry in raw_data:
+          if entry["noise_type"] == noise_key:
+            runs.append(
+              {
+                "run_index": entry["run_index"],
+                "rewards": entry["rewards"],
+                "entropies": entry["entropies"],
+                "completed": entry.get("completed", len(entry["rewards"]) > 0),  # Assume complete if rewards exist
+              }
+            )
+    except Exception as e:
+      print(f"Error loading {raw_path}: {e}")
+  return runs
 
-  # Load existing results
+
+def check_run_exists(runs, run_idx):
+  return any(run["run_index"] == run_idx and run["completed"] for run in runs)
+
+
+def save_raw_run(raw_path, noise_key, run_idx, rewards, entropies, config_list, total_timesteps):
+  raw_data = []
+  if os.path.exists(raw_path):
+    try:
+      with open(raw_path, "r") as file:
+        raw_data = yaml.safe_load(file) or []
+    except Exception as e:
+      print(f"Error loading {raw_path}: {e}")
+
+  new_entry = {
+    "noise_type": noise_key,
+    "run_index": run_idx,
+    "rewards": rewards,
+    "entropies": entropies,
+    "config": config_list,
+    "total_timesteps": total_timesteps,
+    "completed": len(rewards) > 0,  # Mark as complete if rewards were recorded
+    "timestamp": datetime.now().isoformat(),
+  }
+  raw_data.append(new_entry)
+
+  try:
+    os.makedirs(os.path.dirname(raw_path), exist_ok=True)
+    with filelock.FileLock(raw_path + ".lock"):
+      with open(raw_path, "w") as file:
+        yaml.dump(raw_data, file)
+    print(f"Saved raw data to {raw_path} for {noise_key}, run {run_idx+1}")
+  except Exception as e:
+    print(f"Error saving raw data to {raw_path}: {e}")
+
+
+def run_training(model_class, env, config, total_timesteps, num_runs, output_path, env_name, noise_key, model_name, config_list, dry_run=False):
+  result_path = f"{output_path}/{env_name}/{model_name}_results.yml"
+  raw_path = f"{output_path}/{env_name}/{model_name}_raw.yml"
+
+  # Load existing results for smoothed data
   existing_results = []
   if os.path.exists(result_path):
     try:
       with open(result_path, "r") as file:
         existing_results = yaml.safe_load(file) or []
     except Exception as e:
-      print(f"Error loading {result_path}: {e}. Starting with empty results.")
+      print(f"Error loading {result_path}: {e}")
 
-  for run in range(num_runs):
-    print(f"Running {model_class.__name__} on {env.spec.id} - Run {run + 1}/{num_runs} for {noise_key}")
-    callback = TrainingDataCallback(verbose=1)
-    model_config = config.copy()
-    model_config["env"] = env
-    try:
-      model = model_class(**model_config)
-      model.learn(total_timesteps=total_timesteps, callback=callback)
-    except Exception as e:
-      print(f"Error during training for {model_name} on {env_name}, {noise_key}, run {run+1}: {e}")
-      continue
+  # Load existing runs
+  runs = load_raw_runs(raw_path, noise_key)
+  run_rewards = [run["rewards"] for run in runs if run["completed"]]
+  run_entropies = [run["entropies"] for run in runs if run["completed"]]
 
-    rewards = callback.rewards if callback.rewards else [0]
-    entropies = callback.entropies if callback.entropies else [0]
-    run_rewards.append(rewards)
-    run_entropies.append(entropies)
-    print(f"Run {run+1}/{num_runs} completed for {noise_key}.")
+  runs_needed = num_runs - len(run_rewards)
+  if runs_needed <= 0:
+    print(f"All {num_runs} runs already completed for {model_name} on {env_name}, {noise_key}")
+    max_reward_len = max(len(r) for r in run_rewards) if run_rewards else 1
+    max_entropy_len = max(len(e) for e in run_entropies) if run_entropies else 1
+    padded_rewards = [np.pad(r, (0, max_reward_len - len(r)), mode="edge") for r in run_rewards]
+    padded_entropies = [np.pad(e, (0, max_entropy_len - len(e)), mode="edge") for r in run_entropies]
+    avg_rewards = np.mean(padded_rewards, axis=0).tolist() if padded_rewards else [0]
+    avg_entropies = np.mean(padded_entropies, axis=0).tolist() if padded_entropies else [0]
+  else:
+    print(f"Need {runs_needed} more runs for {model_name} on {env_name}, {noise_key}")
+    for run_idx in range(len(run_rewards), num_runs):
+      if check_run_exists(runs, run_idx):
+        print(f"Run {run_idx+1} already exists for {model_name} on {env_name}, {noise_key}. Skipping.")
+        continue
+
+      print(f"Running {model_class.__name__} on {env.spec.id} - Run {run_idx + 1}/{num_runs} for {noise_key}")
+      callback = TrainingDataCallback(verbose=1)
+      model_config = config.copy()
+      model_config["env"] = env
+      try:
+        model = model_class(**model_config)
+        model.learn(total_timesteps=total_timesteps, callback=callback)
+      except Exception as e:
+        print(f"Error during training for {model_name} on {env_name}, {noise_key}, run {run_idx+1}: {e}")
+        continue
+
+      rewards = callback.rewards if callback.rewards else [0]
+      entropies = callback.entropies if callback.entropies else [0]
+      run_rewards.append(rewards)
+      run_entropies.append(entropies)
+      print(f"Run {run_idx+1}/{num_runs} completed for {noise_key}.")
+
+      # Save raw data
+      save_raw_run(raw_path, noise_key, run_idx, rewards, entropies, config_list, total_timesteps)
 
     # Compute averages
     max_reward_len = max(len(r) for r in run_rewards) if run_rewards else 1
@@ -170,36 +248,37 @@ def run_training(model_class, env, config, total_timesteps, num_runs, output_pat
     avg_rewards = np.mean(padded_rewards, axis=0).tolist() if padded_rewards else [0]
     avg_entropies = np.mean(padded_entropies, axis=0).tolist() if padded_entropies else [0]
 
-    # Generate label
-    label = "Baseline" if noise_key == "none" else None
-    if label is None:
-      try:
-        config_idx = int(noise_key.split("_")[-1]) if noise_key.startswith("reward_action_") else -1
-        if config_idx >= 0:
-          entropy_level = generate_step_configs(["reward", "action"], "uniform", 6, -0.5, 0.5)[config_idx][0]["entropy_level"]
-          label = f"reward+action_uniform ({entropy_level:.2f})"
-        else:
-          label = f"reward+action_uniform (unknown)"
-      except (IndexError, ValueError) as e:
-        print(f"Error generating label for {noise_key}: {e}")
-        label = f"reward+action_uniform (unknown)"
-
-    training_data = [{"label": label, "rewards": avg_rewards, "entropies": avg_entropies, "model": model_name}]
-
-    # Update results
-    smoothed_data = smooth_data(training_data)
-    new_result = {"noise_type": noise_key, "smoothed_data": smoothed_data}
-    existing_results = [r for r in existing_results if r["noise_type"] != noise_key]
-    existing_results.append(new_result)
-
-    # Save to YAML
+  # Generate label
+  label = "Baseline" if noise_key == "none" else None
+  if label is None:
     try:
-      os.makedirs(os.path.dirname(result_path), exist_ok=True)
+      config_idx = int(noise_key.split("_")[-1]) if noise_key.startswith("reward_action_") else -1
+      if config_idx >= 0:
+        entropy_level = generate_step_configs(["reward", "action"], "uniform", 6, -0.5, 0.5)[config_idx][0]["entropy_level"]
+        label = f"reward+action_uniform ({entropy_level:.2f})"
+      else:
+        label = f"reward+action_uniform (unknown)"
+    except (IndexError, ValueError) as e:
+      print(f"Error generating label for {noise_key}: {e}")
+      label = f"reward+action_uniform (unknown)"
+
+  training_data = [{"label": label, "rewards": avg_rewards, "entropies": avg_entropies, "model": model_name}]
+
+  # Update smoothed results
+  smoothed_data = smooth_data(training_data)
+  new_result = {"noise_type": noise_key, "smoothed_data": smoothed_data}
+  existing_results = [r for r in existing_results if r["noise_type"] != noise_key]
+  existing_results.append(new_result)
+
+  # Save smoothed results
+  try:
+    os.makedirs(os.path.dirname(result_path), exist_ok=True)
+    with filelock.FileLock(result_path + ".lock"):
       with open(result_path, "w") as file:
         yaml.dump(existing_results, file)
-      print(f"Results appended to {result_path} for {noise_key}, run {run+1}")
-    except Exception as e:
-      print(f"Error saving results to {result_path}: {e}")
+    print(f"Smoothed results updated in {result_path} for {noise_key}")
+  except Exception as e:
+    print(f"Error saving results to {result_path}: {e}")
 
   return avg_rewards, avg_entropies
 
@@ -283,37 +362,25 @@ def plot_results(smoothed_results, model_name, total_timesteps, num_runs, output
   ax2.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
   ax2.grid(True)
   plt.tight_layout()
-  plot_path = f"{output_path}/{env_name}/{model_name}_{total_timesteps}_reward_action_{num_runs}_runs.png"
+  plot_path = f"{output_path}/{env_name}/{model_name}_results.png"
   os.makedirs(os.path.dirname(plot_path), exist_ok=True)
   plt.savefig(plot_path)
   plt.close()
   return plot_path
 
 
-def load_status(env_name, output_path=".noise/final"):
-  status_file = f"{output_path}/{env_name}/.status"
-  if os.path.exists(status_file):
-    try:
-      with open(status_file, "r") as f:
-        return json.load(f)
-    except Exception as e:
-      print(f"Error loading status file {status_file}: {e}")
-  return {"model": None, "noise_type": None}
-
-
-def save_status(env_name, model_name, noise_type, output_path=".noise/final"):
-  status_file = f"{output_path}/{env_name}/.status"
-  os.makedirs(os.path.dirname(status_file), exist_ok=True)
-  try:
-    with open(status_file, "w") as f:
-      json.dump({"model": model_name, "noise_type": noise_type}, f)
-  except Exception as e:
-    print(f"Error saving status to {status_file}: {e}")
-
-
 def is_variant_complete(env_name, model_name, noise_type, total_timesteps, num_runs, output_path=".noise/final"):
-  result_file = f"{output_path}/{env_name}/{model_name}_{total_timesteps}_reward_action_{num_runs}_runs.yml"
-  return os.path.exists(result_file)
+  raw_path = f"{output_path}/{env_name}/{model_name}_raw.yml"
+  if not os.path.exists(raw_path):
+    return False
+  try:
+    with open(raw_path, "r") as file:
+      raw_data = yaml.safe_load(file) or []
+      completed_runs = sum(1 for entry in raw_data if entry["noise_type"] == noise_type and entry.get("completed", False))
+      return completed_runs >= num_runs
+  except Exception as e:
+    print(f"Error checking {raw_path}: {e}")
+  return False
 
 
 def all_variants_completed(env_model_configs, noise_types, steps, total_timesteps, num_runs, output_path=".noise/final"):
@@ -332,39 +399,34 @@ def all_variants_completed(env_model_configs, noise_types, steps, total_timestep
 
 if __name__ == "__main__":
   env_model_configs = [
-    # PPO
-    # ("HalfCheetah-v5", PPO),
-    # ("Hopper-v5", PPO),
-    # ("Humanoid-v5", PPO),
-    # ("HumanoidStandup-v5", PPO),
-    # ("Pusher-v5", PPO),
-    # ("Reacher-v5", PPO),
-    # ("Swimmer-v5", PPO),
-    # # TRPO
-    # ("HalfCheetah-v5", TRPO),
-    # ("Hopper-v5", TRPO),
-    # ("Humanoid-v5", TRPO),
-    # ("HumanoidStandup-v5", TRPO),
-    # ("Pusher-v5", TRPO),
-    # ("Reacher-v5", TRPO),
-    # ("Swimmer-v5", TRPO),
-    # TRPOR
-    # ("HalfCheetah-v5", TRPOR),
-    # ("Hopper-v5", TRPOR),
-    # ("Humanoid-v5", TRPOR), missing hyperparameters
-    # ("HumanoidStandup-v5", TRPOR),
-    # ("Pusher-v5", TRPOR),
+    ("HalfCheetah-v5", PPO),
+    ("Hopper-v5", PPO),
+    ("Humanoid-v5", PPO),
+    ("HumanoidStandup-v5", PPO),
+    ("Pusher-v5", PPO),
+    ("Reacher-v5", PPO),
+    ("Swimmer-v5", PPO),
+    ("HalfCheetah-v5", TRPO),
+    ("Hopper-v5", TRPO),
+    ("Humanoid-v5", TRPO),
+    ("HumanoidStandup-v5", TRPO),
+    ("Pusher-v5", TRPO),
+    ("Reacher-v5", TRPO),
+    ("Swimmer-v5", TRPO),
+    ("HalfCheetah-v5", TRPOR),
+    ("Hopper-v5", TRPOR),
+    ("Humanoid-v5", TRPOR),
+    ("HumanoidStandup-v5", TRPOR),
+    ("Pusher-v5", TRPOR),
     ("Reacher-v5", TRPOR),
     ("Swimmer-v5", TRPOR),
-    # TRPOER
-    # ("HalfCheetah-v5", TRPOER),
+    ("HalfCheetah-v5", TRPOER),
     ("Hopper-v5", TRPOER),
     ("Humanoid-v5", TRPOER),
     ("HumanoidStandup-v5", TRPOER),
     ("Pusher-v5", TRPOER),
     ("Reacher-v5", TRPOER),
     ("Swimmer-v5", TRPOER),
-    # GenTRPO
     ("HalfCheetah-v5", GenTRPO),
     ("Hopper-v5", GenTRPO),
     ("Humanoid-v5", GenTRPO),
@@ -372,7 +434,6 @@ if __name__ == "__main__":
     ("Pusher-v5", GenTRPO),
     ("Reacher-v5", GenTRPO),
     ("Swimmer-v5", GenTRPO),
-    # GenPPO
     ("HalfCheetah-v5", GenPPO),
     ("Hopper-v5", GenPPO),
     ("Humanoid-v5", GenPPO),
@@ -382,7 +443,19 @@ if __name__ == "__main__":
     ("Swimmer-v5", GenPPO),
   ]
 
-  # Check for INVERSE environment variable; presence triggers reversal
+  # Check for MODEL environment variable to filter models
+  model_filter = os.getenv("MODEL")
+  if model_filter:
+    model_filter = model_filter.lower()
+    env_model_configs = [(env, model) for env, model in env_model_configs if model_filter in model.__name__.lower()]
+    print(f"Filtering models with MODEL={model_filter}. Selected models: {[model.__name__ for _, model in env_model_configs]}")
+    if not env_model_configs:
+      print(f"Error: No models match MODEL={model_filter}. Exiting.")
+      exit(1)
+  else:
+    print("No MODEL filter set. Running all models.")
+
+  # Check for INVERSE environment variable
   inverse_flag = os.getenv("INVERSE") is not None
   if inverse_flag:
     env_model_configs = env_model_configs[::-1]
@@ -405,22 +478,11 @@ if __name__ == "__main__":
   used_noise_configs = VALID_NOISE_CONFIGS if not dry_run else {"none": ["none"]}
   noise_types = ["none", "reward_action"] if not dry_run else ["none"]
 
-  max_reward_improvement = float("-inf")
-  max_entropy_reduction = float("-inf")
-
   for env_name, model_class in env_model_configs:
     model_name = model_class.__name__
     os.makedirs(f"{output_path}/{env_name}", exist_ok=True)
 
-    status = load_status(env_name, output_path)
-    last_model = status.get("model")
-    last_noise_type = status.get("noise_type")
-    skip_until = None
-    if last_model and last_noise_type:
-      skip_until = (last_model, last_noise_type)
-
     hyperparam_path = f".hyperparameters/{model_name.lower()}.yml"
-
     if not os.path.exists(hyperparam_path):
       print(f"No hyperparameter file at {hyperparam_path} for {model_name}. Skipping.")
       continue
@@ -438,21 +500,19 @@ if __name__ == "__main__":
 
     env_base = gym.make(env_name, render_mode=None)
     baseline_dict = {}
-    start_processing = skip_until is None or skip_until[0] == model_name
 
     # Baseline run
+    config_list = []  # Empty for baseline
     if not is_variant_complete(env_name, model_name, "none", total_timesteps, num_runs, output_path):
-      if start_processing:
-        print(f"Starting baseline for {model_name} on {env_name}")
-        baseline_rewards, baseline_entropies = run_training(
-          model_class, env_base, model_hyperparameters[env_name], total_timesteps, num_runs, output_path, env_name, "none", model_name, dry_run
-        )
-        baseline_dict[model_name] = {
-          "final_reward": baseline_rewards[-1] if baseline_rewards else 0,
-          "initial_entropy": baseline_entropies[0] if baseline_entropies else 0,
-        }
-        print(f"Baseline completed for {model_name} on {env_name}")
-        save_status(env_name, model_name, "none", output_path)
+      print(f"Starting baseline for {model_name} on {env_name}")
+      baseline_rewards, baseline_entropies = run_training(
+        model_class, env_base, model_hyperparameters[env_name], total_timesteps, num_runs, output_path, env_name, "none", model_name, config_list, dry_run
+      )
+      baseline_dict[model_name] = {
+        "final_reward": baseline_rewards[-1] if baseline_rewards else 0,
+        "initial_entropy": baseline_entropies[0] if baseline_entropies else 0,
+      }
+      print(f"Baseline completed for {model_name} on {env_name}")
     else:
       print(f"Baseline already completed for {model_name} on {env_name}")
 
@@ -465,19 +525,14 @@ if __name__ == "__main__":
         if is_variant_complete(env_name, model_name, noise_key, total_timesteps, num_runs, output_path):
           print(f"Skipping completed {noise_key} for {model_name} on {env_name}")
           continue
-        if not start_processing:
-          if skip_until and skip_until[0] == model_name and skip_until[1] == noise_key:
-            start_processing = True
-          continue
         print(f"Starting {noise_key} for {model_name} on {env_name}")
         env = EntropyInjectionWrapper(env_base, noise_configs=config_list)
         avg_rewards, avg_entropies = run_training(
-          model_class, env, model_hyperparameters[env_name], total_timesteps, num_runs, output_path, env_name, noise_key, model_name, dry_run
+          model_class, env, model_hyperparameters[env_name], total_timesteps, num_runs, output_path, env_name, noise_key, model_name, config_list, dry_run
         )
         print(f"Completed {noise_key} for {model_name} on {env_name}")
-        save_status(env_name, model_name, noise_key, output_path)
 
-    result_path = f"{output_path}/{env_name}/{model_name}_{total_timesteps}_reward_action_{num_runs}_runs.yml"
+    result_path = f"{output_path}/{env_name}/{model_name}_results.yml"
     smoothed_results = []
     if os.path.exists(result_path):
       try:
