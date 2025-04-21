@@ -125,45 +125,154 @@ Hopper-v5:
     step=100000), ''n_envs'': CategoricalDistribution(choices=(2, 4, 6, 8, 10))},
     _trial_id=122'
 Humanoid-v5:
-  trial_number: 95
-  value: 447.94857520000005
+  trial_number: 8
+  value: 1076.5896552
   params:
-    batch_size: 32
+    batch_size: 256
     n_steps: 16
-    gamma: 0.9999
-    learning_rate: 0.0006183509029833883
-    ent_coef: 4.222709699945666e-06
-    clip_range: 0.3
-    n_epochs: 1
-    gae_lambda: 0.99
-    max_grad_norm: 0.9
-    vf_coef: 0.35158850327788066
-    net_arch: medium
+    gamma: 0.995
+    learning_rate: 1.000900380783336e-05
+    ent_coef: 2.034198296337839e-07
+    clip_range: 0.4
+    n_epochs: 20
+    gae_lambda: 0.8
+    max_grad_norm: 0.8
+    vf_coef: 0.8304599284219261
+    net_arch: tiny
     activation_fn: tanh
     n_timesteps: 400000
     n_envs: 10
-  comment: 'Best trial details: _number=95, state=1, _values=[447.94857520000005],
-    _datetime_start=2025-01-30 13:24:08.905804, datetime_complete=2025-01-30 14:00:27.099407,
-    _params={''batch_size'': 32, ''n_steps'': 16, ''gamma'': 0.9999, ''learning_rate'':
-    0.0006183509029833883, ''ent_coef'': 4.222709699945666e-06, ''clip_range'': 0.3,
-    ''n_epochs'': 1, ''gae_lambda'': 0.99, ''max_grad_norm'': 0.9, ''vf_coef'': 0.35158850327788066,
-    ''net_arch'': ''medium'', ''activation_fn'': ''tanh'', ''n_timesteps'': 400000,
-    ''n_envs'': 10}, _user_attrs={}, _system_attrs={''completed_rung_0'': 376.25232259999996},
-    intermediate_values={1: 376.25232259999996, 2: 447.94857520000005}, _distributions={''batch_size'':
-    CategoricalDistribution(choices=(8, 16, 32, 64, 128, 256, 512)), ''n_steps'':
-    CategoricalDistribution(choices=(8, 16, 32, 64, 128, 256, 512, 1024, 2048)), ''gamma'':
-    CategoricalDistribution(choices=(0.9, 0.95, 0.98, 0.99, 0.995, 0.999, 0.9999)),
-    ''learning_rate'': FloatDistribution(high=1.0, log=True, low=1e-05, step=None),
-    ''ent_coef'': FloatDistribution(high=0.1, log=True, low=1e-08, step=None), ''clip_range'':
-    CategoricalDistribution(choices=(0.1, 0.2, 0.3, 0.4)), ''n_epochs'': CategoricalDistribution(choices=(1,
-    5, 10, 20)), ''gae_lambda'': CategoricalDistribution(choices=(0.8, 0.9, 0.92,
-    0.95, 0.98, 0.99, 1.0)), ''max_grad_norm'': CategoricalDistribution(choices=(0.3,
-    0.5, 0.6, 0.7, 0.8, 0.9, 1, 2, 5)), ''vf_coef'': FloatDistribution(high=1.0, log=False,
-    low=0.0, step=None), ''net_arch'': CategoricalDistribution(choices=(''tiny'',
+  comment: 'Best trial details: _number=8, state=1, _values=[1076.5896552], _datetime_start=2025-04-21
+    00:14:15.930998, datetime_complete=2025-04-21 06:18:25.562140, _params={''batch_size'':
+    256, ''n_steps'': 16, ''gamma'': 0.995, ''learning_rate'': 1.000900380783336e-05,
+    ''ent_coef'': 2.034198296337839e-07, ''clip_range'': 0.4, ''n_epochs'': 20, ''gae_lambda'':
+    0.8, ''max_grad_norm'': 0.8, ''vf_coef'': 0.8304599284219261, ''net_arch'': ''tiny'',
+    ''activation_fn'': ''tanh'', ''n_timesteps'': 400000, ''n_envs'': 10}, _user_attrs={},
+    _system_attrs={''completed_rung_0'': 250.88526259999998, ''completed_rung_1'':
+    364.6987656, ''completed_rung_2'': 576.0636360000001, ''completed_rung_3'': 590.3111138},
+    intermediate_values={1: 250.88526259999998, 2: 207.0878826, 3: 353.5487444, 4:
+    364.6987656, 5: 428.97216119999996, 6: 491.3105767999999, 7: 348.58869219999997,
+    8: 462.5990602, 9: 408.2984866, 10: 387.6754014, 11: 430.8472634, 12: 541.1800326,
+    13: 454.22047519999995, 14: 567.6036424, 15: 499.3173498, 16: 576.0636360000001,
+    17: 518.4013408000001, 18: 457.75666220000005, 19: 399.230462, 20: 618.8980514,
+    21: 464.0398806, 22: 457.84491660000003, 23: 548.0096315999999, 24: 580.8385778,
+    25: 491.42635200000007, 26: 423.769193, 27: 560.0995312, 28: 501.274277, 29: 479.4026576,
+    30: 520.8828104, 31: 609.5354452, 32: 489.447716, 33: 548.8933086, 34: 522.1809059999999,
+    35: 538.5036384, 36: 496.243333, 37: 729.8108892, 38: 603.1130964, 39: 559.6997428,
+    40: 592.011872, 41: 476.86819679999996, 42: 560.6137421999999, 43: 484.6370132,
+    44: 478.4708635999999, 45: 567.5618476, 46: 611.0856526, 47: 557.5648853999999,
+    48: 483.2358032, 49: 558.0485354, 50: 615.6621116, 51: 683.7745954, 52: 511.8080292000001,
+    53: 580.3966422, 54: 604.4547766, 55: 666.5569316, 56: 652.2410906, 57: 521.7744747999999,
+    58: 613.7811822, 59: 686.7382828, 60: 655.9048014, 61: 516.2894354, 62: 710.6841634,
+    63: 488.64754200000004, 64: 590.3111138, 65: 766.4135748, 66: 530.6816521999999,
+    67: 531.5223186000001, 68: 630.9011641999999, 69: 787.0483701999999, 70: 692.702546,
+    71: 951.2389053999999, 72: 734.4688481999999, 73: 1045.9506726, 74: 809.8071514000001,
+    75: 918.3028812, 76: 916.4689517999999, 77: 728.2048520000001, 78: 967.5402228,
+    79: 1510.4450746, 80: 1076.5896552}, _distributions={''batch_size'': CategoricalDistribution(choices=(8,
+    16, 32, 64, 128, 256, 512)), ''n_steps'': CategoricalDistribution(choices=(8,
+    16, 32, 64, 128, 256, 512, 1024, 2048)), ''gamma'': CategoricalDistribution(choices=(0.9,
+    0.95, 0.98, 0.99, 0.995, 0.999, 0.9999)), ''learning_rate'': FloatDistribution(high=1.0,
+    log=True, low=1e-05, step=None), ''ent_coef'': FloatDistribution(high=0.1, log=True,
+    low=1e-08, step=None), ''clip_range'': CategoricalDistribution(choices=(0.1, 0.2,
+    0.3, 0.4)), ''n_epochs'': CategoricalDistribution(choices=(1, 5, 10, 20)), ''gae_lambda'':
+    CategoricalDistribution(choices=(0.8, 0.9, 0.92, 0.95, 0.98, 0.99, 1.0)), ''max_grad_norm'':
+    CategoricalDistribution(choices=(0.3, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 2, 5)), ''vf_coef'':
+    FloatDistribution(high=1.0, log=False, low=0.0, step=None), ''net_arch'': CategoricalDistribution(choices=(''tiny'',
     ''small'', ''medium'')), ''activation_fn'': CategoricalDistribution(choices=(''tanh'',
     ''relu'')), ''n_timesteps'': IntDistribution(high=1000000, log=False, low=100000,
     step=100000), ''n_envs'': CategoricalDistribution(choices=(2, 4, 6, 8, 10))},
-    _trial_id=95'
+    _trial_id=8'
+HumanoidStandup-v5:
+  trial_number: 6
+  value: 115543.580888
+  params:
+    batch_size: 512
+    n_steps: 1024
+    gamma: 0.9999
+    learning_rate: 0.0004948905997087219
+    ent_coef: 5.5364049883411455e-05
+    clip_range: 0.1
+    n_epochs: 10
+    gae_lambda: 0.98
+    max_grad_norm: 0.3
+    vf_coef: 0.602511184087952
+    net_arch: small
+    activation_fn: tanh
+    n_timesteps: 800000
+    n_envs: 10
+  comment: 'Best trial details: _number=6, state=1, _values=[115543.580888], _datetime_start=2025-04-21
+    01:50:58.621702, datetime_complete=2025-04-21 05:52:00.474019, _params={''batch_size'':
+    512, ''n_steps'': 1024, ''gamma'': 0.9999, ''learning_rate'': 0.0004948905997087219,
+    ''ent_coef'': 5.5364049883411455e-05, ''clip_range'': 0.1, ''n_epochs'': 10, ''gae_lambda'':
+    0.98, ''max_grad_norm'': 0.3, ''vf_coef'': 0.602511184087952, ''net_arch'': ''small'',
+    ''activation_fn'': ''tanh'', ''n_timesteps'': 800000, ''n_envs'': 10}, _user_attrs={},
+    _system_attrs={''completed_rung_0'': 53687.921687999995, ''completed_rung_1'':
+    47652.6264016, ''completed_rung_2'': 53931.79484259999, ''completed_rung_3'':
+    73366.53624700001}, intermediate_values={1: 53687.921687999995, 2: 57133.039119999994,
+    3: 58969.499954, 4: 47652.6264016, 5: 56196.35185980001, 6: 52840.01154380001,
+    7: 72824.7884166, 8: 53784.677435, 9: 45161.371315000004, 10: 42538.6564536, 11:
+    43277.7383392, 12: 58850.8722268, 13: 84551.78342939999, 14: 77217.68455, 15:
+    68616.1233034, 16: 53931.79484259999, 17: 57147.73341880001, 18: 86483.8756482,
+    19: 100851.7338634, 20: 99750.4027744, 21: 51599.4652788, 22: 60782.112681599996,
+    23: 74293.9235688, 24: 53846.223656, 25: 52257.2657894, 26: 73758.189925, 27:
+    68938.444016, 28: 78148.27850419999, 29: 66093.7696836, 30: 71016.25936360001,
+    31: 78701.3025708, 32: 94127.9506092, 33: 85104.86268580002, 34: 71095.7179596,
+    35: 71179.65318240001, 36: 73067.1327956, 37: 73659.21299320001, 38: 75826.28776440001,
+    39: 115626.2618856, 40: 85768.1124064, 41: 102004.8533606, 42: 80933.76718859999,
+    43: 80397.963995, 44: 107404.06087140001, 45: 107350.18399680001, 46: 79322.1971838,
+    47: 101595.808421, 48: 109686.63518140002, 49: 120048.5794816, 50: 109784.6068102,
+    51: 120736.8387594, 52: 111746.79874219999, 53: 111171.22992420002, 54: 108985.45145800003,
+    55: 112092.6012674, 56: 99115.8148708, 57: 78286.06999379999, 58: 84461.7175898,
+    59: 73886.3470944, 60: 77336.0844986, 61: 79724.9803752, 62: 69827.1803488, 63:
+    69944.38661399999, 64: 73366.53624700001, 65: 100454.92113960002, 66: 79144.0789408,
+    67: 87750.5210574, 68: 84012.52935340001, 69: 82628.1557028, 70: 73513.5269832,
+    71: 71578.9501788, 72: 81087.17083340001, 73: 78659.916549, 74: 74985.8464026,
+    75: 73690.55004999999, 76: 77165.1528672, 77: 77097.89488559999, 78: 74203.1829504,
+    79: 75904.23197599998, 80: 66769.6019426, 81: 69022.73100100001, 82: 73350.0690196,
+    83: 72914.7665768, 84: 69224.477593, 85: 74719.0458222, 86: 75832.52305260001,
+    87: 77013.03427520001, 88: 77380.873665, 89: 72360.5851484, 90: 73392.0533174,
+    91: 79053.60047540002, 92: 75305.2936932, 93: 81233.93597020001, 94: 71040.1758882,
+    95: 77121.4855596, 96: 79449.6698258, 97: 79221.22064079999, 98: 76953.58155819999,
+    99: 73090.3769834, 100: 75134.526754, 101: 76735.01452240002, 102: 74785.7876304,
+    103: 78661.4920996, 104: 79072.145873, 105: 79532.75638939999, 106: 84208.1656982,
+    107: 75851.3168204, 108: 79621.88164379999, 109: 74156.8302402, 110: 77368.815122,
+    111: 71372.9875594, 112: 71682.7439474, 113: 78743.9355078, 114: 73856.21510379999,
+    115: 85110.665732, 116: 77207.3707178, 117: 84592.7847388, 118: 75722.514122,
+    119: 80120.39125439999, 120: 78567.41919079999, 121: 72968.7725444, 122: 76047.31887419999,
+    123: 70368.28340440002, 124: 78377.77451440001, 125: 84644.5218028, 126: 76850.75200179999,
+    127: 79352.8223716, 128: 74484.0884432, 129: 85920.58790299999, 130: 78670.20714420002,
+    131: 76387.82091380001, 132: 89895.67485380001, 133: 84073.0917272, 134: 93926.8489528,
+    135: 81775.6487098, 136: 76399.07041780002, 137: 86141.2974566, 138: 79580.17481980001,
+    139: 83324.22262340001, 140: 80512.9627554, 141: 83246.78984259999, 142: 75734.90939280001,
+    143: 72006.6858762, 144: 85386.5691296, 145: 89713.787747, 146: 81610.84702280001,
+    147: 102415.7440938, 148: 85440.7905464, 149: 88455.61291940001, 150: 89991.2709428,
+    151: 99445.1880546, 152: 80566.9388566, 153: 83286.48914719999, 154: 80806.53752340001,
+    155: 72356.17766660001, 156: 85464.74133359999, 157: 81678.5627074, 158: 86101.6394412,
+    159: 90870.6800666, 160: 89645.4896036, 161: 90532.9228166, 162: 97047.38536560001,
+    163: 98240.46688960001, 164: 80900.35953320001, 165: 93803.7110796, 166: 86052.66477060001,
+    167: 88048.6644072, 168: 92556.9341032, 169: 92304.0045864, 170: 95279.7071068,
+    171: 84587.83069120001, 172: 93406.9641804, 173: 89910.43154979999, 174: 79146.69052,
+    175: 100218.47200359999, 176: 91280.126033, 177: 99297.79011680001, 178: 100067.8943156,
+    179: 96635.4163134, 180: 101524.116866, 181: 93358.6217894, 182: 97074.08869139999,
+    183: 97920.13326120001, 184: 108142.7608864, 185: 104132.57428259999, 186: 100432.346315,
+    187: 96671.4189054, 188: 105391.56887679998, 189: 102000.73812620001, 190: 99432.99740519999,
+    191: 105810.8163732, 192: 101488.547583, 193: 103211.59004319999, 194: 114934.81112180001,
+    195: 91093.3438062, 196: 112046.8201962, 197: 103703.5706216, 198: 110888.8847024,
+    199: 103361.55055639999, 200: 123952.7926196, 201: 101559.5173166, 202: 115543.580888},
+    _distributions={''batch_size'': CategoricalDistribution(choices=(8, 16, 32, 64,
+    128, 256, 512)), ''n_steps'': CategoricalDistribution(choices=(8, 16, 32, 64,
+    128, 256, 512, 1024, 2048)), ''gamma'': CategoricalDistribution(choices=(0.9,
+    0.95, 0.98, 0.99, 0.995, 0.999, 0.9999)), ''learning_rate'': FloatDistribution(high=1.0,
+    log=True, low=1e-05, step=None), ''ent_coef'': FloatDistribution(high=0.1, log=True,
+    low=1e-08, step=None), ''clip_range'': CategoricalDistribution(choices=(0.1, 0.2,
+    0.3, 0.4)), ''n_epochs'': CategoricalDistribution(choices=(1, 5, 10, 20)), ''gae_lambda'':
+    CategoricalDistribution(choices=(0.8, 0.9, 0.92, 0.95, 0.98, 0.99, 1.0)), ''max_grad_norm'':
+    CategoricalDistribution(choices=(0.3, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 2, 5)), ''vf_coef'':
+    FloatDistribution(high=1.0, log=False, low=0.0, step=None), ''net_arch'': CategoricalDistribution(choices=(''tiny'',
+    ''small'', ''medium'')), ''activation_fn'': CategoricalDistribution(choices=(''tanh'',
+    ''relu'')), ''n_timesteps'': IntDistribution(high=1000000, log=False, low=100000,
+    step=100000), ''n_envs'': CategoricalDistribution(choices=(2, 4, 6, 8, 10))},
+    _trial_id=6'
 InvertedDoublePendulum-v5:
   trial_number: 35
   value: 9326.5882746
@@ -204,3 +313,47 @@ InvertedDoublePendulum-v5:
     ''relu'')), ''n_timesteps'': IntDistribution(high=1000000, log=False, low=100000,
     step=100000), ''n_envs'': CategoricalDistribution(choices=(2, 4, 6, 8, 10))},
     _trial_id=35'
+Reacher-v5:
+  trial_number: 123
+  value: -3.6735252000000003
+  params:
+    batch_size: 256
+    n_steps: 128
+    gamma: 0.98
+    learning_rate: 0.00041003062237224513
+    ent_coef: 0.028522726926146675
+    clip_range: 0.2
+    n_epochs: 5
+    gae_lambda: 0.8
+    max_grad_norm: 0.8
+    vf_coef: 0.7443911275358162
+    net_arch: medium
+    activation_fn: relu
+    n_timesteps: 500000
+    n_envs: 6
+  comment: 'Best trial details: _number=123, state=1, _values=[-3.6735252000000003],
+    _datetime_start=2025-04-21 13:30:23.533204, datetime_complete=2025-04-21 15:03:06.604026,
+    _params={''batch_size'': 256, ''n_steps'': 128, ''gamma'': 0.98, ''learning_rate'':
+    0.00041003062237224513, ''ent_coef'': 0.028522726926146675, ''clip_range'': 0.2,
+    ''n_epochs'': 5, ''gae_lambda'': 0.8, ''max_grad_norm'': 0.8, ''vf_coef'': 0.7443911275358162,
+    ''net_arch'': ''medium'', ''activation_fn'': ''relu'', ''n_timesteps'': 500000,
+    ''n_envs'': 6}, _user_attrs={}, _system_attrs={''completed_rung_0'': -9.971540999999998,
+    ''completed_rung_1'': -4.1597555999999996, ''completed_rung_2'': -3.2834934000000002},
+    intermediate_values={1: -9.971540999999998, 2: -8.5557026, 3: -5.5451454, 4: -4.1597555999999996,
+    5: -6.002343, 6: -3.8458168, 7: -5.1820021999999994, 8: -4.1673426, 9: -3.3160719999999997,
+    10: -3.6567686000000004, 11: -3.5791308, 12: -4.3366282, 13: -3.8312698, 14: -5.5268856,
+    15: -3.6543272, 16: -3.2834934000000002, 17: -3.3339659999999993, 18: -3.8509618000000003,
+    19: -3.9952108, 20: -3.6735252000000003}, _distributions={''batch_size'': CategoricalDistribution(choices=(8,
+    16, 32, 64, 128, 256, 512)), ''n_steps'': CategoricalDistribution(choices=(8,
+    16, 32, 64, 128, 256, 512, 1024, 2048)), ''gamma'': CategoricalDistribution(choices=(0.9,
+    0.95, 0.98, 0.99, 0.995, 0.999, 0.9999)), ''learning_rate'': FloatDistribution(high=1.0,
+    log=True, low=1e-05, step=None), ''ent_coef'': FloatDistribution(high=0.1, log=True,
+    low=1e-08, step=None), ''clip_range'': CategoricalDistribution(choices=(0.1, 0.2,
+    0.3, 0.4)), ''n_epochs'': CategoricalDistribution(choices=(1, 5, 10, 20)), ''gae_lambda'':
+    CategoricalDistribution(choices=(0.8, 0.9, 0.92, 0.95, 0.98, 0.99, 1.0)), ''max_grad_norm'':
+    CategoricalDistribution(choices=(0.3, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 2, 5)), ''vf_coef'':
+    FloatDistribution(high=1.0, log=False, low=0.0, step=None), ''net_arch'': CategoricalDistribution(choices=(''tiny'',
+    ''small'', ''medium'')), ''activation_fn'': CategoricalDistribution(choices=(''tanh'',
+    ''relu'')), ''n_timesteps'': IntDistribution(high=1000000, log=False, low=100000,
+    step=100000), ''n_envs'': CategoricalDistribution(choices=(2, 4, 6, 8, 10))},
+    _trial_id=123'
