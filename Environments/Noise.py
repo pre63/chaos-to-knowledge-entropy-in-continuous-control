@@ -290,16 +290,6 @@ def plot_results(smoothed_results, model_name, total_timesteps, num_runs, output
   return plot_path
 
 
-def update_summary(summary, output_path):
-  os.makedirs(output_path, exist_ok=True)
-  summary_path = f"{output_path}/summary.yml"
-  try:
-    with open(summary_path, "w") as file:
-      yaml.dump(summary, file)
-  except Exception as e:
-    print(f"Error saving summary to {summary_path}: {e}")
-
-
 def load_status(env_name, output_path=".noise/final"):
   status_file = f"{output_path}/{env_name}/.status"
   if os.path.exists(status_file):
@@ -415,13 +405,6 @@ if __name__ == "__main__":
   used_noise_configs = VALID_NOISE_CONFIGS if not dry_run else {"none": ["none"]}
   noise_types = ["none", "reward_action"] if not dry_run else ["none"]
 
-  summary = {
-    "total_timesteps": total_timesteps,
-    "num_runs": num_runs,
-    "models_tested": [],
-    "best_reward_config": None,
-    "best_entropy_config": None,
-  }
   max_reward_improvement = float("-inf")
   max_entropy_reduction = float("-inf")
 
@@ -437,15 +420,18 @@ if __name__ == "__main__":
       skip_until = (last_model, last_noise_type)
 
     hyperparam_path = f".hyperparameters/{model_name.lower()}.yml"
+
     if not os.path.exists(hyperparam_path):
       print(f"No hyperparameter file at {hyperparam_path} for {model_name}. Skipping.")
       continue
+
     try:
       with open(hyperparam_path, "r") as file:
         model_hyperparameters = yaml.safe_load(file) or {}
     except Exception as e:
       print(f"Error loading {hyperparam_path}: {e}. Skipping.")
       continue
+
     if not model_hyperparameters.get(env_name):
       print(f"No hyperparameters for {model_name} on {env_name}. Skipping.")
       continue
@@ -506,31 +492,7 @@ if __name__ == "__main__":
       except Exception as e:
         print(f"Error generating plot for {model_name} on {env_name}: {e}")
 
-    if model_name not in summary["models_tested"]:
-      summary["models_tested"].append(model_name)
-    for result in smoothed_results:
-      if result["noise_type"] == "none":
-        continue
-      for data in result["smoothed_data"]:
-        model_name = data["model"]
-        baseline_final_reward = baseline_dict.get(model_name, {}).get("final_reward", 0)
-        baseline_initial_entropy = baseline_dict.get(model_name, {}).get("initial_entropy", 0)
-        final_reward = data["rewards"][-1] if data["rewards"] else 0
-        final_entropy = data["entropies"][-1] if data["entropies"] else 0
-        reward_improvement = final_reward - baseline_final_reward
-        entropy_reduction = baseline_initial_entropy - final_entropy
-        if reward_improvement > max_reward_improvement:
-          max_reward_improvement = reward_improvement
-          summary["best_reward_config"] = {"config": data["label"], "model": model_name, "improvement": float(reward_improvement)}
-        if entropy_reduction > max_entropy_reduction:
-          max_entropy_reduction = entropy_reduction
-          summary["best_entropy_config"] = {"config": data["label"], "model": model_name, "reduction": float(entropy_reduction)}
-
-    update_summary(summary, output_path)
     print(f"Model {model_name} completed for {env_name}")
-
-  update_summary(summary, output_path)
-  print(f"Final summary saved: Best reward config = {summary['best_reward_config']}, Best entropy config = {summary['best_entropy_config']}")
 
   if all_variants_completed(env_model_configs, noise_types, steps, total_timesteps, num_runs, output_path):
     print("All variants completed.")
