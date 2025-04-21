@@ -3,7 +3,6 @@ import os
 from datetime import datetime
 from itertools import chain, combinations
 
-import filelock  # Added for file locking
 import gymnasium as gym
 import matplotlib.pyplot as plt
 import numpy as np
@@ -31,13 +30,13 @@ class TrainingDataCallback(BaseCallback):
     if hasattr(self.model, "rollout_buffer"):
       rewards = self.model.rollout_buffer.rewards
       if rewards.size > 0:
-        self.rewards.append(np.mean(rewards))
+        self.rewards.append(float(np.mean(rewards)))  # Convert to float
 
       for rollout_data in self.model.rollout_buffer.get(batch_size=None):
         observations = rollout_data.observations
         distribution = self.model.policy.get_distribution(observations)
         entropy_mean = distribution.entropy().mean().item()
-        self.entropies.append(entropy_mean)
+        self.entropies.append(float(entropy_mean))  # Convert to float
 
 
 class EntropyInjectionWrapper(gym.Wrapper):
@@ -143,7 +142,7 @@ def load_raw_runs(raw_path, noise_key):
                 "run_index": entry["run_index"],
                 "rewards": entry["rewards"],
                 "entropies": entry["entropies"],
-                "completed": entry.get("completed", len(entry["rewards"]) > 0),  # Assume complete if rewards exist
+                "completed": entry.get("completed", len(entry["rewards"]) > 0),
               }
             )
     except Exception as e:
@@ -167,20 +166,19 @@ def save_raw_run(raw_path, noise_key, run_idx, rewards, entropies, config_list, 
   new_entry = {
     "noise_type": noise_key,
     "run_index": run_idx,
-    "rewards": rewards,
-    "entropies": entropies,
+    "rewards": rewards,  # Already converted to float in callback
+    "entropies": entropies,  # Already converted to float in callback
     "config": config_list,
     "total_timesteps": total_timesteps,
-    "completed": len(rewards) > 0,  # Mark as complete if rewards were recorded
+    "completed": len(rewards) > 0,
     "timestamp": datetime.now().isoformat(),
   }
   raw_data.append(new_entry)
 
   try:
     os.makedirs(os.path.dirname(raw_path), exist_ok=True)
-    with filelock.FileLock(raw_path + ".lock"):
-      with open(raw_path, "w") as file:
-        yaml.dump(raw_data, file)
+    with open(raw_path, "w") as file:
+      yaml.dump(raw_data, file, default_flow_style=False)  # Improve readability
     print(f"Saved raw data to {raw_path} for {noise_key}, run {run_idx+1}")
   except Exception as e:
     print(f"Error saving raw data to {raw_path}: {e}")
@@ -210,9 +208,9 @@ def run_training(model_class, env, config, total_timesteps, num_runs, output_pat
     max_reward_len = max(len(r) for r in run_rewards) if run_rewards else 1
     max_entropy_len = max(len(e) for e in run_entropies) if run_entropies else 1
     padded_rewards = [np.pad(r, (0, max_reward_len - len(r)), mode="edge") for r in run_rewards]
-    padded_entropies = [np.pad(e, (0, max_entropy_len - len(e)), mode="edge") for r in run_entropies]
-    avg_rewards = np.mean(padded_rewards, axis=0).tolist() if padded_rewards else [0]
-    avg_entropies = np.mean(padded_entropies, axis=0).tolist() if padded_entropies else [0]
+    padded_entropies = [np.pad(e, (0, max_entropy_len - len(e)), mode="edge") for e in run_entropies]
+    avg_rewards = [float(x) for x in np.mean(padded_rewards, axis=0)] if padded_rewards else [0.0]
+    avg_entropies = [float(x) for x in np.mean(padded_entropies, axis=0)] if padded_entropies else [0.0]
   else:
     print(f"Need {runs_needed} more runs for {model_name} on {env_name}, {noise_key}")
     for run_idx in range(len(run_rewards), num_runs):
@@ -231,8 +229,8 @@ def run_training(model_class, env, config, total_timesteps, num_runs, output_pat
         print(f"Error during training for {model_name} on {env_name}, {noise_key}, run {run_idx+1}: {e}")
         continue
 
-      rewards = callback.rewards if callback.rewards else [0]
-      entropies = callback.entropies if callback.entropies else [0]
+      rewards = callback.rewards if callback.rewards else [0.0]
+      entropies = callback.entropies if callback.entropies else [0.0]
       run_rewards.append(rewards)
       run_entropies.append(entropies)
       print(f"Run {run_idx+1}/{num_runs} completed for {noise_key}.")
@@ -245,8 +243,8 @@ def run_training(model_class, env, config, total_timesteps, num_runs, output_pat
     max_entropy_len = max(len(e) for e in run_entropies) if run_entropies else 1
     padded_rewards = [np.pad(r, (0, max_reward_len - len(r)), mode="edge") for r in run_rewards]
     padded_entropies = [np.pad(e, (0, max_entropy_len - len(e)), mode="edge") for e in run_entropies]
-    avg_rewards = np.mean(padded_rewards, axis=0).tolist() if padded_rewards else [0]
-    avg_entropies = np.mean(padded_entropies, axis=0).tolist() if padded_entropies else [0]
+    avg_rewards = [float(x) for x in np.mean(padded_rewards, axis=0)] if padded_rewards else [0.0]
+    avg_entropies = [float(x) for x in np.mean(padded_entropies, axis=0)] if padded_entropies else [0.0]
 
   # Generate label
   label = "Baseline" if noise_key == "none" else None
@@ -273,9 +271,8 @@ def run_training(model_class, env, config, total_timesteps, num_runs, output_pat
   # Save smoothed results
   try:
     os.makedirs(os.path.dirname(result_path), exist_ok=True)
-    with filelock.FileLock(result_path + ".lock"):
-      with open(result_path, "w") as file:
-        yaml.dump(existing_results, file)
+    with open(result_path, "w") as file:
+      yaml.dump(existing_results, file, default_flow_style=False)
     print(f"Smoothed results updated in {result_path} for {noise_key}")
   except Exception as e:
     print(f"Error saving results to {result_path}: {e}")
@@ -294,20 +291,27 @@ def smooth_data(training_data, window_size=50, pad_mode="edge"):
     entropies = np.array(data["entropies"])
 
     if len(rewards) <= 1:
-      smoothed_rewards = rewards
+      smoothed_rewards = rewards.tolist()
     else:
       pad_size = window_size // 2
       padded_rewards = np.pad(rewards, (pad_size, pad_size), mode=pad_mode)
-      smoothed_rewards = uniform_filter1d(padded_rewards, size=window_size, mode="nearest")[pad_size : pad_size + len(rewards)]
+      smoothed_rewards = uniform_filter1d(padded_rewards, size=window_size, mode="nearest")[pad_size : pad_size + len(rewards)].tolist()
 
     if len(entropies) <= 1:
-      smoothed_entropies = entropies
+      smoothed_entropies = entropies.tolist()
     else:
       pad_size = window_size // 2
       padded_entropies = np.pad(entropies, (pad_size, pad_size), mode=pad_mode)
-      smoothed_entropies = uniform_filter1d(padded_entropies, size=window_size, mode="nearest")[pad_size : pad_size + len(entropies)]
+      smoothed_entropies = uniform_filter1d(padded_entropies, size=window_size, mode="nearest")[pad_size : pad_size + len(entropies)].tolist()
 
-    smoothed_data.append({"label": data["label"], "rewards": smoothed_rewards.tolist(), "entropies": smoothed_entropies.tolist(), "model": data["model"]})
+    smoothed_data.append(
+      {
+        "label": data["label"],
+        "rewards": [float(x) for x in smoothed_rewards],  # Ensure floats
+        "entropies": [float(x) for x in smoothed_entropies],  # Ensure floats
+        "model": data["model"],
+      }
+    )
 
   return smoothed_data
 
@@ -482,6 +486,7 @@ if __name__ == "__main__":
     model_name = model_class.__name__
     os.makedirs(f"{output_path}/{env_name}", exist_ok=True)
 
+    # Note: Hyperparameter files must be named as [model_name].yml in lowercase
     hyperparam_path = f".hyperparameters/{model_name.lower()}.yml"
     if not os.path.exists(hyperparam_path):
       print(f"No hyperparameter file at {hyperparam_path} for {model_name}. Skipping.")
@@ -502,15 +507,15 @@ if __name__ == "__main__":
     baseline_dict = {}
 
     # Baseline run
-    config_list = []  # Empty for baseline
+    config_list = []
     if not is_variant_complete(env_name, model_name, "none", total_timesteps, num_runs, output_path):
       print(f"Starting baseline for {model_name} on {env_name}")
       baseline_rewards, baseline_entropies = run_training(
         model_class, env_base, model_hyperparameters[env_name], total_timesteps, num_runs, output_path, env_name, "none", model_name, config_list, dry_run
       )
       baseline_dict[model_name] = {
-        "final_reward": baseline_rewards[-1] if baseline_rewards else 0,
-        "initial_entropy": baseline_entropies[0] if baseline_entropies else 0,
+        "final_reward": baseline_rewards[-1] if baseline_rewards else 0.0,
+        "initial_entropy": baseline_entropies[0] if baseline_entropies else 0.0,
       }
       print(f"Baseline completed for {model_name} on {env_name}")
     else:
