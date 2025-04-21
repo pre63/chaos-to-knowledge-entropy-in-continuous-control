@@ -130,46 +130,93 @@ def generate_step_configs(components, noise_type, steps, min_level=-1.0, max_lev
   return configs
 
 
-def run_training(model_class, env, config, total_timesteps, num_runs, dry_run=False):
+def run_training(model_class, env, config, total_timesteps, num_runs, output_path, env_name, noise_key, model_name, dry_run=False):
   run_rewards = []
   run_entropies = []
+  result_path = f"{output_path}/{env_name}/{model_name}_{total_timesteps}_reward_action_{num_runs}_runs.yml"
+
+  # Load existing results
+  existing_results = []
+  if os.path.exists(result_path):
+    try:
+      with open(result_path, "r") as file:
+        existing_results = yaml.safe_load(file) or []
+    except Exception as e:
+      print(f"Error loading {result_path}: {e}. Starting with empty results.")
+
   for run in range(num_runs):
-    print(f"Running {model_class.__name__} on {env.spec.id} - Run {run + 1}/{num_runs}")
+    print(f"Running {model_class.__name__} on {env.spec.id} - Run {run + 1}/{num_runs} for {noise_key}")
     callback = TrainingDataCallback(verbose=1)
     model_config = config.copy()
     model_config["env"] = env
-    model = model_class(**model_config)
-    model.learn(total_timesteps=total_timesteps, callback=callback)
+    try:
+      model = model_class(**model_config)
+      model.learn(total_timesteps=total_timesteps, callback=callback)
+    except Exception as e:
+      print(f"Error during training for {model_name} on {env_name}, {noise_key}, run {run+1}: {e}")
+      continue
+
     rewards = callback.rewards if callback.rewards else [0]
     entropies = callback.entropies if callback.entropies else [0]
     run_rewards.append(rewards)
     run_entropies.append(entropies)
-    print(f"Run {run+1}/{num_runs} completed.")
-  max_reward_len = max(len(r) for r in run_rewards)
-  max_entropy_len = max(len(e) for e in run_entropies)
-  padded_rewards = [np.pad(r, (0, max_reward_len - len(r)), mode="edge") for r in run_rewards]
-  padded_entropies = [np.pad(e, (0, max_entropy_len - len(e)), mode="edge") for e in run_entropies]
-  return np.mean(padded_rewards, axis=0).tolist(), np.mean(padded_entropies, axis=0).tolist()
+    print(f"Run {run+1}/{num_runs} completed for {noise_key}.")
+
+    # Compute averages
+    max_reward_len = max(len(r) for r in run_rewards) if run_rewards else 1
+    max_entropy_len = max(len(e) for e in run_entropies) if run_entropies else 1
+    padded_rewards = [np.pad(r, (0, max_reward_len - len(r)), mode="edge") for r in run_rewards]
+    padded_entropies = [np.pad(e, (0, max_entropy_len - len(e)), mode="edge") for e in run_entropies]
+    avg_rewards = np.mean(padded_rewards, axis=0).tolist() if padded_rewards else [0]
+    avg_entropies = np.mean(padded_entropies, axis=0).tolist() if padded_entropies else [0]
+
+    # Generate label
+    label = "Baseline" if noise_key == "none" else None
+    if label is None:
+      try:
+        config_idx = int(noise_key.split("_")[-1]) if noise_key.startswith("reward_action_") else -1
+        if config_idx >= 0:
+          entropy_level = generate_step_configs(["reward", "action"], "uniform", 6, -0.5, 0.5)[config_idx][0]["entropy_level"]
+          label = f"reward+action_uniform ({entropy_level:.2f})"
+        else:
+          label = f"reward+action_uniform (unknown)"
+      except (IndexError, ValueError) as e:
+        print(f"Error generating label for {noise_key}: {e}")
+        label = f"reward+action_uniform (unknown)"
+
+    training_data = [{"label": label, "rewards": avg_rewards, "entropies": avg_entropies, "model": model_name}]
+
+    # Update results
+    smoothed_data = smooth_data(training_data)
+    new_result = {"noise_type": noise_key, "smoothed_data": smoothed_data}
+    existing_results = [r for r in existing_results if r["noise_type"] != noise_key]
+    existing_results.append(new_result)
+
+    # Save to YAML
+    try:
+      os.makedirs(os.path.dirname(result_path), exist_ok=True)
+      with open(result_path, "w") as file:
+        yaml.dump(existing_results, file)
+      print(f"Results appended to {result_path} for {noise_key}, run {run+1}")
+    except Exception as e:
+      print(f"Error saving results to {result_path}: {e}")
+
+  return avg_rewards, avg_entropies
 
 
 def smooth_data(training_data, window_size=50, pad_mode="edge"):
   smoothed_data = []
-
-  # Ensure window_size is positive and odd for symmetry
   window_size = max(1, window_size)
   if window_size % 2 == 0:
-    window_size += 1  # Make it odd for centered smoothing
+    window_size += 1
 
   for data in training_data:
-    # Convert to numpy arrays for processing
     rewards = np.array(data["rewards"])
     entropies = np.array(data["entropies"])
 
-    # Skip smoothing for very short sequences
     if len(rewards) <= 1:
       smoothed_rewards = rewards
     else:
-      # Pad symmetrically to avoid edge artifacts
       pad_size = window_size // 2
       padded_rewards = np.pad(rewards, (pad_size, pad_size), mode=pad_mode)
       smoothed_rewards = uniform_filter1d(padded_rewards, size=window_size, mode="nearest")[pad_size : pad_size + len(rewards)]
@@ -181,7 +228,6 @@ def smooth_data(training_data, window_size=50, pad_mode="edge"):
       padded_entropies = np.pad(entropies, (pad_size, pad_size), mode=pad_mode)
       smoothed_entropies = uniform_filter1d(padded_entropies, size=window_size, mode="nearest")[pad_size : pad_size + len(entropies)]
 
-    # Append smoothed data as a new dict
     smoothed_data.append({"label": data["label"], "rewards": smoothed_rewards.tolist(), "entropies": smoothed_entropies.tolist(), "model": data["model"]})
 
   return smoothed_data
@@ -192,51 +238,41 @@ def plot_results(smoothed_results, model_name, total_timesteps, num_runs, output
   colors = ["b", "g", "r", "c", "m", "y", "k"]
   markers = ["o", "s", "^", "v", "*", "+", "x"]
 
-  # Create mappings of labels to markers and colors
   label_to_marker = {}
   label_to_color = {}
   marker_idx = 0
   color_idx = 0
 
-  # Assign markers and colors independently to each unique label
   for result in smoothed_results:
     for data in result["smoothed_data"]:
       if data["label"] not in label_to_marker:
-        # Assign marker and color with separate cycling
         label_to_marker[data["label"]] = markers[marker_idx % len(markers)]
         label_to_color[data["label"]] = colors[color_idx % len(colors)]
-        marker_idx += 1  # Increment marker independently
-        color_idx = (color_idx + 2) % len(colors)  # Offset color increment (e.g., skip 2)
+        marker_idx += 1
+        color_idx = (color_idx + 2) % len(colors)
 
-  # Plot each dataset with its assigned marker and color
   for result in smoothed_results:
     for data in result["smoothed_data"]:
       label = data["label"]
       marker = label_to_marker[label]
       color = label_to_color[label]
 
-      # Get rewards and x-axis, with safety check
       rewards = data["rewards"]
-      if not rewards:  # Handle empty rewards
+      if not rewards:
         print(f"Warning: Empty rewards for label '{label}'")
         continue
       x = np.arange(len(rewards))
-
-      # Set markevery safely
       mark_every = max(1, len(x) // 10) if len(x) > 0 else 1
+      ax1.plot(x, rewards, label=label, color=color, marker=marker, linewidth=2, markersize=8, markevery=mark_every)
 
-      # Plot rewards with markers
-      ax1.plot(x, data["rewards"], label=label, color=color, marker=marker, linewidth=2, markersize=8, markevery=mark_every)
-
-      # Handle entropies with padding if needed
       entropies = data["entropies"]
-      if not entropies:  # Handle empty entropies
+      if not entropies:
         print(f"Warning: Empty entropies for label '{label}'")
         continue
       entropies_len = len(entropies)
       padded_entropies = np.pad(entropies, (0, len(x) - entropies_len), mode="edge") if entropies_len < len(x) else entropies[: len(x)]
-      # Plot entropies with markers
       ax2.plot(x, padded_entropies, label=label, color=color, marker=marker, linewidth=2, markersize=8, markevery=mark_every)
+
   ax1.set_title(f"Reward+Action Noise - Rewards (Avg of {num_runs} Runs) - {env_name}")
   ax1.set_ylabel("Mean Reward")
   ax1.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
@@ -251,30 +287,38 @@ def plot_results(smoothed_results, model_name, total_timesteps, num_runs, output
   os.makedirs(os.path.dirname(plot_path), exist_ok=True)
   plt.savefig(plot_path)
   plt.close()
-
   return plot_path
 
 
 def update_summary(summary, output_path):
   os.makedirs(output_path, exist_ok=True)
   summary_path = f"{output_path}/summary.yml"
-  with open(summary_path, "w") as file:
-    yaml.dump(summary, file)
+  try:
+    with open(summary_path, "w") as file:
+      yaml.dump(summary, file)
+  except Exception as e:
+    print(f"Error saving summary to {summary_path}: {e}")
 
 
 def load_status(env_name, output_path=".noise/final"):
   status_file = f"{output_path}/{env_name}/.status"
   if os.path.exists(status_file):
-    with open(status_file, "r") as f:
-      return json.load(f)
+    try:
+      with open(status_file, "r") as f:
+        return json.load(f)
+    except Exception as e:
+      print(f"Error loading status file {status_file}: {e}")
   return {"model": None, "noise_type": None}
 
 
 def save_status(env_name, model_name, noise_type, output_path=".noise/final"):
   status_file = f"{output_path}/{env_name}/.status"
   os.makedirs(os.path.dirname(status_file), exist_ok=True)
-  with open(status_file, "w") as f:
-    json.dump({"model": model_name, "noise_type": noise_type}, f)
+  try:
+    with open(status_file, "w") as f:
+      json.dump({"model": model_name, "noise_type": noise_type}, f)
+  except Exception as e:
+    print(f"Error saving status to {status_file}: {e}")
 
 
 def is_variant_complete(env_name, model_name, noise_type, total_timesteps, num_runs, output_path=".noise/final"):
@@ -371,7 +415,6 @@ if __name__ == "__main__":
   used_noise_configs = VALID_NOISE_CONFIGS if not dry_run else {"none": ["none"]}
   noise_types = ["none", "reward_action"] if not dry_run else ["none"]
 
-  # Initialize summary
   summary = {
     "total_timesteps": total_timesteps,
     "num_runs": num_runs,
@@ -382,12 +425,10 @@ if __name__ == "__main__":
   max_reward_improvement = float("-inf")
   max_entropy_reduction = float("-inf")
 
-  # Process each environment and model
   for env_name, model_class in env_model_configs:
     model_name = model_class.__name__
     os.makedirs(f"{output_path}/{env_name}", exist_ok=True)
 
-    # Load status
     status = load_status(env_name, output_path)
     last_model = status.get("model")
     last_noise_type = status.get("noise_type")
@@ -395,16 +436,21 @@ if __name__ == "__main__":
     if last_model and last_noise_type:
       skip_until = (last_model, last_noise_type)
 
-    # Load hyperparameters
     hyperparam_path = f".hyperparameters/{model_name.lower()}.yml"
-    with open(hyperparam_path, "r") as file:
-      model_hyperparameters = yaml.safe_load(file)
+    if not os.path.exists(hyperparam_path):
+      print(f"No hyperparameter file at {hyperparam_path} for {model_name}. Skipping.")
+      continue
+    try:
+      with open(hyperparam_path, "r") as file:
+        model_hyperparameters = yaml.safe_load(file) or {}
+    except Exception as e:
+      print(f"Error loading {hyperparam_path}: {e}. Skipping.")
+      continue
     if not model_hyperparameters.get(env_name):
       print(f"No hyperparameters for {model_name} on {env_name}. Skipping.")
       continue
 
     env_base = gym.make(env_name, render_mode=None)
-    all_results = []
     baseline_dict = {}
     start_processing = skip_until is None or skip_until[0] == model_name
 
@@ -412,9 +458,9 @@ if __name__ == "__main__":
     if not is_variant_complete(env_name, model_name, "none", total_timesteps, num_runs, output_path):
       if start_processing:
         print(f"Starting baseline for {model_name} on {env_name}")
-        baseline_rewards, baseline_entropies = run_training(model_class, env_base, model_hyperparameters[env_name], total_timesteps, num_runs, dry_run)
-        baseline_data = [{"label": "Baseline", "rewards": baseline_rewards, "entropies": baseline_entropies, "model": model_name}]
-        all_results.append({"noise_type": "none", "training_data": baseline_data})
+        baseline_rewards, baseline_entropies = run_training(
+          model_class, env_base, model_hyperparameters[env_name], total_timesteps, num_runs, output_path, env_name, "none", model_name, dry_run
+        )
         baseline_dict[model_name] = {
           "final_reward": baseline_rewards[-1] if baseline_rewards else 0,
           "initial_entropy": baseline_entropies[0] if baseline_entropies else 0,
@@ -424,12 +470,10 @@ if __name__ == "__main__":
     else:
       print(f"Baseline already completed for {model_name} on {env_name}")
 
-    # Noise runs
     if not dry_run:
       combo = tuple(ALL_COMPONENTS)
       noise_type = "uniform"
       configs = generate_step_configs(combo, noise_type, steps, min_level, max_level)
-      training_data = []
       for idx, config_list in enumerate(configs):
         noise_key = f"reward_action_{idx}"
         if is_variant_complete(env_name, model_name, noise_key, total_timesteps, num_runs, output_path):
@@ -441,24 +485,27 @@ if __name__ == "__main__":
           continue
         print(f"Starting {noise_key} for {model_name} on {env_name}")
         env = EntropyInjectionWrapper(env_base, noise_configs=config_list)
-        avg_rewards, avg_entropies = run_training(model_class, env, model_hyperparameters[env_name], total_timesteps, num_runs, dry_run)
-        label = f"reward+action_{noise_type} ({config_list[0]['entropy_level']:.2f})"
-        training_data.append({"label": label, "rewards": avg_rewards, "entropies": avg_entropies, "model": model_name})
+        avg_rewards, avg_entropies = run_training(
+          model_class, env, model_hyperparameters[env_name], total_timesteps, num_runs, output_path, env_name, noise_key, model_name, dry_run
+        )
         print(f"Completed {noise_key} for {model_name} on {env_name}")
         save_status(env_name, model_name, noise_key, output_path)
-      if training_data:
-        all_results.append({"noise_type": "reward_action", "training_data": training_data})
 
-    # Process results
-    smoothed_results = [{"noise_type": r["noise_type"], "smoothed_data": smooth_data(r["training_data"])} for r in all_results]
+    result_path = f"{output_path}/{env_name}/{model_name}_{total_timesteps}_reward_action_{num_runs}_runs.yml"
+    smoothed_results = []
+    if os.path.exists(result_path):
+      try:
+        with open(result_path, "r") as file:
+          smoothed_results = yaml.safe_load(file) or []
+      except Exception as e:
+        print(f"Error loading results from {result_path}: {e}")
     if smoothed_results:
-      plot_path = plot_results(smoothed_results, model_name, total_timesteps, num_runs, output_path, env_name)
-      result_path = f"{output_path}/{env_name}/{model_name}_{total_timesteps}_reward_action_{num_runs}_runs.yml"
-      with open(result_path, "w") as file:
-        yaml.dump(smoothed_results, file)
-      print(f"Results saved for {model_name} on {env_name}")
+      try:
+        plot_path = plot_results(smoothed_results, model_name, total_timesteps, num_runs, output_path, env_name)
+        print(f"Plot generated at {plot_path}")
+      except Exception as e:
+        print(f"Error generating plot for {model_name} on {env_name}: {e}")
 
-    # Update summary
     if model_name not in summary["models_tested"]:
       summary["models_tested"].append(model_name)
     for result in smoothed_results:
@@ -482,11 +529,9 @@ if __name__ == "__main__":
     update_summary(summary, output_path)
     print(f"Model {model_name} completed for {env_name}")
 
-  # Finalize
   update_summary(summary, output_path)
   print(f"Final summary saved: Best reward config = {summary['best_reward_config']}, Best entropy config = {summary['best_entropy_config']}")
 
-  # Check completion
   if all_variants_completed(env_model_configs, noise_types, steps, total_timesteps, num_runs, output_path):
     print("All variants completed.")
     exit(0)
