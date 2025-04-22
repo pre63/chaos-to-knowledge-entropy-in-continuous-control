@@ -12,7 +12,7 @@ HalfCheetah-v5:
   activation_fn: tanh
   entropy_coef: -0.26
   sampling_coef: -0.42999999999999994
-  buffer_capacity: 38000
+  buffer_capacity: 10000
   epsilon: 0.35
   orthogonal_init: 1
   n_timesteps: 100000
@@ -35,7 +35,7 @@ Hopper-v5:
   activation_fn: relu
   entropy_coef: -0.45999999999999996
   sampling_coef: -0.8200000000000001
-  buffer_capacity: 53000
+  buffer_capacity: 10000
   epsilon: 0.2
   orthogonal_init: 1
   n_timesteps: 100000
@@ -57,7 +57,7 @@ Humanoid-v5:
   activation_fn: tanh
   entropy_coef: 0.14000000000000012
   sampling_coef: -0.9299999999999999
-  buffer_capacity: 84000
+  buffer_capacity: 10000
   epsilon: 0.7000000000000001
   orthogonal_init: 1
   n_timesteps: 400000
@@ -79,7 +79,7 @@ HumanoidStandup-v5:
   activation_fn: tanh
   entropy_coef: 0.7
   sampling_coef: -0.59
-  buffer_capacity: 81000
+  buffer_capacity: 10000
   epsilon: 0.55
   orthogonal_init: 0
   n_timesteps: 100000
@@ -101,7 +101,7 @@ InvertedPendulum-v5:
   activation_fn: tanh
   entropy_coef: 0.28
   sampling_coef: -0.19999999999999996
-  buffer_capacity: 28000
+  buffer_capacity: 10000
   epsilon: 0.85
   orthogonal_init: 1
   n_timesteps: 100000
@@ -123,7 +123,7 @@ Pusher-v5:
   activation_fn: tanh
   entropy_coef: -0.030000000000000027
   sampling_coef: 0.6100000000000001
-  buffer_capacity: 55000
+  buffer_capacity: 10000
   epsilon: 0.30000000000000004
   orthogonal_init: 1
   n_timesteps: 100000
@@ -145,7 +145,7 @@ Reacher-v5:
   activation_fn: tanh
   entropy_coef: -0.38
   sampling_coef: 0.3400000000000001
-  buffer_capacity: 93000
+  buffer_capacity: 10000
   epsilon: 0.35
   orthogonal_init: 0
   n_timesteps: 100000
@@ -167,7 +167,7 @@ Swimmer-v5:
   activation_fn: tanh
   entropy_coef: 0.06000000000000005
   sampling_coef: -0.04999999999999993
-  buffer_capacity: 33000
+  buffer_capacity: 10000
   epsilon: 0.75
   orthogonal_init: 1
   n_timesteps: 100000
