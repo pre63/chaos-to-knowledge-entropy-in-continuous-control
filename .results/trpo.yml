@@ -95,41 +95,42 @@ HalfCheetah-v5:
     IntDistribution(high=1000000, log=False, low=100000, step=100000), ''n_envs'':
     CategoricalDistribution(choices=(2, 4, 6, 8, 10))}, _trial_id=157'
 Hopper-v5:
-  trial_number: 19
-  value: 1011.4105754
+  trial_number: 65
+  value: 1071.8287912
   params:
-    batch_size: 64
-    n_steps: 64
-    gamma: 0.995
-    learning_rate: 0.010136368429310897
-    line_search_shrinking_factor: 0.8
+    batch_size: 16
+    n_steps: 8
+    gamma: 0.9999
+    learning_rate: 0.0016985720143707533
+    line_search_shrinking_factor: 0.9
     n_critic_updates: 5
-    cg_max_steps: 10
-    cg_damping: 0.1
-    target_kl: 0.001
-    gae_lambda: 0.8
-    net_arch: small
-    log_std_init: -2.5826934804074293
-    sde_sample_freq: 8
-    ortho_init: 0
+    cg_max_steps: 5
+    cg_damping: 0.05
+    target_kl: 0.01
+    gae_lambda: 0.92
+    net_arch: medium
+    log_std_init: -0.9257540950521486
+    sde_sample_freq: 256
+    ortho_init: 1
     activation_fn: tanh
     lr_schedule: linear
-    n_timesteps: 500000
-    n_envs: 8
-  comment: 'Best trial details: _number=19, state=1, _values=[1011.4105754], _datetime_start=2025-04-22
-    14:08:12.294791, datetime_complete=2025-04-22 15:36:42.289962, _params={''batch_size'':
-    64, ''n_steps'': 64, ''gamma'': 0.995, ''learning_rate'': 0.010136368429310897,
-    ''line_search_shrinking_factor'': 0.8, ''n_critic_updates'': 5, ''cg_max_steps'':
-    10, ''cg_damping'': 0.1, ''target_kl'': 0.001, ''gae_lambda'': 0.8, ''net_arch'':
-    ''small'', ''log_std_init'': -2.5826934804074293, ''sde_sample_freq'': 8, ''ortho_init'':
-    False, ''activation_fn'': ''tanh'', ''lr_schedule'': ''linear'', ''n_timesteps'':
-    500000, ''n_envs'': 8}, _user_attrs={}, _system_attrs={''completed_rung_0'': 1008.3081796,
-    ''completed_rung_1'': 1008.1265738, ''completed_rung_2'': 1009.8622476}, intermediate_values={1:
-    1008.3081796, 2: 1006.5762234, 3: 1007.0716248000001, 4: 1008.1265738, 5: 1007.3187765999999,
-    6: 1007.3934578000001, 7: 1008.1286963999999, 8: 1008.0681612000001, 9: 1008.1458188,
-    10: 1009.1747152000002, 11: 1009.4181302000001, 12: 1008.7312392, 13: 1009.5319708000001,
-    14: 1009.5023496, 15: 1009.795375, 16: 1009.8622476, 17: 1010.3078662, 18: 1010.6205308000001,
-    19: 1010.8662883999999, 20: 1011.4105754}, _distributions={''batch_size'': CategoricalDistribution(choices=(8,
+    n_timesteps: 900000
+    n_envs: 10
+  comment: 'Best trial details: _number=65, state=1, _values=[1071.8287912], _datetime_start=2025-04-22
+    15:33:28.909176, datetime_complete=2025-04-23 01:31:16.697507, _params={''batch_size'':
+    16, ''n_steps'': 8, ''gamma'': 0.9999, ''learning_rate'': 0.0016985720143707533,
+    ''line_search_shrinking_factor'': 0.9, ''n_critic_updates'': 5, ''cg_max_steps'':
+    5, ''cg_damping'': 0.05, ''target_kl'': 0.01, ''gae_lambda'': 0.92, ''net_arch'':
+    ''medium'', ''log_std_init'': -0.9257540950521486, ''sde_sample_freq'': 256, ''ortho_init'':
+    True, ''activation_fn'': ''tanh'', ''lr_schedule'': ''linear'', ''n_timesteps'':
+    900000, ''n_envs'': 10}, _user_attrs={}, _system_attrs={''completed_rung_0'':
+    1050.5536468, ''completed_rung_1'': 1045.493001, ''completed_rung_2'': 1074.2451133999998},
+    intermediate_values={1: 1050.5536468, 2: 912.540808, 3: 1046.1571331999999, 4:
+    1045.493001, 5: 1047.3284995999998, 6: 1051.4109296000001, 7: 1057.0354335999998,
+    8: 1112.1318418, 9: 1056.9808782000002, 10: 1065.9386242, 11: 1062.4027106, 12:
+    1060.8349086000003, 13: 1054.7296935999998, 14: 1063.4769342000002, 15: 1071.8453648,
+    16: 1074.2451133999998, 17: 1062.795182, 18: 1061.676349, 19: 1086.2357382, 20:
+    1071.8287912}, _distributions={''batch_size'': CategoricalDistribution(choices=(8,
     16, 32, 64, 128, 256, 512)), ''n_steps'': CategoricalDistribution(choices=(8,
     16, 32, 64, 128, 256, 512, 1024, 2048)), ''gamma'': CategoricalDistribution(choices=(0.9,
     0.95, 0.98, 0.99, 0.995, 0.999, 0.9999)), ''learning_rate'': FloatDistribution(high=1.0,
@@ -146,7 +147,65 @@ Hopper-v5:
     CategoricalDistribution(choices=(''tanh'', ''relu'')), ''lr_schedule'': CategoricalDistribution(choices=(''linear'',
     ''constant'')), ''n_timesteps'': IntDistribution(high=1000000, log=False, low=100000,
     step=100000), ''n_envs'': CategoricalDistribution(choices=(2, 4, 6, 8, 10))},
-    _trial_id=19'
+    _trial_id=65'
+Humanoid-v5:
+  trial_number: 11
+  value: 490.30956860000003
+  params:
+    batch_size: 128
+    n_steps: 512
+    gamma: 0.999
+    learning_rate: 5.204166747167708e-05
+    line_search_shrinking_factor: 0.7
+    n_critic_updates: 5
+    cg_max_steps: 10
+    cg_damping: 0.05
+    target_kl: 0.03
+    gae_lambda: 0.99
+    net_arch: medium
+    log_std_init: -2.388910076410446
+    sde_sample_freq: 256
+    ortho_init: 1
+    activation_fn: relu
+    lr_schedule: linear
+    n_timesteps: 700000
+    n_envs: 4
+  comment: 'Best trial details: _number=11, state=1, _values=[490.30956860000003],
+    _datetime_start=2025-04-23 02:10:39.229101, datetime_complete=2025-04-23 04:09:43.272769,
+    _params={''batch_size'': 128, ''n_steps'': 512, ''gamma'': 0.999, ''learning_rate'':
+    5.204166747167708e-05, ''line_search_shrinking_factor'': 0.7, ''n_critic_updates'':
+    5, ''cg_max_steps'': 10, ''cg_damping'': 0.05, ''target_kl'': 0.03, ''gae_lambda'':
+    0.99, ''net_arch'': ''medium'', ''log_std_init'': -2.388910076410446, ''sde_sample_freq'':
+    256, ''ortho_init'': True, ''activation_fn'': ''relu'', ''lr_schedule'': ''linear'',
+    ''n_timesteps'': 700000, ''n_envs'': 4}, _user_attrs={}, _system_attrs={''completed_rung_0'':
+    336.7762344000001, ''completed_rung_1'': 339.7541272, ''completed_rung_2'': 446.51697759999996},
+    intermediate_values={1: 336.7762344000001, 2: 381.2667904, 3: 409.88771180000003,
+    4: 339.7541272, 5: 304.7309652, 6: 427.0518288, 7: 404.2267852, 8: 416.31284859999994,
+    9: 339.732326, 10: 402.7643948, 11: 425.6751816, 12: 418.9975568, 13: 393.9472112,
+    14: 442.6724446, 15: 413.6675716, 16: 446.51697759999996, 17: 403.78706900000003,
+    18: 411.5582708, 19: 417.53090820000006, 20: 423.9417554, 21: 471.4834218, 22:
+    541.1167638, 23: 457.80552520000003, 24: 461.9303698, 25: 498.919192, 26: 469.5285576,
+    27: 468.12030000000004, 28: 474.6514194, 29: 438.3138084, 30: 482.60054479999997,
+    31: 459.904475, 32: 500.37851420000004, 33: 445.1225856, 34: 455.80478780000004,
+    35: 405.637737, 36: 446.1011364, 37: 431.60146640000005, 38: 463.8528926, 39:
+    458.22212979999995, 40: 490.30956860000003}, _distributions={''batch_size'': CategoricalDistribution(choices=(8,
+    16, 32, 64, 128, 256, 512)), ''n_steps'': CategoricalDistribution(choices=(8,
+    16, 32, 64, 128, 256, 512, 1024, 2048)), ''gamma'': CategoricalDistribution(choices=(0.9,
+    0.95, 0.98, 0.99, 0.995, 0.999, 0.9999)), ''learning_rate'': FloatDistribution(high=1.0,
+    log=True, low=1e-05, step=None), ''line_search_shrinking_factor'': CategoricalDistribution(choices=(0.6,
+    0.7, 0.8, 0.9)), ''n_critic_updates'': CategoricalDistribution(choices=(5, 10,
+    20, 25, 30)), ''cg_max_steps'': CategoricalDistribution(choices=(5, 10, 20, 25,
+    30)), ''cg_damping'': CategoricalDistribution(choices=(0.5, 0.2, 0.1, 0.05, 0.01)),
+    ''target_kl'': CategoricalDistribution(choices=(0.1, 0.05, 0.03, 0.02, 0.01, 0.005,
+    0.001)), ''gae_lambda'': CategoricalDistribution(choices=(0.8, 0.9, 0.92, 0.95,
+    0.98, 0.99, 1.0)), ''net_arch'': CategoricalDistribution(choices=(''small'', ''medium'')),
+    ''log_std_init'': FloatDistribution(high=1.0, log=False, low=-4.0, step=None),
+    ''sde_sample_freq'': CategoricalDistribution(choices=(-1, 8, 16, 32, 64, 128,
+    256)), ''ortho_init'': CategoricalDistribution(choices=(False, True)), ''activation_fn'':
+    CategoricalDistribution(choices=(''tanh'', ''relu'')), ''lr_schedule'': CategoricalDistribution(choices=(''linear'',
+    ''constant'')), ''n_timesteps'': IntDistribution(high=1000000, log=False, low=100000,
+    step=100000), ''n_envs'': CategoricalDistribution(choices=(2, 4, 6, 8, 10))},
+    _trial_id=11'
 InvertedDoublePendulum-v5:
   trial_number: 29
   value: 9359.012380600001
