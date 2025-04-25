@@ -255,37 +255,41 @@ InvertedDoublePendulum-v5:
     IntDistribution(high=1000000, log=False, low=100000, step=100000), ''n_envs'':
     CategoricalDistribution(choices=(2, 4, 6, 8, 10))}, _trial_id=29'
 Swimmer-v5:
-  trial_number: 9
-  value: 77.8803888
+  trial_number: 135
+  value: 355.1765516
   params:
-    batch_size: 128
-    n_steps: 256
+    batch_size: 64
+    n_steps: 128
     gamma: 0.999
-    learning_rate: 0.010957520371686296
+    learning_rate: 5.2019645918946135e-05
     line_search_shrinking_factor: 0.7
-    n_critic_updates: 20
-    cg_max_steps: 25
-    cg_damping: 0.1
+    n_critic_updates: 25
+    cg_max_steps: 5
+    cg_damping: 0.2
     target_kl: 0.1
-    gae_lambda: 0.8
+    gae_lambda: 0.98
     net_arch: small
-    log_std_init: 0.5737327876000187
+    log_std_init: 0.8744241148020431
     sde_sample_freq: 128
     ortho_init: 1
     activation_fn: relu
     lr_schedule: constant
-    n_timesteps: 100000
+    n_timesteps: 700000
     n_envs: 10
-  comment: 'Best trial details: _number=9, state=2, _values=[77.8803888], _datetime_start=2025-04-23
-    12:35:59.837346, datetime_complete=2025-04-23 15:38:21.009144, _params={''batch_size'':
-    128, ''n_steps'': 256, ''gamma'': 0.999, ''learning_rate'': 0.010957520371686296,
-    ''line_search_shrinking_factor'': 0.7, ''n_critic_updates'': 20, ''cg_max_steps'':
-    25, ''cg_damping'': 0.1, ''target_kl'': 0.1, ''gae_lambda'': 0.8, ''net_arch'':
-    ''small'', ''log_std_init'': 0.5737327876000187, ''sde_sample_freq'': 128, ''ortho_init'':
+  comment: 'Best trial details: _number=135, state=1, _values=[355.1765516], _datetime_start=2025-04-23
+    23:05:15.509258, datetime_complete=2025-04-24 01:13:13.720553, _params={''batch_size'':
+    64, ''n_steps'': 128, ''gamma'': 0.999, ''learning_rate'': 5.2019645918946135e-05,
+    ''line_search_shrinking_factor'': 0.7, ''n_critic_updates'': 25, ''cg_max_steps'':
+    5, ''cg_damping'': 0.2, ''target_kl'': 0.1, ''gae_lambda'': 0.98, ''net_arch'':
+    ''small'', ''log_std_init'': 0.8744241148020431, ''sde_sample_freq'': 128, ''ortho_init'':
     True, ''activation_fn'': ''relu'', ''lr_schedule'': ''constant'', ''n_timesteps'':
-    100000, ''n_envs'': 10}, _user_attrs={}, _system_attrs={''completed_rung_0'':
-    79.6175116, ''completed_rung_1'': 77.8803888}, intermediate_values={1: 79.6175116,
-    2: 75.89844020000001, 3: 69.7675234, 4: 77.8803888}, _distributions={''batch_size'':
+    700000, ''n_envs'': 10}, _user_attrs={}, _system_attrs={''completed_rung_0'':
+    50.2103478, ''completed_rung_1'': 274.6406372, ''completed_rung_2'': 349.13547619999997},
+    intermediate_values={1: 50.2103478, 2: 129.3076842, 3: 242.20335720000003, 4:
+    274.6406372, 5: 278.24885839999996, 6: 275.8931972, 7: 276.38716, 8: 276.5219292,
+    9: 273.59818700000005, 10: 194.77245979999998, 11: 266.224776, 12: 328.88219960000004,
+    13: 351.4246484, 14: 346.3807878, 15: 326.2001432, 16: 349.13547619999997, 17:
+    348.85929400000003, 18: 355.0361406, 19: 352.8577238, 20: 355.1765516}, _distributions={''batch_size'':
     CategoricalDistribution(choices=(8, 16, 32, 64, 128, 256, 512)), ''n_steps'':
     CategoricalDistribution(choices=(8, 16, 32, 64, 128, 256, 512, 1024, 2048)), ''gamma'':
     CategoricalDistribution(choices=(0.9, 0.95, 0.98, 0.99, 0.995, 0.999, 0.9999)),
@@ -302,4 +306,4 @@ Swimmer-v5:
     ''activation_fn'': CategoricalDistribution(choices=(''tanh'', ''relu'')), ''lr_schedule'':
     CategoricalDistribution(choices=(''linear'', ''constant'')), ''n_timesteps'':
     IntDistribution(high=1000000, log=False, low=100000, step=100000), ''n_envs'':
-    CategoricalDistribution(choices=(2, 4, 6, 8, 10))}, _trial_id=9'
+    CategoricalDistribution(choices=(2, 4, 6, 8, 10))}, _trial_id=135'
