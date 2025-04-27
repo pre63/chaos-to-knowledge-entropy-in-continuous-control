@@ -127,6 +127,7 @@ tune:
 	$(MAKE) train model=trpo env=Reacher-v5 n_jobs=15 optimize=True
 	$(MAKE) train model=trpo env=Swimmer-v5 n_jobs=15 optimize=True
 
+
 plot:
 	@rm -rf .plots
 	@python Reports/Plot.py --data_dir .noise/final --smooth_window 30 --markers_per_line 4
