@@ -138,7 +138,7 @@ def format_label(label):
 # Plot returns and entropy vs steps for one algorithm across all environments
 def plot_algo_across_envs(data, algo, environments, output_dir, smooth_window=5, markers_per_line=10):
   """
-    Plot all runs for one algorithm across 6 environments in a 2x6 tiled grid with returns (top row)
+    Plot all runs for one algorithm across 6 environments in a 2x7 tiled grid with returns (top row)
     and entropy (bottom row), with linear y-axis scale (per-environment for both rewards and entropy),
     x-axis with decimal ticks and scientific notation note for 1M steps, frequent lower y-ticks, tiny
     fonts, increased offset markers, y-label only on first cell of each row, and single legend at the bottom.
@@ -146,7 +146,7 @@ def plot_algo_across_envs(data, algo, environments, output_dir, smooth_window=5,
     Args:
         data: Loaded data.
         algo (str): Algorithm name.
-        environments: List of environment names (expected up to 6).
+        environments: List of environment names (expected up to 7).
         output_dir (str): Where to save the plot.
         smooth_window (int): Smoothing window size (default: 5).
         markers_per_line (int): Number of markers to show per line (default: 10).
@@ -155,15 +155,15 @@ def plot_algo_across_envs(data, algo, environments, output_dir, smooth_window=5,
   if not valid_envs:
     print(f"No data for {algo} in any environments.")
     return
-  # Fixed 2x6 grid for 12 square tiles
-  nrows, ncols = 2, 6
+  # Fixed 2x7 grid for 12 square tiles
+  nrows, ncols = 2, 7
   fig, axes = plt.subplots(nrows, ncols, figsize=(18, 6), squeeze=False)
   # Define markers
   markers = ["o", "s", "^", "v", "*", "+", "x"]  # Markers for distinction
   # Get y-axis bounds for returns and entropy per environment
   handles, labels = [], []
   marker_interval = max(1, 100 // markers_per_line)  # Interval between markers
-  for i in range(6):
+  for i in range(7):
     # Top row: Returns
     ax_returns = axes[0, i]
     # Bottom row: Entropy
@@ -273,7 +273,7 @@ def plot_algo_across_envs(data, algo, environments, output_dir, smooth_window=5,
 # Plot all algorithms for one environment, each in its own subplot
 def plot_env_all_algos(data, env, algorithms, output_dir, smooth_window=5, markers_per_line=10):
   """
-    Plot all runs for each algorithm in one environment in a 2x6 tiled grid with returns (top row)
+    Plot all runs for each algorithm in one environment in a 2x7 tiled grid with returns (top row)
     and entropy (bottom row), with linear y-axis scale (shared for rewards, per-algorithm for entropy),
     x-axis with decimal ticks and scientific notation note for 1M steps, frequent lower y-ticks, tiny
     fonts, increased offset markers, y-label only on first cell of each row, and single legend at the bottom.
@@ -281,7 +281,7 @@ def plot_env_all_algos(data, env, algorithms, output_dir, smooth_window=5, marke
     Args:
         data: Loaded data.
         env (str): Environment name.
-        algorithms: List of algorithm names (expected up to 6).
+        algorithms: List of algorithm names (expected up to 7).
         output_dir (str): Where to save the plot.
         smooth_window (int): Smoothing window size (default: 5).
         markers_per_line (int): Number of markers to show per line (default: 10).
@@ -293,8 +293,8 @@ def plot_env_all_algos(data, env, algorithms, output_dir, smooth_window=5, marke
   if not valid_algos:
     print(f"No algorithms for {env}.")
     return
-  # Fixed 2x6 grid for 12 square tiles
-  nrows, ncols = 2, 6
+  # Fixed 2x7 grid for 12 square tiles
+  nrows, ncols = 2, 7
   fig, axes = plt.subplots(nrows, ncols, figsize=(18, 6), squeeze=False)
   # Define markers
   markers = ["o", "s", "^", "v", "*", "+", "x"]  # Markers for distinction
@@ -303,7 +303,7 @@ def plot_env_all_algos(data, env, algorithms, output_dir, smooth_window=5, marke
   rewards_y_min, rewards_y_max = get_y_bounds(data, "rewards", keys)
   marker_interval = max(1, 100 // markers_per_line)  # Interval between markers
   handles, labels = [], []
-  for i in range(6):
+  for i in range(7):
     ax_returns = axes[0, i]
     ax_entropy = axes[1, i]
     if i < len(valid_algos):
@@ -428,15 +428,15 @@ if __name__ == "__main__":
   sns.set(style="whitegrid", palette="gray")
   data = load_data(args.data_dir)
 
-  # Get environments and algorithms (limit to 6 each)
-  environments = sorted(data.keys())[:6]
-  algorithms = sorted(set(algo for env in data for algo in data[env]))[:6]
+  # Get environments and algorithms (limit to 7 each)
+  environments = sorted(data.keys())[:7]
+  algorithms = sorted(set(algo for env in data for algo in data[env]))[:7]
 
-  # Plot for each algorithm: 6 environments, all runs
+  # Plot for each algorithm: 7 environments, all runs
   for algo in algorithms:
     plot_algo_across_envs(data, algo, environments, output_dir, args.smooth_window, args.markers_per_line)
 
-  # Plot for each environment: 6 algorithms, each in its own subplot, all runs
+  # Plot for each environment:  algorithms, each in its own subplot, all runs
   for env in environments:
     plot_env_all_algos(data, env, algorithms, output_dir, args.smooth_window, args.markers_per_line)
 
