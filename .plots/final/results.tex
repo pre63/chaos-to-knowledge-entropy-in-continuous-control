@@ -1,0 +1,23 @@
+\begin{table}[h]
+\centering
+\caption{Maximum Rewards, Variation, and Best Noise Level for Each Algorithm and Environment}
+\label{tab:numerical_results}
+\begin{tabular}{|l|c|c|c|c|c|c|c|}
+\hline
+Algorithm & HalfCheetah & Hopper & Humanoid & HumanoidStandup & Pusher & Reacher & Swimmer \\ \hline
+PPO & - & - & - & - & - & - & - \\ \hline
+GenPPO & - & - & - & - & - & - & - \\ \hline
+TRPO & - & - & - & - & - & - & - \\ \hline
+GenTRPO & - & - & - & - & - & - & - \\ \hline
+TRPOR & - & - & - & - & - & - & - \\ \hline
+TRPOER & - & - & - & - & - & - & - \\ \hline
+\end{tabular}
+\end{table}
+\section{Statistical Significance Against Baseline}
+This section evaluates the statistical significance of each algorithm’s performance compared to its baseline (PPO for GenPPO, TRPO for GenTRPO, TRPOR, TRPOER) using a two-sample t-test. The p-value indicates the likelihood that a noise-trained run outperforms the baseline.
+\subsection{GenPPO vs. PPO}
+\subsection{GenTRPO vs. TRPO}
+\subsection{TRPOR vs. TRPO}
+\subsection{TRPOER vs. TRPO}
+\section{Comparison Statistics}
+This section analyzes the probability that GenPPO outperforms PPO and GenTRPO outperforms TRPO based on maximum rewards across all runs, using a binomial test. It also identifies the model and noise configuration most likely to achieve the highest reward per environment.

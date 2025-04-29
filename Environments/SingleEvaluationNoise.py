@@ -365,48 +365,40 @@ def is_variant_complete(env_name, model_name, noise_type, total_timesteps, num_r
   return False
 
 
+def generate_noise_config(env_name, model_class, entropy_level=None):
+  if entropy_level is None:
+    return [], "none"
+  config_list = [
+    {"component": "reward", "type": "uniform", "entropy_level": entropy_level},
+    {"component": "action", "type": "uniform", "entropy_level": entropy_level},
+  ]
+  noise_key = f"reward_action_{entropy_level:+.1f}".replace("+", "").replace("-", "-")
+  return config_list, noise_key
+
+
 if __name__ == "__main__":
   env_model_configs = [
-    (
-      "HalfCheetah-v5",
-      GenPPO,
-      [{"component": "reward", "type": "uniform", "entropy_level": 0.1}, {"component": "action", "type": "uniform", "entropy_level": 0.1}],
-      "reward_action_0.1",
-    ),
-    ("HalfCheetah-v5", PPO, [], "none"),
-    (
-      "Humanoid-v5",
-      GenTRPO,
-      [{"component": "reward", "type": "uniform", "entropy_level": -0.3}, {"component": "action", "type": "uniform", "entropy_level": -0.3}],
-      "reward_action_-0.3",
-    ),
-    ("Humanoid-v5", TRPO, [], "none"),
-    (
-      "HumanoidStandup-v5",
-      TRPOER,
-      [{"component": "reward", "type": "uniform", "entropy_level": -0.5}, {"component": "action", "type": "uniform", "entropy_level": -0.5}],
-      "reward_action_-0.5",
-    ),
-    (
-      "HumanoidStandup-v5",
-      TRPOR,
-      [{"component": "reward", "type": "uniform", "entropy_level": 0.1}, {"component": "action", "type": "uniform", "entropy_level": 0.1}],
-      "reward_action_0.1",
-    ),
-    ("HumanoidStandup-v5", TRPO, [], "none"),
-    (
-      "Swimmer-v5",
-      GenTRPO,
-      [{"component": "reward", "type": "uniform", "entropy_level": 0.3}, {"component": "action", "type": "uniform", "entropy_level": 0.3}],
-      "reward_action_0.3",
-    ),
-    ("Swimmer-v5", TRPO, [], "none"),
+    generate_noise_config("HalfCheetah-v5", PPO, None),
+    generate_noise_config("Hopper-v5", PPO, -0.1),
+    generate_noise_config("Humanoid-v5", TRPO, None),
+    generate_noise_config("HumanoidStandup-v5", TRPO, None),
+    generate_noise_config("Swimmer-v5", TRPO, None),
+    generate_noise_config("Swimmer-v5", TRPO, -0.3),
+    generate_noise_config("Swimmer-v5", GenTRPO, 0.3),
+    generate_noise_config("HumanoidStandup-v5", TRPOER, -0.5),
+    generate_noise_config("HumanoidStandup-v5", TRPOR, 0.1),
+    generate_noise_config("Swimmer-v5", GenTRPO, 0.3),
+    generate_noise_config("Humanoid-v5", GenTRPO, -0.3),
+    generate_noise_config("HalfCheetah-v5", GenPPO, 0.1),
   ]
+
+  # Add environment and model to each config
+  env_model_configs = [(env_name, model_class, config_list, noise_key) for (env_name, model_class), (config_list, noise_key) in env_model_configs]
 
   dry_run = False
   total_timesteps = 1000000
   num_runs = 1
-  output_path = ".noise/final"
+  output_path = ".noise/extras"
 
   for env_name, model_class, config_list, noise_key in env_model_configs:
     model_name = model_class.__name__
