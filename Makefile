@@ -141,3 +141,6 @@ run:
 	@$(MAKE) noise MODEL=gentrpo
 	@$(MAKE) noise MODEL=ppo
 	@$(MAKE) noise MODEL=trpo
+
+single:
+	@. .venv/bin/activate; PYTHONPATH=. python -u Environments/SingleEvaluationNoise.py
