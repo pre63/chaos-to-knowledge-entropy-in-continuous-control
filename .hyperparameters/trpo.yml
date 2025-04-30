@@ -47,6 +47,21 @@ Humanoid-v5:
   n_critic_updates: 20
   learning_rate: !!float 1e-3
 
+HumanoidStandup-v5:
+  normalize: true
+  n_envs: 2
+  n_timesteps: !!float 2e6
+  policy: 'MlpPolicy'
+  batch_size: 128
+  n_steps: 1024
+  gamma: 0.99
+  gae_lambda: 0.95
+  sub_sampling_factor: 1
+  cg_max_steps: 25
+  cg_damping: 0.1
+  n_critic_updates: 20
+  learning_rate: !!float 1e-3
+
 # Tuned
 Swimmer-v5:
   normalize: true
