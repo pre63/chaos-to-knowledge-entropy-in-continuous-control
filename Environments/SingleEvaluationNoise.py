@@ -326,7 +326,7 @@ def plot_results(smoothed_results, model_name, total_timesteps, num_runs, output
       mark_every = max(1, len(x) // 10) if len(x) > 0 else 1
       ax1.plot(x, rewards, label=label, color=color, marker=marker, linewidth=2, markersize=8, markevery=mark_every)
 
-      entropies = data["rewards"]
+      entropies = data["entropies"]  # Corrected to use entropies
       if not entropies:
         print(f"Warning: Empty entropies for label '{label}'")
         continue
@@ -351,7 +351,7 @@ def plot_results(smoothed_results, model_name, total_timesteps, num_runs, output
   return plot_path
 
 
-def is_variant_complete(env_name, model_name, noise_type, total_timesteps, num_runs, output_path=".noise/final"):
+def is_variant_complete(env_name, model_name, noise_type, total_timesteps, num_runs, output_path=".noise/extras"):
   raw_path = f"{output_path}/{env_name}/{model_name}_raw.yml"
   if not os.path.exists(raw_path):
     return False
@@ -367,13 +367,13 @@ def is_variant_complete(env_name, model_name, noise_type, total_timesteps, num_r
 
 def generate_noise_config(env_name, model_class, entropy_level=None):
   if entropy_level is None:
-    return [], "none"
+    return env_name, model_class, [], "none"
   config_list = [
     {"component": "reward", "type": "uniform", "entropy_level": entropy_level},
     {"component": "action", "type": "uniform", "entropy_level": entropy_level},
   ]
   noise_key = f"reward_action_{entropy_level:+.1f}".replace("+", "").replace("-", "-")
-  return config_list, noise_key
+  return env_name, model_class, config_list, noise_key
 
 
 if __name__ == "__main__":
@@ -392,13 +392,10 @@ if __name__ == "__main__":
     generate_noise_config("HalfCheetah-v5", GenPPO, 0.1),
   ]
 
-  # Add environment and model to each config
-  env_model_configs = [(env_name, model_class, config_list, noise_key) for (env_name, model_class), (config_list, noise_key) in env_model_configs]
-
   dry_run = False
-  total_timesteps = 1000000
+  total_timesteps = 10000000
   num_runs = 1
-  output_path = ".noise/extras"
+  output_path = f".noise/extras_{total_timesteps}"
 
   for env_name, model_class, config_list, noise_key in env_model_configs:
     model_name = model_class.__name__

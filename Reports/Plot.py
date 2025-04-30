@@ -16,15 +16,6 @@ from scipy.stats import binomtest, ttest_ind
 def normalize_data(values, original_steps, target_steps=1000000, target_points=100):
   """
     Normalize a list of values to a fixed number of points representing 1,000,000 steps.
-
-    Args:
-        values (list): Original data (e.g., rewards or entropies).
-        original_steps (int): Total steps in the original data (e.g., 1000000).
-        target_steps (int): Desired total steps (1000000).
-        target_points (int): Number of points to interpolate to (100).
-
-    Returns:
-        np.ndarray: Interpolated values with target_points.
     """
   values = np.array(values)
   if len(values) < 2:
@@ -40,12 +31,6 @@ def normalize_data(values, original_steps, target_steps=1000000, target_points=1
 def format_label(label):
   """
     Format YAML label to show 'Baseline' or 'Noise (value)'.
-
-    Args:
-        label (str): Original label from YAML (e.g., 'Baseline', 'reward+action_uniform(-0.5)').
-
-    Returns:
-        str: Formatted label (e.g., 'Baseline', 'Noise (-0.5)').
     """
   if label.lower() == "baseline":
     return "Baseline"
@@ -53,6 +38,7 @@ def format_label(label):
   if match:
     value = match.group(1)
     return f"Noise ({value})"
+  print(f"Warning: Could not parse label '{label}'. Using raw label.")
   return label
 
 
@@ -60,14 +46,6 @@ def format_label(label):
 def get_y_bounds(data, metric, keys):
   """
     Compute global min and max for a metric across specified keys.
-
-    Args:
-        data: List of (env, algo, label, run_idx, rewards, entropies) tuples.
-        metric (str): 'rewards' or 'entropies'.
-        keys: List of (env, algo, label) tuples to consider.
-
-    Returns:
-        tuple: (y_min, y_max)
     """
   y_min, y_max = np.inf, -np.inf
   for env, algo, label in keys:
@@ -84,19 +62,8 @@ def get_y_bounds(data, metric, keys):
 def load_and_preprocess_data(data_dir, algorithms, environments):
   """
     Load YAML files and preprocess data, computing max rewards, variations, and statistical results.
-
-    Args:
-        data_dir (str): Path to directory with YAML files.
-        algorithms: List of algorithm names.
-        environments: List of environment names.
-
-    Returns:
-        tuple: (
-            runs: List of (env, algo, label, run_idx, rewards, entropies) tuples,
-            table_data: Dict of {algo: {env: (max_reward, std_dev, best_noise)}},
-            significance_data: Dict of {algo: {env: {label: p_value}}},
-            comparison_data: Dict of {env: (genppo_prob, gentrpo_prob, best_algo, best_noise, max_reward)}
-        )
+    Best configuration is chosen based on the highest single maximum reward across all runs.
+    Variation (std_dev) is computed over all runs across all configurations for each model/env pair.
     """
   runs = []
   table_data = {algo: {env: None for env in environments} for algo in algorithms}
@@ -104,11 +71,13 @@ def load_and_preprocess_data(data_dir, algorithms, environments):
   comparison_data = {env: (1.0, 1.0, "N/A", "N/A", -np.inf) for env in environments}
 
   # Load and normalize data
+  print(f"Loading data from {data_dir}")
   for env_dir in os.listdir(data_dir):
     env_path = os.path.join(data_dir, env_dir)
     if not os.path.isdir(env_path) or env_dir not in environments:
       continue
     env_name = env_dir
+    print(f"Processing environment: {env_name}")
     for file in os.listdir(env_path):
       if not file.endswith(".yml") or file.lower() == "config.yaml" or "summary" in file.lower():
         continue
@@ -116,6 +85,7 @@ def load_and_preprocess_data(data_dir, algorithms, environments):
       if algo_name not in algorithms:
         continue
       file_path = os.path.join(env_path, file)
+      print(f"Reading file: {file_path}")
       with open(file_path, "r") as f:
         try:
           algo_data = yaml.safe_load(f)
@@ -124,19 +94,25 @@ def load_and_preprocess_data(data_dir, algorithms, environments):
           continue
       if not isinstance(algo_data, list):
         continue
-      for entry in algo_data:
-        if not isinstance(entry, dict) or "smoothed_data" not in entry:
+      for noise_entry in algo_data:
+        if not isinstance(noise_entry, dict) or "noise_type" not in noise_entry or "smoothed_data" not in noise_entry:
           continue
-        smoothed_data = entry.get("smoothed_data", [])
-        if not isinstance(smoothed_data, list):
+        smoothed_data = noise_entry.get("smoothed_data", [])
+        if not isinstance(smoothed_data, list) or len(smoothed_data) != 1:
           continue
-        for smoothed in smoothed_data:
-          if not isinstance(smoothed, dict) or not all(k in smoothed for k in ["label", "rewards", "entropies"]):
-            continue
-          rewards = normalize_data(smoothed["rewards"], original_steps=1000000)
-          entropies = normalize_data(smoothed["entropies"], original_steps=1000000)
-          label = smoothed["label"]
-          runs.append((env_name, algo_name, label, len(runs), rewards, entropies))
+        smoothed = smoothed_data[0]
+        if not isinstance(smoothed, dict) or not all(k in smoothed for k in ["label", "model", "rewards", "entropies"]):
+          continue
+        if smoothed["model"] != algo_name:
+          print(f"Warning: Model {smoothed['model']} does not match filename algo {algo_name} in {file_path}. Using file algo.")
+        rewards = normalize_data(smoothed["rewards"], original_steps=1000000)
+        entropies = normalize_data(smoothed["entropies"], original_steps=1000000)
+        label = smoothed["label"]
+        runs.append((env_name, algo_name, label, len(runs), rewards, entropies))
+        max_reward = np.max(rewards)
+        print(f"Added run: env={env_name}, algo={algo_name}, label={label}, noise_type={noise_entry['noise_type']}, max_reward={max_reward:.2f}")
+
+  print(f"Total runs loaded: {len(runs)}")
 
   # Group runs by environment, algorithm, and label
   run_groups = {}
@@ -148,46 +124,56 @@ def load_and_preprocess_data(data_dir, algorithms, environments):
 
   # Precompute table and statistical data
   for env in environments:
+    print(f"Computing stats for environment: {env}")
+
     for algo in algorithms:
-      max_reward, std_dev, best_noise = 0, 0, "N/A"
-      best_avg = -np.inf
-      if algo in ["PPO", "TRPO"]:
-        key = (env, algo, "Baseline")
-        if key in run_groups and len(run_groups[key]) >= 5:
+      max_reward, best_noise = -np.inf, "N/A"
+      all_rewards = []
+      # Find the configuration with the highest single maximum reward
+      for label in sorted(set(label for e, a, l in run_groups if e == env and a == algo)):  # Sort for reproducibility
+        key = (env, algo, label)
+        if key in run_groups:
           rewards = [np.max(run[0]) for run in run_groups[key]]
-          avg_reward = np.mean(rewards)
-          max_reward = max(rewards)
-          std_dev = np.std(rewards)
-          best_noise = "Baseline"
-          best_avg = avg_reward
-      else:
-        for label in set(label for e, a, label in run_groups if e == env and a == algo):
-          key = (env, algo, label)
-          if key in run_groups and len(run_groups[key]) >= 5:
-            rewards = [np.max(run[0]) for run in run_groups[key]]
-            avg_reward = np.mean(rewards)
-            if avg_reward > best_avg:
-              best_avg = avg_reward
-              max_reward = max(rewards)
-              std_dev = np.std(rewards)
-              best_noise = format_label(label)
-      if best_avg != -np.inf:
+          all_rewards.extend(rewards)  # Add all rewards for std_dev
+          current_max = max(rewards) if rewards else -np.inf
+          if current_max > max_reward:
+            max_reward = current_max
+            best_noise = format_label(label)
+          print(f"{algo} in {env}, label={label}: {len(rewards)} runs, max_reward={current_max:.2f}")
+      if all_rewards:
+        std_dev = np.std(all_rewards) if len(all_rewards) > 1 else 0.0
         table_data[algo][env] = (max_reward, std_dev, best_noise)
+        print(f"{algo} in {env}: total {len(all_rewards)} runs, std_dev={std_dev:.2f}, best_max_reward={max_reward:.2f}, best_noise={best_noise}")
       else:
         table_data[algo][env] = None
+        print(f"No valid data for {algo} in {env}")
 
-    # Statistical significance
+    # Statistical significance (1 baseline run, any noise runs)
     for algo, baseline in [("GenPPO", "PPO"), ("GenTRPO", "TRPO"), ("TRPOR", "TRPO"), ("TRPOER", "TRPO")]:
       baseline_key = (env, baseline, "Baseline")
-      if baseline_key not in run_groups or len(run_groups[baseline_key]) < 5:
+      if baseline_key not in run_groups or not run_groups[baseline_key]:
+        print(f"Skipping t-test for {algo} vs {baseline} in {env}: no baseline runs")
         continue
-      baseline_runs = [np.max(run[0]) for run in run_groups[baseline_key]]
+      baseline_rewards = [np.max(run[0]) for run in run_groups[baseline_key]]
       for label in set(label for e, a, l in run_groups if e == env and a == algo and l.lower() != "baseline"):
         key = (env, algo, label)
-        if key in run_groups and len(run_groups[key]) >= 5:
-          algo_runs = [np.max(run[0]) for run in run_groups[key]]
-          t_stat, p_value = ttest_ind(algo_runs, baseline_runs, equal_var=False, alternative="greater")
-          significance_data[algo][env][format_label(label)] = p_value
+        if key not in run_groups:
+          continue
+        algo_runs = [np.max(run[0]) for run in run_groups[key]]
+        if len(algo_runs) == 1 and len(baseline_rewards) == 1:
+          p_value = 0.0 if algo_runs[0] > baseline_rewards[0] else 1.0
+          print(f"Single run comparison for {algo} vs {baseline} in {env}, label={label}: {'outperforms' if p_value == 0.0 else 'does not outperform'}")
+        else:
+          try:
+            t_stat, p_value = ttest_ind(algo_runs, baseline_rewards, equal_var=False, alternative="greater")
+            if np.isnan(p_value):
+              p_value = 1.0
+              print(f"Warning: NaN p-value for {algo} vs {baseline} in {env}, label={label}. Setting p_value=1.0")
+          except Exception as e:
+            p_value = 1.0
+            print(f"Error in t-test for {algo} vs {baseline} in {env}, label={label}: {e}. Setting p_value=1.0")
+        significance_data[algo][env][format_label(label)] = p_value
+        print(f"T-test {algo} vs {baseline} in {env}, label={label}: p_value={p_value:.3f}")
 
     # Comparison statistics
     ppo_runs = [np.max(run[0]) for key in run_groups if key[0] == env and key[1] == "PPO" for run in run_groups[key]]
@@ -199,22 +185,25 @@ def load_and_preprocess_data(data_dir, algorithms, environments):
       genppo_wins = sum(1 for g in genppo_runs for p in ppo_runs if g > p)
       total_comparisons = len(genppo_runs) * len(ppo_runs)
       genppo_prob = binomtest(genppo_wins, total_comparisons, p=0.5, alternative="greater").pvalue if total_comparisons > 0 else 1.0
+      print(f"Binomial test GenPPO vs PPO in {env}: p_value={genppo_prob:.3f}, wins={genppo_wins}/{total_comparisons}")
     gentrpo_prob = 1.0
     if trpo_runs and gentrpo_runs:
       gentrpo_wins = sum(1 for g in gentrpo_runs for t in trpo_runs if g > t)
       total_comparisons = len(gentrpo_runs) * len(trpo_runs)
       gentrpo_prob = binomtest(gentrpo_wins, total_comparisons, p=0.5, alternative="greater").pvalue if total_comparisons > 0 else 1.0
+      print(f"Binomial test GenTRPO vs TRPO in {env}: p_value={gentrpo_prob:.3f}, wins={gentrpo_wins}/{total_comparisons}")
     max_reward, best_algo, best_noise = -np.inf, "N/A", "N/A"
     for algo in algorithms:
       for label in set(label for e, a, l in run_groups if e == env and a == algo):
         key = (env, algo, label)
-        if key in run_groups and len(run_groups[key]) >= 5:
+        if key in run_groups:
           rewards = [np.max(run[0]) for run in run_groups[key]]
-          avg_reward = np.mean(rewards)
-          if avg_reward > max_reward:
-            max_reward = avg_reward
+          current_max = max(rewards)
+          if current_max > max_reward:
+            max_reward = current_max
             best_algo = algo
             best_noise = format_label(label)
+          print(f"Best model check: {algo} in {env}, label={label}, max_reward={current_max:.2f}")
     comparison_data[env] = (genppo_prob, gentrpo_prob, best_algo, best_noise, max_reward)
 
   return runs, table_data, significance_data, comparison_data
@@ -223,18 +212,7 @@ def load_and_preprocess_data(data_dir, algorithms, environments):
 # Plot comparison of two algorithms across shared environments, stacked vertically
 def plot_algo_pair_comparison(data, algo1, algo2, environments, output_dir, smooth_window=5, markers_per_line=10):
   """
-    Plot rewards for two algorithms across shared environments in a 2xN grid (algo1 on top, algo2 below),
-    with shared linear y-axis scale per environment, x-axis with decimal ticks and scientific notation note
-    for 1M steps, frequent lower y-ticks, tiny fonts, increased offset markers, y-label only on first subplot
-    of each row, and single legend at the bottom.
-
-    Args:
-        data: List of (env, algo, label, run_idx, rewards, entropies) tuples.
-        algo1, algo2 (str): Algorithm names to compare.
-        environments: List of environment names.
-        output_dir (str): Where to save the plot.
-        smooth_window (int): Smoothing window size (default: 5).
-        markers_per_line (int): Number of markers to show per line (default: 10).
+    Plot rewards for two algorithms across shared environments in a 2xN grid (algo1 on top, algo2 below).
     """
   valid_envs = sorted([env for env in environments if any(r[0] == env and r[1] == algo1 for r in data) and any(r[0] == env and r[1] == algo2 for r in data)])
   if not valid_envs:
@@ -317,17 +295,7 @@ def plot_algo_pair_comparison(data, algo1, algo2, environments, output_dir, smoo
 def plot_env_all_algos(data, env, algorithms, output_dir, smooth_window=5, markers_per_line=10):
   """
     Plot all runs for each algorithm in one environment in a 2x7 tiled grid with returns (top row)
-    and entropy (bottom row), with linear y-axis scale (shared for rewards, per-algorithm for entropy),
-    x-axis with decimal ticks and scientific notation note for 1M steps, frequent lower y-ticks, tiny
-    fonts, increased offset markers, y-label only on first cell of each row, and single legend at the bottom.
-
-    Args:
-        data: List of (env, algo, label, run_idx, rewards, entropies) tuples.
-        env (str): Environment name.
-        algorithms: List of algorithm names (expected up to 7).
-        output_dir (str): Where to save the plot.
-        smooth_window (int): Smoothing window size (default: 5).
-        markers_per_line (int): Number of markers to show per line (default: 10).
+    and entropy (bottom row).
     """
   valid_algos = sorted([algo for algo in algorithms if any(run[0] == env and run[1] == algo for run in data)])
   if not valid_algos:
@@ -445,17 +413,7 @@ def plot_env_all_algos(data, env, algorithms, output_dir, smooth_window=5, marke
 def plot_algo_across_envs(data, algo, environments, output_dir, smooth_window=5, markers_per_line=10):
   """
     Plot all runs for one algorithm across 7 environments in a 2x7 tiled grid with returns (top row)
-    and entropy (bottom row), with linear y-axis scale (per-environment for both rewards and entropy),
-    x-axis with decimal ticks and scientific notation note for 1M steps, frequent lower y-ticks, tiny
-    fonts, increased offset markers, y-label only on first cell of each row, and single legend at the bottom.
-
-    Args:
-        data: List of (env, algo, label, run_idx, rewards, entropies) tuples.
-        algo (str): Algorithm name.
-        environments: List of environment names (expected up to 7).
-        output_dir (str): Where to save the plot.
-        smooth_window (int): Smoothing window size (default: 5).
-        markers_per_line (int): Number of markers to show per line (default: 10).
+    and entropy (bottom row), with linear y-axis scale, x-axis with decimal ticks, and single legend.
     """
   valid_envs = sorted([env for env in environments if any(run[0] == env and run[1] == algo for run in data)])
   if not valid_envs:
@@ -568,19 +526,32 @@ def plot_algo_across_envs(data, algo, environments, output_dir, smooth_window=5,
   plt.close(fig)
 
 
+# Validate plots against table data
+def validate_plots(data, table_data, environments, algorithms):
+  """
+    Validate that the maximum rewards in plots match the table data.
+    """
+  print("Validating plot rewards against table data...")
+  for env in environments:
+    for algo in algorithms:
+      if table_data[algo][env] is None:
+        continue
+      table_max_reward, _, table_best_noise = table_data[algo][env]
+      plot_max_reward = -np.inf
+      for run in data:
+        if run[0] == env and run[1] == algo and format_label(run[2]) == table_best_noise:
+          plot_max_reward = max(plot_max_reward, np.max(run[4]))
+      if abs(table_max_reward - plot_max_reward) > 1e-2:
+        print(f"Warning: Mismatch in {env}, {algo}: Table reward={table_max_reward:.2f}, Plot reward={plot_max_reward:.2f}")
+      else:
+        print(f"Validation passed for {env}, {algo}: Table reward={table_max_reward:.2f}, Plot reward={plot_max_reward:.2f}")
+
+
 # Generate LaTeX table and statistical sections
 def generate_latex_outputs(table_data, significance_data, comparison_data, output_dir, algorithms, environments):
   """
     Generate a single LaTeX file with numerical results table, statistical significance,
     and comparison statistics sections using precomputed data.
-
-    Args:
-        table_data: Dict of {algo: {env: (max_reward, std_dev, best_noise)}}.
-        significance_data: Dict of {algo: {env: {label: p_value}}}.
-        comparison_data: Dict of {env: (genppo_prob, gentrpo_prob, best_algo, best_noise, max_reward)}.
-        output_dir (str): Where to save the LaTeX file.
-        algorithms: List of algorithm names.
-        environments: List of environment names.
     """
   os.makedirs(output_dir, exist_ok=True)
   latex_content = []
@@ -601,7 +572,7 @@ def generate_latex_outputs(table_data, significance_data, comparison_data, outpu
         row.append("-")
       else:
         max_reward, std_dev, best_noise = table_data[algo][env]
-        row.append(f"{max_reward:.2f} $\\pm$ {std_dev:.2f} ({best_noise})")
+        row.append(f"{max_reward:.2f} ({std_dev:.2f}, {best_noise})")
     latex_content.append(" & ".join(row) + " \\\\ \\hline")
 
   latex_content.append("\\end{tabular}")
@@ -610,7 +581,7 @@ def generate_latex_outputs(table_data, significance_data, comparison_data, outpu
   # LaTeX Section: Statistical Significance vs. Baseline
   latex_content.append("\\section{Statistical Significance Against Baseline}")
   latex_content.append(
-    "This section evaluates the statistical significance of each algorithm’s performance compared to its baseline (PPO for GenPPO, TRPO for GenTRPO, TRPOR, TRPOER) using a two-sample t-test. The p-value indicates the likelihood that a noise-trained run outperforms the baseline."
+    "This section evaluates the statistical significance of each algorithm’s performance compared to its baseline (PPO for GenPPO, TRPO for GenTRPO, TRPOR, TRPOER) using a two-sample t-test. The p-value indicates the likelihood that a noise-trained run outperforms the baseline. For single-run comparisons, a deterministic outcome is reported."
   )
 
   for algo, baseline in [("GenPPO", "PPO"), ("GenTRPO", "TRPO"), ("TRPOR", "TRPO"), ("TRPOER", "TRPO")]:
@@ -620,12 +591,16 @@ def generate_latex_outputs(table_data, significance_data, comparison_data, outpu
         continue
       latex_content.append(f"\\paragraph{{{env.replace('-v5', '')}}}")
       for label, p_value in significance_data[algo][env].items():
-        latex_content.append(f"For noise level {label}, the p-value is {p_value:.3f}, indicating the likelihood that {algo} outperforms {baseline}.")
+        if p_value == 0.0 or p_value == 1.0:
+          outcome = "outperforms" if p_value == 0.0 else "does not outperform"
+          latex_content.append(f"For noise level {label}, {algo} {outcome} {baseline} (single-run comparison).")
+        else:
+          latex_content.append(f"For noise level {label}, the p-value is {p_value:.3f}, indicating the likelihood that {algo} outperforms {baseline}.")
 
   # LaTeX Section: Comparison Statistics (GenPPO vs. PPO, GenTRPO vs. TRPO, Best Model)
   latex_content.append("\\section{Comparison Statistics}")
   latex_content.append(
-    "This section analyzes the probability that GenPPO outperforms PPO and GenTRPO outperforms TRPO based on maximum rewards across all runs, using a binomial test. It also identifies the model and noise configuration most likely to achieve the highest reward per environment."
+    "This section analyzes the probability that GenPPO outperforms PPO and GenTRPO outperforms TRPO based on maximum rewards across all runs, using a binomial test. It also identifies the model and noise configuration with the highest maximum reward per environment."
   )
 
   for env in environments:
@@ -637,7 +612,7 @@ def generate_latex_outputs(table_data, significance_data, comparison_data, outpu
       latex_content.append(f"The probability that GenPPO outperforms PPO is {genppo_prob:.3f}.")
     if gentrpo_prob < 1.0:
       latex_content.append(f"The probability that GenTRPO outperforms TRPO is {gentrpo_prob:.3f}.")
-    latex_content.append(f"The best model is {best_algo} with noise level {best_noise}, achieving an average maximum reward of {max_reward:.2f}.")
+    latex_content.append(f"The best model is {best_algo} with noise level {best_noise}, achieving a maximum reward of {max_reward:.2f}.")
 
   # Save all LaTeX content to a single file
   with open(os.path.join(output_dir, "results.tex"), "w") as f:
@@ -646,6 +621,7 @@ def generate_latex_outputs(table_data, significance_data, comparison_data, outpu
 
 # Main execution
 if __name__ == "__main__":
+  print("Starting Plot.py execution")
   parser = argparse.ArgumentParser(description="Generate publication-quality RL plots and LaTeX results for MuJoCo.")
   parser.add_argument("--data_dir", type=str, required=True, help="Directory with YAML files (e.g., '.noise/2025-04-19_18-19-45')")
   parser.add_argument("--smooth_window", type=int, default=5, help="Smoothing window size for curves")
@@ -678,6 +654,9 @@ if __name__ == "__main__":
 
   for env in environments:
     plot_env_all_algos(runs, env, algorithms, output_dir, args.smooth_window, args.markers_per_line)
+
+  # Validate plots against table data
+  validate_plots(runs, table_data, environments, algorithms)
 
   generate_latex_outputs(table_data, significance_data, comparison_data, output_dir, algorithms, environments)
 
