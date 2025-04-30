@@ -6,7 +6,7 @@
 \hline
 Algorithm & HalfCheetah & Hopper & Humanoid & HumanoidStandup & Pusher & Reacher & Swimmer \\ \hline
 PPO & 0.62 (0.00, Noise (0.50)) & 2.14 (0.00, Noise (0.50)) & 4.65 (0.00, Noise (0.50)) & 37.79 (0.00, Noise (0.50)) & - & -1.02 (0.00, Noise (0.50)) & 0.07 (0.00, Noise (0.50)) \\ \hline
-GenPPO & - & - & - & - & - & - & - \\ \hline
+GenPPO & 0.31 (0.00, Noise (0.50)) & - & - & - & - & - & - \\ \hline
 TRPO & 0.05 (0.00, Noise (0.50)) & 2.90 (0.00, Noise (0.50)) & 4.86 (0.00, Noise (0.50)) & 68.46 (0.00, Noise (0.50)) & -1.12 (0.00, Noise (0.50)) & -1.29 (0.00, Noise (0.50)) & 0.24 (0.00, Noise (0.50)) \\ \hline
 GenTRPO & -0.01 (0.00, Noise (0.50)) & 2.07 (0.00, Noise (0.50)) & 4.91 (0.00, Noise (0.50)) & 68.81 (0.00, Noise (0.50)) & -1.80 (0.00, Noise (0.50)) & -1.16 (0.00, Noise (0.50)) & 0.08 (0.00, Noise (0.50)) \\ \hline
 TRPOR & 0.04 (0.00, Noise (0.50)) & 2.27 (0.00, Noise (0.50)) & 4.55 (0.00, Noise (0.50)) & 70.04 (0.00, Noise (0.50)) & -0.63 (0.00, Noise (0.50)) & -0.67 (0.00, Noise (0.50)) & 0.04 (0.00, Noise (0.50)) \\ \hline
@@ -16,6 +16,8 @@ TRPOER & 0.14 (0.00, Noise (0.50)) & 1.98 (0.00, Noise (0.50)) & 4.83 (0.00, Noi
 \section{Statistical Significance Against Baseline}
 This section evaluates the statistical significance of each algorithm’s performance compared to its baseline (PPO for GenPPO, TRPO for GenTRPO, TRPOR, TRPOER) using a two-sample t-test. The p-value indicates the likelihood that a noise-trained run outperforms the baseline. For single-run comparisons, a deterministic outcome is reported.
 \subsection{GenPPO vs. PPO}
+\paragraph{HalfCheetah}
+For noise level Noise (0.50), GenPPO does not outperform PPO (single-run comparison).
 \subsection{GenTRPO vs. TRPO}
 \paragraph{HalfCheetah}
 For noise level Noise (0.50), GenTRPO does not outperform TRPO (single-run comparison).
