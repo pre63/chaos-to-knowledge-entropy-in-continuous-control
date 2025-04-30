@@ -7,7 +7,7 @@
 Algorithm & HalfCheetah & Hopper & Humanoid & HumanoidStandup & Pusher & Reacher & Swimmer \\ \hline
 PPO & 0.62 (0.00, Noise (0.50)) & 2.14 (0.00, Noise (0.50)) & 4.65 (0.00, Noise (0.50)) & 37.79 (0.00, Noise (0.50)) & - & -1.02 (0.00, Noise (0.50)) & 0.07 (0.00, Noise (0.50)) \\ \hline
 GenPPO & - & - & - & - & - & - & - \\ \hline
-TRPO & 0.05 (0.00, Noise (0.50)) & 2.90 (0.00, Noise (0.50)) & 4.86 (0.00, Noise (0.50)) & - & - & - & 0.24 (0.00, Noise (0.50)) \\ \hline
+TRPO & 0.05 (0.00, Noise (0.50)) & 2.90 (0.00, Noise (0.50)) & 4.86 (0.00, Noise (0.50)) & 68.46 (0.00, Noise (0.50)) & -1.12 (0.00, Noise (0.50)) & -1.29 (0.00, Noise (0.50)) & 0.24 (0.00, Noise (0.50)) \\ \hline
 GenTRPO & -0.01 (0.00, Noise (0.50)) & 2.07 (0.00, Noise (0.50)) & 4.91 (0.00, Noise (0.50)) & 68.81 (0.00, Noise (0.50)) & -1.80 (0.00, Noise (0.50)) & -1.16 (0.00, Noise (0.50)) & 0.08 (0.00, Noise (0.50)) \\ \hline
 TRPOR & 0.04 (0.00, Noise (0.50)) & 2.27 (0.00, Noise (0.50)) & 4.55 (0.00, Noise (0.50)) & 70.04 (0.00, Noise (0.50)) & -0.63 (0.00, Noise (0.50)) & -0.67 (0.00, Noise (0.50)) & 0.04 (0.00, Noise (0.50)) \\ \hline
 TRPOER & 0.14 (0.00, Noise (0.50)) & 1.98 (0.00, Noise (0.50)) & 4.83 (0.00, Noise (0.50)) & - & -0.64 (0.00, Noise (0.50)) & -0.68 (0.00, Noise (0.50)) & 0.07 (0.00, Noise (0.50)) \\ \hline
@@ -25,6 +25,10 @@ For noise level Noise (0.50), GenTRPO does not outperform TRPO (single-run compa
 For noise level Noise (0.50), GenTRPO outperforms TRPO (single-run comparison).
 \paragraph{HumanoidStandup}
 For noise level Noise (0.50), GenTRPO does not outperform TRPO (single-run comparison).
+\paragraph{Pusher}
+For noise level Noise (0.50), GenTRPO does not outperform TRPO (single-run comparison).
+\paragraph{Reacher}
+For noise level Noise (0.50), GenTRPO does not outperform TRPO (single-run comparison).
 \paragraph{Swimmer}
 For noise level Noise (0.50), GenTRPO does not outperform TRPO (single-run comparison).
 \subsection{TRPOR vs. TRPO}
@@ -36,6 +40,10 @@ For noise level Noise (0.50), TRPOR does not outperform TRPO (single-run compari
 For noise level Noise (0.50), TRPOR does not outperform TRPO (single-run comparison).
 \paragraph{HumanoidStandup}
 For noise level Noise (0.50), TRPOR does not outperform TRPO (single-run comparison).
+\paragraph{Pusher}
+For noise level Noise (0.50), TRPOR outperforms TRPO (single-run comparison).
+\paragraph{Reacher}
+For noise level Noise (0.50), TRPOR does not outperform TRPO (single-run comparison).
 \paragraph{Swimmer}
 For noise level Noise (0.50), TRPOR does not outperform TRPO (single-run comparison).
 \subsection{TRPOER vs. TRPO}
@@ -45,6 +53,10 @@ For noise level Noise (0.50), TRPOER does not outperform TRPO (single-run compar
 For noise level Noise (0.50), TRPOER does not outperform TRPO (single-run comparison).
 \paragraph{Humanoid}
 For noise level Noise (0.50), TRPOER outperforms TRPO (single-run comparison).
+\paragraph{Pusher}
+For noise level Noise (0.50), TRPOER outperforms TRPO (single-run comparison).
+\paragraph{Reacher}
+For noise level Noise (0.50), TRPOER does not outperform TRPO (single-run comparison).
 \paragraph{Swimmer}
 For noise level Noise (0.50), TRPOER does not outperform TRPO (single-run comparison).
 \section{Comparison Statistics}
@@ -59,11 +71,12 @@ The best model is TRPO with noise level Noise (0.50), achieving a maximum reward
 The probability that GenTRPO outperforms TRPO is 0.000.
 The best model is GenTRPO with noise level Noise (0.50), achieving a maximum reward of 4.91.
 \subsection{HumanoidStandup}
-The probability that GenTRPO outperforms TRPO is 0.044.
+The probability that GenTRPO outperforms TRPO is 0.011.
 The best model is TRPOR with noise level Noise (0.50), achieving a maximum reward of 70.04.
 \subsection{Pusher}
 The best model is TRPOR with noise level Noise (0.50), achieving a maximum reward of -0.63.
 \subsection{Reacher}
+The probability that GenTRPO outperforms TRPO is 0.999.
 The best model is TRPOR with noise level Noise (0.50), achieving a maximum reward of -0.67.
 \subsection{Swimmer}
 The probability that GenTRPO outperforms TRPO is 1.000.
