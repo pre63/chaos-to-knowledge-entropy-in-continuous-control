@@ -1,8 +1,22 @@
-# Tuned for PPO
-HalfCheetah-v5:
-  normalize: true
+Ant-v5:
   policy: 'MlpPolicy'
+  batch_size: 64
+  n_steps: 256
+  gamma: 0.9
+  learning_rate: 0.011345042877629868
+  ent_coef: 0.0006300346375901035
+  clip_range: 0.3
+  n_epochs: 1
+  gae_lambda: 0.99
+  max_grad_norm: 0.3
+  vf_coef: 0.9467710647343072
+  net_arch: small
+  activation_fn: relu
   n_timesteps: 100000
+  n_envs: 10
+
+HalfCheetah-v5:
+  policy: 'MlpPolicy'
   batch_size: 64
   n_steps: 16
   gamma: 0.9
@@ -15,13 +29,11 @@ HalfCheetah-v5:
   vf_coef: 0.47070192790845444
   net_arch: small
   activation_fn: relu
+  n_timesteps: 800000
   n_envs: 10
 
-# Tuned for PPO
 Hopper-v5:
   policy: 'MlpPolicy'
-  n_timesteps: 100000
-  normalize: true
   batch_size: 512
   n_steps: 256
   gamma: 0.99
@@ -34,13 +46,11 @@ Hopper-v5:
   vf_coef: 0.8162295327543241
   net_arch: small
   activation_fn: relu
+  n_timesteps: 600000
   n_envs: 4
 
-# Tuned for PPO
 Humanoid-v5:
-  normalize: true
   policy: 'MlpPolicy'
-  n_timesteps: 100000
   batch_size: 256
   n_steps: 16
   gamma: 0.995
@@ -53,13 +63,11 @@ Humanoid-v5:
   vf_coef: 0.8304599284219261
   net_arch: tiny
   activation_fn: tanh
+  n_timesteps: 400000
   n_envs: 10
 
-# Tuned for PPO
 HumanoidStandup-v5:
-  normalize: true
   policy: 'MlpPolicy'
-  n_timesteps: 100000
   batch_size: 512
   n_steps: 1024
   gamma: 0.9999
@@ -72,12 +80,27 @@ HumanoidStandup-v5:
   vf_coef: 0.602511184087952
   net_arch: small
   activation_fn: tanh
+  n_timesteps: 800000
   n_envs: 10
-  
 
-# Tuned for PPO
+InvertedDoublePendulum-v5:
+  policy: 'MlpPolicy'
+  batch_size: 256
+  n_steps: 512
+  gamma: 0.95
+  learning_rate: 0.008853701642334575
+  ent_coef: 2.5370668529088744e-08
+  clip_range: 0.1
+  n_epochs: 10
+  gae_lambda: 0.8
+  max_grad_norm: 0.3
+  vf_coef: 0.6300195360697247
+  net_arch: tiny
+  activation_fn: tanh
+  n_timesteps: 100000
+  n_envs: 4
+
 Reacher-v5:
-  normalize: true
   policy: 'MlpPolicy'
   batch_size: 256
   n_steps: 128
@@ -94,21 +117,19 @@ Reacher-v5:
   n_timesteps: 500000
   n_envs: 6
 
-# Tuned for PPO
 Swimmer-v5:
-  normalize: true
   policy: 'MlpPolicy'
   batch_size: 512
-  n_steps: 256
-  gamma: 0.999
-  learning_rate: 4.42013827608134e-05
-  ent_coef: 2.7462399856123295e-05
+  n_steps: 1024
+  gamma: 0.995
+  learning_rate: 0.0005375507136780008
+  ent_coef: 7.896624456190611e-06
   clip_range: 0.4
-  n_epochs: 1
-  gae_lambda: 0.8
+  n_epochs: 20
+  gae_lambda: 0.98
   max_grad_norm: 0.9
-  vf_coef: 0.16250911908696952
-  net_arch: medium
-  activation_fn: tanh
-  n_timesteps: 100000
-  n_envs: 2
+  vf_coef: 0.05560006762484643
+  net_arch: small
+  activation_fn: relu
+  n_timesteps: 900000
+  n_envs: 6
