@@ -112,20 +112,20 @@ noise-plot:
 
 tune:
 	#PPO for HalfCheetah-v5 Hopper-v5 Humanoid-v5 HumanoidStandup-v5 Reacher-v5 Swimmer-v5
-	$(MAKE) train model=ppo env=HalfCheetah-v5 n_jobs=15 optimize=True
-	$(MAKE) train model=ppo env=Hopper-v5 n_jobs=15 optimize=True
-	$(MAKE) train model=ppo env=Humanoid-v5 n_jobs=15 optimize=True
-	$(MAKE) train model=ppo env=HumanoidStandup-v5 n_jobs=15 optimize=True
-	$(MAKE) train model=ppo env=Reacher-v5 n_jobs=15 optimize=True
-	$(MAKE) train model=ppo env=Swimmer-v5 n_jobs=15 optimize=True
+	$(MAKE) train model=ppo env=HalfCheetah-v5 n_jobs=5 optimize=True
+	$(MAKE) train model=ppo env=Hopper-v5 n_jobs=5 optimize=True
+	$(MAKE) train model=ppo env=Humanoid-v5 n_jobs=5 optimize=True
+	$(MAKE) train model=ppo env=HumanoidStandup-v5 n_jobs=5 optimize=True
+	$(MAKE) train model=ppo env=Reacher-v5 n_jobs=5 optimize=True
+	$(MAKE) train model=ppo env=Swimmer-v5 n_jobs=5 optimize=True
 
 	#TRPO for HalfCheetah-v5 Hopper-v5 Humanoid-v5 HumanoidStandup-v5 Reacher-v5 Swimmer-v5
-	$(MAKE) train model=trpo env=HalfCheetah-v5 n_jobs=15 optimize=True
-	$(MAKE) train model=trpo env=Hopper-v5 n_jobs=15 optimize=True
-	$(MAKE) train model=trpo env=Humanoid-v5 n_jobs=15 optimize=True
-	$(MAKE) train model=trpo env=HumanoidStandup-v5 n_jobs=15 optimize=True
-	$(MAKE) train model=trpo env=Reacher-v5 n_jobs=15 optimize=True
-	$(MAKE) train model=trpo env=Swimmer-v5 n_jobs=15 optimize=True
+	$(MAKE) train model=trpo env=HalfCheetah-v5 n_jobs=5 optimize=True
+	$(MAKE) train model=trpo env=Hopper-v5 n_jobs=5 optimize=True
+	$(MAKE) train model=trpo env=Humanoid-v5 n_jobs=5 optimize=True
+	$(MAKE) train model=trpo env=HumanoidStandup-v5 n_jobs=5 optimize=True
+	$(MAKE) train model=trpo env=Reacher-v5 n_jobs=5 optimize=True
+	$(MAKE) train model=trpo env=Swimmer-v5 n_jobs=5 optimize=True
 
 
 plot:
