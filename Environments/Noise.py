@@ -122,6 +122,7 @@ def generate_step_configs(components, noise_type, steps, min_level=-1.0, max_lev
   if steps < 1 or min_level >= max_level:
     raise ValueError("Invalid steps or range.")
   entropy_levels = np.linspace(min_level, max_level, steps)
+  print(entropy_levels)
   configs = []
   for level in entropy_levels:
     config_list = [{"component": comp, "type": noise_type, "entropy_level": float(level)} for comp in components]
@@ -403,48 +404,48 @@ def all_variants_completed(env_model_configs, noise_types, steps, total_timestep
 
 if __name__ == "__main__":
   env_model_configs = [
-    ("HalfCheetah-v5", PPO),
-    ("Hopper-v5", PPO),
-    ("Humanoid-v5", PPO),
-    ("HumanoidStandup-v5", PPO),
-    ("Pusher-v5", PPO),
-    ("Reacher-v5", PPO),
-    ("Swimmer-v5", PPO),
-    ("HalfCheetah-v5", TRPO),
-    ("Hopper-v5", TRPO),
+    # ("HalfCheetah-v5", PPO),
+    # ("Hopper-v5", PPO),
+    # ("Humanoid-v5", PPO),
+    # ("HumanoidStandup-v5", PPO),
+    # ("Pusher-v5", PPO),
+    # ("Reacher-v5", PPO),
+    # ("Swimmer-v5", PPO),
+    # ("HalfCheetah-v5", TRPO),
+    # ("Hopper-v5", TRPO),
     ("Humanoid-v5", TRPO),
     ("HumanoidStandup-v5", TRPO),
-    ("Pusher-v5", TRPO),
-    ("Reacher-v5", TRPO),
-    ("Swimmer-v5", TRPO),
-    ("HalfCheetah-v5", TRPOR),
-    ("Hopper-v5", TRPOR),
+    # ("Pusher-v5", TRPO),
+    # ("Reacher-v5", TRPO),
+    # ("Swimmer-v5", TRPO),
+    # ("HalfCheetah-v5", TRPOR),
+    # ("Hopper-v5", TRPOR),
     ("Humanoid-v5", TRPOR),
     ("HumanoidStandup-v5", TRPOR),
-    ("Pusher-v5", TRPOR),
-    ("Reacher-v5", TRPOR),
-    ("Swimmer-v5", TRPOR),
-    ("HalfCheetah-v5", TRPOER),
-    ("Hopper-v5", TRPOER),
-    ("Humanoid-v5", TRPOER),
-    ("HumanoidStandup-v5", TRPOER),
-    ("Pusher-v5", TRPOER),
-    ("Reacher-v5", TRPOER),
-    ("Swimmer-v5", TRPOER),
-    ("HalfCheetah-v5", GenTRPO),
-    ("Hopper-v5", GenTRPO),
-    ("Humanoid-v5", GenTRPO),
-    ("HumanoidStandup-v5", GenTRPO),
-    ("Pusher-v5", GenTRPO),
-    ("Reacher-v5", GenTRPO),
-    ("Swimmer-v5", GenTRPO),
-    ("HalfCheetah-v5", GenPPO),
-    ("Hopper-v5", GenPPO),
-    ("Humanoid-v5", GenPPO),
-    ("HumanoidStandup-v5", GenPPO),
-    ("Pusher-v5", GenPPO),
-    ("Reacher-v5", GenPPO),
-    ("Swimmer-v5", GenPPO),
+    # ("Pusher-v5", TRPOR),
+    # ("Reacher-v5", TRPOR),
+    # ("Swimmer-v5", TRPOR),
+    # ("HalfCheetah-v5", TRPOER),
+    # ("Hopper-v5", TRPOER),
+    # ("Humanoid-v5", TRPOER),
+    # ("HumanoidStandup-v5", TRPOER),
+    # ("Pusher-v5", TRPOER),
+    # ("Reacher-v5", TRPOER),
+    # ("Swimmer-v5", TRPOER),
+    # ("HalfCheetah-v5", GenTRPO),
+    # ("Hopper-v5", GenTRPO),
+    # ("Humanoid-v5", GenTRPO),
+    # ("HumanoidStandup-v5", GenTRPO),
+    # ("Pusher-v5", GenTRPO),
+    # ("Reacher-v5", GenTRPO),
+    # ("Swimmer-v5", GenTRPO),
+    # ("HalfCheetah-v5", GenPPO),
+    # ("Hopper-v5", GenPPO),
+    # ("Humanoid-v5", GenPPO),
+    # ("HumanoidStandup-v5", GenPPO),
+    # ("Pusher-v5", GenPPO),
+    # ("Reacher-v5", GenPPO),
+    # ("Swimmer-v5", GenPPO),
   ]
 
   # Check for MODEL environment variable to filter models
@@ -470,11 +471,11 @@ if __name__ == "__main__":
   # Configuration values
   dry_run = False
   total_timesteps = 100000
-  steps = 6
-  min_level = -0.5
-  max_level = 0.5
-  num_runs = 5
-  output_path = ".noise/final"
+  steps = 2
+  min_level = -0.3
+  max_level = -0.1
+  num_runs = 3
+  output_path = ".noise/new_study_entropy_only"
 
   # Noise configs
   VALID_NOISE_CONFIGS = {"reward": ["uniform"], "action": ["uniform"]}

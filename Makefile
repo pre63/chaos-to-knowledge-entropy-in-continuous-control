@@ -135,12 +135,19 @@ plot:
 
 .PHONY: run
 run:
-	@$(MAKE) noise MODEL=trpor
-	@$(MAKE) noise MODEL=trpoer
+	#@$(MAKE) noise MODEL=trpor
+	#@$(MAKE) noise MODEL=trpoer
 	@$(MAKE) noise MODEL=genppo
 	@$(MAKE) noise MODEL=gentrpo
-	@$(MAKE) noise MODEL=ppo
-	@$(MAKE) noise MODEL=trpo
+	#@$(MAKE) noise MODEL=ppo
 
 single:
 	@. .venv/bin/activate; PYTHONPATH=. python -u Environments/SingleEvaluationNoise.py
+
+new:
+	$(MAKE) train model=trpor env=Humanoid-v5 n_jobs=5 optimize=True
+	$(MAKE) train model=trpor env=HumanoidStandup-v5 n_jobs=5 optimize=True
+
+new_eval:
+	@$(MAKE) noise MODEL=trpo
+	@$(MAKE) noise MODEL=trpor
