@@ -153,5 +153,23 @@ new_eval:
 	@$(MAKE) noise MODEL=trpor
 
 
-omega: fix
-	@. .venv/bin/activate; PYTHONPATH=. python -m Omega
+omega: omega-optimize omega-train-final omega-compare
+
+omega-optimize: fix
+	@source .venv/bin/activate; \
+	PYTHONPATH=. python -m Omega --config=trpo_no_noise --mode=optimize --n_trials=100 --n_timesteps=1000000 --env_id=HumanoidStandup-v5 --device=cpu & \
+	PYTHONPATH=. python -m Omega --config=trpo_with_noise --mode=optimize --n_trials=100 --n_timesteps=1000000 --env_id=HumanoidStandup-v5 --device=cpu & \
+	PYTHONPATH=. python -m Omega --config=trpor_no_noise --mode=optimize --n_trials=100 --n_timesteps=1000000 --env_id=HumanoidStandup-v5 --device=cpu & \
+	PYTHONPATH=. python -m Omega --config=trpor_with_noise --mode=optimize --n_trials=100 --n_timesteps=1000000 --env_id=HumanoidStandup-v5 --device=cpu & \
+	wait
+
+omega-train-final: fix
+	@source .venv/bin/activate; \
+	PYTHONPATH=. python -m Omega --config=trpo_no_noise --mode=train_final --n_timesteps=1000000 --env_id=HumanoidStandup-v5 --device=cpu & \
+	PYTHONPATH=. python -m Omega --config=trpo_with_noise --mode=train_final --n_timesteps=1000000 --env_id=HumanoidStandup-v5 --device=cpu & \
+	PYTHONPATH=. python -m Omega --config=trpor_no_noise --mode=train_final --n_timesteps=1000000 --env_id=HumanoidStandup-v5 --device=cpu & \
+	PYTHONPATH=. python -m Omega --config=trpor_with_noise --mode=train_final --n_timesteps=1000000 --env_id=HumanoidStandup-v5 --device=cpu & \
+	wait
+
+omega-compare: fix
+	@. .venv/bin/activate; PYTHONPATH=. python -m Omega --mode=compare --env_id=HumanoidStandup-v5

@@ -1,3 +1,4 @@
+import argparse
 import functools
 import os
 from typing import Any, Dict
@@ -117,7 +118,6 @@ def create_param_samplers():
     "net_arch": dict(pi=[256, 256], vf=[256, 256]),
     "activation_fn": nn.Tanh,
     "ortho_init": False,
-    "n_timesteps": N_TIMESTEPS,
     "n_envs": 4,
   }
 
@@ -154,7 +154,6 @@ def create_param_samplers():
     # Combine shared defaults, TRPOR-specific, and sampled params
     params = {
       "policy": "MlpPolicy",
-      "n_timesteps": defaults["n_timesteps"],
       "n_envs": defaults["n_envs"],
       "epsilon": trpor_defaults["epsilon"],
       "ent_coef": ent_coef,
@@ -193,7 +192,6 @@ def create_param_samplers():
     # Combine shared defaults, TRPO-specific, and sampled params
     params = {
       "policy": "MlpPolicy",
-      "n_timesteps": defaults["n_timesteps"],
       "n_envs": defaults["n_envs"],
       "n_steps": n_steps,
       "batch_size": batch_size,
@@ -258,7 +256,9 @@ def objective(trial, config, env_id, n_timesteps, device, config_to_study):
   return max_reward
 
 
-def train_with_best_params(config, best_params, env_id, n_timesteps, device, log_dir, config_to_study):
+def train_with_best_params(config, env_id, n_timesteps, device, log_dir, config_to_study):
+  study = config_to_study[config]
+  best_params = study.best_params
   entropy_level = -0.3 if "with_noise" in config else 0.0  # Fixed noise level
 
   env = gym.make(env_id)
@@ -292,31 +292,54 @@ def train_with_best_params(config, best_params, env_id, n_timesteps, device, log
   return results["max_reward"]
 
 
+def compare_results(env_id="HumanoidStandup-v5", log_dir=".omega/finetune_logs/"):
+  configs = ["trpo_no_noise", "trpo_with_noise", "trpor_no_noise", "trpor_with_noise"]
+  max_rewards = {}
+
+  for config in configs:
+    config_name = get_name(config)
+    model_class_name = "TRPOR" if "trpor" in config else "TRPO"
+    path = os.path.join(log_dir, f"{model_class_name}_{env_id.split('-')[0]}_{config_name}.yaml")
+    if os.path.exists(path):
+      with open(path, "r") as f:
+        results = yaml.safe_load(f)
+      max_rewards[config] = results["max_reward"]
+    else:
+      print(f"Missing results file for {config}: {path}")
+
+  if max_rewards:
+    # Plot max rewards using Matplotlib
+    models = list(max_rewards.keys())
+    rewards = list(max_rewards.values())
+
+    plt.figure(figsize=(10, 6))
+    plt.bar(models, rewards)
+    plt.title(f"Max Rewards Comparison - {env_id}")
+    plt.ylabel("Max Reward")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig(os.path.join(log_dir, "max_rewards_comparison.png"))
+    plt.close()
+
+    print("\nComparison of Max Rewards from Final Training:")
+    for config, reward in max_rewards.items():
+      print(f"{config.upper().replace('_', ' ')}: {reward:.2f}")
+
+
 def get_name(cfg):
   return cfg.upper().replace("_", " ")
 
 
-def compare_max_rewards(env_id="HumanoidStandup-v5", n_timesteps=100_000, n_trials=100, device="cpu"):
-  log_dir = ".omega/finetune_logs/"
-  os.makedirs(log_dir, exist_ok=True)
-
+def setup_studies(env_id):
   configs = ["trpo_no_noise", "trpo_with_noise", "trpor_no_noise", "trpor_with_noise"]
-  max_rewards = {}
-  best_stats = {}
 
-  batch_size = 10  # Number of trials per batch
-
-  # Create studies for each config
   config_to_study = {}
   optuna_dir = ".omega/optuna_studies/"
   os.makedirs(optuna_dir, exist_ok=True)
   sampler = optuna.samplers.TPESampler()
   pruner = optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=10)
 
-  study_has_one_trial = {}
-
   for config in configs:
-    print(f"\nSetting up study for {config}...")
     storage = JournalStorage(JournalFileBackend(f"{optuna_dir}/{config}_storage"))
     study_name = f"{config}_{env_id}_study"
     study = optuna.create_study(
@@ -329,79 +352,53 @@ def compare_max_rewards(env_id="HumanoidStandup-v5", n_timesteps=100_000, n_tria
     )
     config_to_study[config] = study
 
-  # Track trials remaining and batch numbers per config
-  config_to_trials_remaining = {config: n_trials for config in configs}
-  config_to_batch_number = {config: 1 for config in configs}
+  return config_to_study
 
-  # Round-robin batches across configs
-  while any(config_to_trials_remaining[config] > 0 for config in configs):
-    # Print best trial for each config before each batch
-    print(f"\nBest Trial Stats Across All Configs (Batch {min(config_to_batch_number.values())}):")
-    for cfg in configs:
-      config_name = get_name(cfg)
-      st = config_to_study[cfg]
-      if st.trials and study_has_one_trial.get(config_name, False):
-        bt = st.best_trial
-        print(f"{config_name}:")
-        print(f"  Best Parameters: {bt.params}")
-        print(f"  Best Max Reward: {bt.value:.2f}")
-      else:
-        print(f"{config_name}: No trials yet")
 
-    for config in configs:
-      if config_to_trials_remaining[config] > 0:
-        current_batch_size = min(batch_size, config_to_trials_remaining[config])
-        print(f"\nRunning batch {config_to_batch_number[config]} for {config} ({current_batch_size} trials for {n_timesteps} timesteps)...")
+def main():
+  parser = argparse.ArgumentParser(description="Run training for specified model/config.")
+  parser.add_argument(
+    "--config",
+    type=str,
+    required=True,
+    choices=["trpo_no_noise", "trpo_with_noise", "trpor_no_noise", "trpor_with_noise"],
+    help="The model configuration to run.",
+  )
+  parser.add_argument(
+    "--mode",
+    type=str,
+    default="optimize",
+    choices=["optimize", "train_final", "compare"],
+    help="Mode: 'optimize' for hyperparam tuning, 'train_final' for training with best params, 'compare' for comparing results.",
+  )
+  parser.add_argument("--n_trials", type=int, default=100, help="Number of trials for optimization mode.")
+  parser.add_argument("--env_id", type=str, default="HumanoidStandup-v5", help="Environment ID.")
+  parser.add_argument("--n_timesteps", type=int, default=1_000_000, help="Number of timesteps for training.")
+  parser.add_argument("--device", type=str, default="cpu", help="Device to use (cpu or cuda).")
+  parser.add_argument("--log_dir", type=str, default=".omega/finetune_logs/", help="Log directory.")
 
-        study = config_to_study[config]
-        study.optimize(lambda trial: objective(trial, config, env_id, n_timesteps, device, config_to_study), n_trials=current_batch_size)
-        study_has_one_trial[get_name(config)] = True
-        print(f"Completed {current_batch_size} trials for {config}.")
+  args = parser.parse_args()
 
-        config_to_trials_remaining[config] -= current_batch_size
-        config_to_batch_number[config] += 1
+  os.makedirs(args.log_dir, exist_ok=True)
+  config_to_study = setup_studies(args.env_id)
 
-  # After all batches, train final models for each config and collect best stats
-  for config in configs:
-    study = config_to_study[config]
-    best_params = study.best_params
-    best_value = study.best_value
-    best_stats[config] = {"best_params": best_params, "best_value": best_value}
-    print(f"\nOverall best params for {config}: {best_params}")
-    print(f"Overall best value for {config}: {best_value:.2f}")
-    print(f"Training final model for {config} with best params...")
-    max_reward = train_with_best_params(config, best_params, env_id, n_timesteps, device, log_dir, config_to_study)
-    max_rewards[config] = max_reward
+  if args.mode == "optimize":
+    print(f"\nRunning optimization for {args.config} with {args.n_trials} trials...")
+    study = config_to_study[args.config]
+    study.optimize(lambda trial: objective(trial, args.config, args.env_id, args.n_timesteps, args.device, config_to_study), n_trials=args.n_trials)
+    print(f"Completed {args.n_trials} trials for {args.config}.")
+    print(f"Best params for {args.config}: {study.best_params}")
+    print(f"Best value for {args.config}: {study.best_value:.2f}")
 
-  # Print final summary across all configs
-  print("\nFinal Best Trial Stats Across All Configs:")
-  for config, stats in best_stats.items():
-    print(f"\n{config.upper().replace('_', ' ')}:")
-    print(f"  Best Parameters: {stats['best_params']}")
-    print(f"  Best Value: {stats['best_value']:.2f}")
+  elif args.mode == "train_final":
+    print(f"\nTraining final model for {args.config} with best params...")
+    max_reward = train_with_best_params(args.config, args.env_id, args.n_timesteps, args.device, args.log_dir, config_to_study)
+    print(f"Max reward from final training for {args.config}: {max_reward:.2f}")
 
-  print("\nComparison of Max Rewards from Final Training:")
-  for config, reward in max_rewards.items():
-    print(f"{config.upper().replace('_', ' ')}: {reward:.2f}")
-
-  # Plot max rewards using Matplotlib
-  models = list(max_rewards.keys())
-  rewards = list(max_rewards.values())
-
-  plt.figure(figsize=(10, 6))
-  plt.bar(models, rewards)
-  plt.title(f"Max Rewards Comparison - {env_id}")
-  plt.ylabel("Max Reward")
-  plt.xticks(rotation=45)
-  plt.tight_layout()
-  plt.savefig(os.path.join(log_dir, "max_rewards_comparison.png"))
-  plt.close()
+  elif args.mode == "compare":
+    print("\nRunning comparison across all configs...")
+    compare_results(args.env_id, args.log_dir)
 
 
 if __name__ == "__main__":
-  N_TIMESTEPS = 1_000_000
-  compare_max_rewards(
-    env_id="HumanoidStandup-v5",
-    n_timesteps=N_TIMESTEPS,
-    n_trials=100,
-  )
+  main()
