@@ -8,8 +8,8 @@ n_jobs=15 # Default number of jobs to run in parallel
 model=trpo # Default model to train
 
 optimize=False # Default to not optimize hyperparameters
-trials=160 # Default number of trials for hyperparameter optimization
-max_trials=160 # Default maximum number of trials for hyperparameter optimization
+trials=1000 # Default number of trials for hyperparameter optimization
+max_trials=1000 # Default maximum number of trials for hyperparameter optimization
 
 n_timesteps=0 # Default number of timesteps to train for
 n_eval_timesteps=1000000 # Default number of timesteps to evaluate for
@@ -151,3 +151,7 @@ new:
 new_eval:
 	@$(MAKE) noise MODEL=trpo
 	@$(MAKE) noise MODEL=trpor
+
+
+omega: fix
+	@. .venv/bin/activate; PYTHONPATH=. python -m Omega

@@ -33,3 +33,5 @@ results/results.png
 *.fls
 
 ppo_humanoid_conv1d_test.zip
+all.txt
+.omega
