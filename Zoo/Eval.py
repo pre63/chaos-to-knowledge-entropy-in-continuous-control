@@ -57,7 +57,16 @@ def load_reward_threshold(conf_file, env):
   return None
 
 
-def evaluate_training(algo, env, device, optimize_hyperparameters, conf_file, n_trials, n_timesteps, n_jobs):
+def evaluate_training(
+  algo,
+  env,
+  device,
+  optimize_hyperparameters,
+  conf_file,
+  n_trials,
+  n_timesteps,
+  n_jobs,
+):
   results_dir = ".results/"
   csv_file = f"{results_dir}results.csv"
   os.makedirs(results_dir, exist_ok=True)

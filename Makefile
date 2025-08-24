@@ -156,8 +156,8 @@ new_eval:
 
 omega: fix
 	@source .venv/bin/activate; \
-	PYTHONPATH=. python -m Omega --config=trpo_no_noise --n_trials=100 --n_timesteps=1000000 --env_id=HumanoidStandup-v5 --device=cpu
-	PYTHONPATH=. python -m Omega --config=trpo_with_noise --n_trials=100 --n_timesteps=1000000 --env_id=HumanoidStandup-v5 --device=cpu
-	PYTHONPATH=. python -m Omega --config=trpor_no_noise --n_trials=100 --n_timesteps=1000000 --env_id=HumanoidStandup-v5 --device=cpu
-	PYTHONPATH=. python -m Omega --config=trpor_with_noise --n_trials=100 --n_timesteps=1000000 --env_id=HumanoidStandup-v5 --device=cpu
+	PYTHONPATH=. python -m Omega --config=trpo_no_noise --n_trials=100 --n_timesteps=1000000 --env_id=HumanoidStandup-v5
+	PYTHONPATH=. python -m Omega --config=trpo_with_noise --n_trials=100 --n_timesteps=1000000 --env_id=HumanoidStandup-v5
+	PYTHONPATH=. python -m Omega --config=trpor_no_noise --n_trials=100 --n_timesteps=1000000 --env_id=HumanoidStandup-v5
+	PYTHONPATH=. python -m Omega --config=trpor_with_noise --n_trials=100 --n_timesteps=1000000 --env_id=HumanoidStandup-v5
 	wait

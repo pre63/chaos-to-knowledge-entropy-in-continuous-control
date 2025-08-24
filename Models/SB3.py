@@ -42,10 +42,11 @@ class TRPO(TRPO):
     policy_kwargs: Optional[Dict[str, Any]] = None,
     verbose: int = 0,
     seed: Optional[int] = None,
-    device: Union[th.device, str] = "auto",
+    device: Union[th.device, str] = "cuda",
     _init_setup_model: bool = True,
     **kwargs,
   ):
+
     super().__init__(
       policy=policy,
       env=env,
@@ -75,6 +76,14 @@ class TRPO(TRPO):
       _init_setup_model=_init_setup_model,
     )
     # Ignore kwargs for compatibility
+
+    # Print device and verify it is being used
+    print(f"Device set to: {device}")
+    if isinstance(device, str):
+      device = th.device(device if th.cuda.is_available() else "cpu")
+    elif isinstance(device, th.device):
+      device = device if th.cuda.is_available() else th.device("cpu")
+    print(f"Using device: {device} (CUDA available: {th.cuda.is_available()})")
 
 
 def sample_trpo_params(trial: optuna.Trial, n_actions: int, n_envs: int, additional_args: dict) -> Dict[str, Any]:
@@ -121,7 +130,12 @@ def sample_trpo_params(trial: optuna.Trial, n_actions: int, n_envs: int, additio
     "medium": dict(pi=[256, 256], vf=[256, 256]),
   }[net_arch_type]
 
-  activation_fn = {"tanh": nn.Tanh, "relu": nn.ReLU, "elu": nn.ELU, "leaky_relu": nn.LeakyReLU}[activation_fn_name]
+  activation_fn = {
+    "tanh": nn.Tanh,
+    "relu": nn.ReLU,
+    "elu": nn.ELU,
+    "leaky_relu": nn.LeakyReLU,
+  }[activation_fn_name]
 
   n_timesteps = trial.suggest_int("n_timesteps", 100000, 1000000, step=100000)
 
@@ -262,7 +276,12 @@ def sample_ppo_params(trial: optuna.Trial, n_actions: int, n_envs: int, addition
     "medium": dict(pi=[256, 256], vf=[256, 256]),
   }[net_arch_type]
 
-  activation_fn = {"tanh": nn.Tanh, "relu": nn.ReLU, "elu": nn.ELU, "leaky_relu": nn.LeakyReLU}[activation_fn_name]
+  activation_fn = {
+    "tanh": nn.Tanh,
+    "relu": nn.ReLU,
+    "elu": nn.ELU,
+    "leaky_relu": nn.LeakyReLU,
+  }[activation_fn_name]
 
   n_timesteps = trial.suggest_int("n_timesteps", 100000, 1000000, step=100000)
   n_envs_choice = [2, 4, 6, 8, 10]

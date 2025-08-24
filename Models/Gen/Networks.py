@@ -40,7 +40,15 @@ class ForwardDynamicsModel(nn.Module):
 
 
 class GenerativeReplayBuffer:
-  def __init__(self, real_capacity, synthetic_capacity, relevance_function, generative_model, batch_size, device):
+  def __init__(
+    self,
+    real_capacity,
+    synthetic_capacity,
+    relevance_function,
+    generative_model,
+    batch_size,
+    device,
+  ):
     self.real_capacity = real_capacity
     self.synthetic_capacity = synthetic_capacity
     self.real_buffer = []
@@ -90,15 +98,30 @@ class GenerativeReplayBuffer:
     synthetic_sample_size = num_samples // 2
 
     real_sample = random.sample(self.real_buffer, min(real_sample_size, len(self.real_buffer)))
-    synthetic_sample = random.sample(self.synthetic_buffer, min(synthetic_sample_size, len(self.synthetic_buffer)))
+    synthetic_sample = random.sample(
+      self.synthetic_buffer,
+      min(synthetic_sample_size, len(self.synthetic_buffer)),
+    )
 
     real_sample = [
-      (obs.to(self.device), action.to(self.device), returns.to(self.device), advantages.to(self.device), old_log_prob.to(self.device))
+      (
+        obs.to(self.device),
+        action.to(self.device),
+        returns.to(self.device),
+        advantages.to(self.device),
+        old_log_prob.to(self.device),
+      )
       for obs, action, returns, advantages, old_log_prob in real_sample
     ]
 
     synthetic_sample = [
-      (obs.to(self.device), action.to(self.device), returns.to(self.device), advantages.to(self.device), old_log_prob.to(self.device))
+      (
+        obs.to(self.device),
+        action.to(self.device),
+        returns.to(self.device),
+        advantages.to(self.device),
+        old_log_prob.to(self.device),
+      )
       for obs, action, returns, advantages, old_log_prob in synthetic_sample
     ]
 

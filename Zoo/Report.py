@@ -10,7 +10,31 @@ import pandas as pd
 import yaml
 
 line_styles = ["-", "--", "-.", ":"]
-markers = [".", ",", "o", "v", "^", "<", ">", "1", "2", "3", "4", "8", "s", "p", "*", "h", "H", "+", "x", "D", "d", "|", "_"]
+markers = [
+  ".",
+  ",",
+  "o",
+  "v",
+  "^",
+  "<",
+  ">",
+  "1",
+  "2",
+  "3",
+  "4",
+  "8",
+  "s",
+  "p",
+  "*",
+  "h",
+  "H",
+  "+",
+  "x",
+  "D",
+  "d",
+  "|",
+  "_",
+]
 
 
 def downsample_data_with_smoothing(timesteps, rewards, max_points=1000, window_size=500):
@@ -30,7 +54,10 @@ def downsample_data_with_smoothing(timesteps, rewards, max_points=1000, window_s
   # Downsample the smoothed data
   bin_size = int(np.ceil(len(timesteps) / max_points))
   binned_timesteps = np.mean(timesteps[: len(timesteps) // bin_size * bin_size].reshape(-1, bin_size), axis=1)
-  binned_rewards = np.mean(smoothed_rewards[: len(smoothed_rewards) // bin_size * bin_size].values.reshape(-1, bin_size), axis=1)
+  binned_rewards = np.mean(
+    smoothed_rewards[: len(smoothed_rewards) // bin_size * bin_size].values.reshape(-1, bin_size),
+    axis=1,
+  )
 
   # Handle any remaining data points
   remainder_timesteps = timesteps[len(timesteps) // bin_size * bin_size :]
@@ -160,7 +187,10 @@ def plot_learning_stability_cv(grouped, results_dir, num_points):
         resampled_data = resample_to_fixed_points(run_data, num_points, common_timesteps)
 
         downsampled_timesteps, downsampled_rewards = downsample_data_with_smoothing(
-          resampled_data.index, resampled_data["Reward"], max_points=100, window_size=1000
+          resampled_data.index,
+          resampled_data["Reward"],
+          max_points=100,
+          window_size=1000,
         )
 
         if model not in model_aggregated:
@@ -178,7 +208,15 @@ def plot_learning_stability_cv(grouped, results_dir, num_points):
         cv = std_rewards / mean_rewards.replace(0, np.nan)  # Avoid division by zero
 
         # Plot CV
-        ax.plot(mean_rewards.index, cv, label=f"{model} CV", linewidth=1.5, linestyle=style_mapping[model], marker=marker_mapping[model], markevery=5)
+        ax.plot(
+          mean_rewards.index,
+          cv,
+          label=f"{model} CV",
+          linewidth=1.5,
+          linestyle=style_mapping[model],
+          marker=marker_mapping[model],
+          markevery=5,
+        )
 
     ax.set_title(f"Environment: {env}")
     ax.set_xlabel("Normalized Episodes")
@@ -235,10 +273,16 @@ def plot_learning_stability(grouped, results_dir, num_points):
         # Check if downsampling is necessary
         if len(resampled_data) > 1000:
           downsampled_timesteps, downsampled_rewards = downsample_data_with_smoothing(
-            resampled_data.index, resampled_data["Reward"], max_points=1000, window_size=500
+            resampled_data.index,
+            resampled_data["Reward"],
+            max_points=1000,
+            window_size=500,
           )
         else:
-          downsampled_timesteps, downsampled_rewards = resampled_data.index, resampled_data["Reward"].values
+          downsampled_timesteps, downsampled_rewards = (
+            resampled_data.index,
+            resampled_data["Reward"].values,
+          )
 
         if model not in model_aggregated:
           model_aggregated[model] = []
@@ -314,7 +358,10 @@ def plot_rewards_sd_and_reject_outliers(grouped, results_dir, num_points, outlie
 
         if downsample:
           downsampled_timesteps, downsampled_rewards = downsample_data_with_smoothing(
-            resampled_data.index, resampled_data["Reward"], max_points=max_points, window_size=500
+            resampled_data.index,
+            resampled_data["Reward"],
+            max_points=max_points,
+            window_size=500,
           )
         else:
           downsampled_timesteps = resampled_data.index
@@ -416,7 +463,14 @@ def plot_sample_efficiency(grouped, results_dir, filter_envs=None, filter_models
       line_style = style_mapping[model]
       marker = marker_mapping[model]
 
-      ax.bar(model, mean_episodes, yerr=std_episodes, capsize=5, label=model, alpha=0.75)
+      ax.bar(
+        model,
+        mean_episodes,
+        yerr=std_episodes,
+        capsize=5,
+        label=model,
+        alpha=0.75,
+      )
 
     ax.set_title(f"Environment: {env}")
     ax.set_ylabel("Episodes Completed")
@@ -623,7 +677,12 @@ def plot(env_path, results_dir, num_points, filter_envs=None, filter_models=None
   generate_latex_comparison_table(grouped, results_dir)
   save_flattened_data_to_csv(grouped, results_dir)
 
-  plot_all_from_csv(".results/results.csv", results_dir, filter_envs=filter_envs, filter_models=filter_models)
+  plot_all_from_csv(
+    ".results/results.csv",
+    results_dir,
+    filter_envs=filter_envs,
+    filter_models=filter_models,
+  )
 
 
 if __name__ == "__main__":

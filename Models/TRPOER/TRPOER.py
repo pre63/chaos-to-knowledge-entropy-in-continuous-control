@@ -112,10 +112,21 @@ class TRPOER(TRPO):
     # Compute entropy and determine how many replay samples to mix in.
     distribution = self.policy.get_distribution(on_policy_obs)
     entropy_mean = distribution.entropy().mean().item()
-    num_replay_samples = sampling_strategy(entropy=entropy_mean, sampling_coef=self.sampling_coef, min_samples=0, max_samples=self.batch_size)
+    num_replay_samples = sampling_strategy(
+      entropy=entropy_mean,
+      sampling_coef=self.sampling_coef,
+      min_samples=0,
+      max_samples=self.batch_size,
+    )
 
     if num_replay_samples > 0:
-      replay_obs, replay_actions, replay_returns, replay_advantages, replay_old_log_prob = self.replay_buffer.sample(num_replay_samples)
+      (
+        replay_obs,
+        replay_actions,
+        replay_returns,
+        replay_advantages,
+        replay_old_log_prob,
+      ) = self.replay_buffer.sample(num_replay_samples)
       replay_obs = replay_obs.to(self.device)
       replay_actions = replay_actions.to(self.device)
       replay_returns = replay_returns.to(self.device)
@@ -154,7 +165,10 @@ class TRPOER(TRPO):
       max_iter=self.cg_max_steps,
     )
     line_search_max_step_size = 2 * self.target_kl
-    line_search_max_step_size /= th.matmul(search_direction, hessian_vector_product_fn(search_direction, retain_graph=False))
+    line_search_max_step_size /= th.matmul(
+      search_direction,
+      hessian_vector_product_fn(search_direction, retain_graph=False),
+    )
     line_search_max_step_size = th.sqrt(line_search_max_step_size)
     line_search_backtrack_coeff = 1.0
     original_actor_params = [param.detach().clone() for param in actor_params]

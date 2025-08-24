@@ -44,7 +44,14 @@ class ReplayBuffer:
     self.old_log_prob = deque(maxlen=capacity)
     self.cumulative_rewards = deque(maxlen=capacity)  # Required only for PER
 
-  def add(self, observations: th.Tensor, actions: th.Tensor, returns: th.Tensor, advantages: th.Tensor, old_log_prob: th.Tensor):
+  def add(
+    self,
+    observations: th.Tensor,
+    actions: th.Tensor,
+    returns: th.Tensor,
+    advantages: th.Tensor,
+    old_log_prob: th.Tensor,
+  ):
     """
         Add a batch of transitions to the buffer. Stores cumulative rewards if PER is enabled.
 
@@ -63,7 +70,15 @@ class ReplayBuffer:
       if self.use_per:
         self.cumulative_rewards.append(cumulative_reward)
 
-  def sample_extend(self, batch_size: int, observations: th.Tensor, actions: th.Tensor, returns: th.Tensor, advantages: th.Tensor, old_log_prob: th.Tensor):
+  def sample_extend(
+    self,
+    batch_size: int,
+    observations: th.Tensor,
+    actions: th.Tensor,
+    returns: th.Tensor,
+    advantages: th.Tensor,
+    old_log_prob: th.Tensor,
+  ):
     """
         Sample a batch of transitions and extend the provided tensors with the sampled batch.
 
@@ -215,12 +230,25 @@ class EnTRPO(TRPO):
         # Sample data from the replay buffer and
         # concatenate with the current rollout data,
         # effectively doubling the batch size
-        data = self.replay_buffer.sample_extend(self.batch_size, observations, actions, returns, advantages, old_log_prob)
+        data = self.replay_buffer.sample_extend(
+          self.batch_size,
+          observations,
+          actions,
+          returns,
+          advantages,
+          old_log_prob,
+        )
 
         observations, actions, returns, advantages, old_log_prob = data
 
       # Add the current rollout data to the replay buffer for next iteration
-      self.replay_buffer.add(rollout_data.observations, rollout_data.actions, rollout_data.returns, rollout_data.advantages, rollout_data.old_log_prob)
+      self.replay_buffer.add(
+        rollout_data.observations,
+        rollout_data.actions,
+        rollout_data.returns,
+        rollout_data.advantages,
+        rollout_data.old_log_prob,
+      )
 
       if isinstance(self.action_space, spaces.Discrete):
         # Convert discrete action from float to long
@@ -272,7 +300,10 @@ class EnTRPO(TRPO):
 
       # Maximal step length
       line_search_max_step_size = 2 * self.target_kl
-      line_search_max_step_size /= th.matmul(search_direction, hessian_vector_product_fn(search_direction, retain_graph=False))
+      line_search_max_step_size /= th.matmul(
+        search_direction,
+        hessian_vector_product_fn(search_direction, retain_graph=False),
+      )
       line_search_max_step_size = th.sqrt(line_search_max_step_size)  # type: ignore[assignment, arg-type]
 
       line_search_backtrack_coeff = 1.0

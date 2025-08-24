@@ -11,8 +11,8 @@ from stable_baselines3.common.type_aliases import GymEnv, Schedule
 from torch import nn
 from torch.nn import functional as F
 
-from Models.SB3 import TRPO
 from Models.Experimental.TRPOQ.Network import QuantileValueNetwork, optimize_hyperparameters
+from Models.SB3 import TRPO
 
 SelfTRPO = TypeVar("SelfTRPO", bound="TRPO")
 
@@ -52,14 +52,24 @@ class TRPOQ2(TRPO):
     # Initialize dual critics
     self.truncated_value_networks = nn.ModuleList(
       [
-        QuantileValueNetwork(state_dim=env.observation_space.shape[0], n_quantiles=n_quantiles, net_arch=net_arch, activation_fn=activation_fn)
+        QuantileValueNetwork(
+          state_dim=env.observation_space.shape[0],
+          n_quantiles=n_quantiles,
+          net_arch=net_arch,
+          activation_fn=activation_fn,
+        )
         for _ in range(n_value_networks)
       ]
     )
 
     self.standard_value_networks = nn.ModuleList(
       [
-        QuantileValueNetwork(state_dim=env.observation_space.shape[0], n_quantiles=n_quantiles, net_arch=net_arch, activation_fn=activation_fn)
+        QuantileValueNetwork(
+          state_dim=env.observation_space.shape[0],
+          n_quantiles=n_quantiles,
+          net_arch=net_arch,
+          activation_fn=activation_fn,
+        )
         for _ in range(n_value_networks)
       ]
     )
@@ -77,7 +87,11 @@ class TRPOQ2(TRPO):
     if self.adaptive_truncation:
       # Adaptive truncation based on variance
       variances = th.var(sorted_quantiles, dim=1)
-      adaptive_truncation_threshold = th.clamp((variances.mean() * self.truncation_threshold).long(), 1, self.n_quantiles)
+      adaptive_truncation_threshold = th.clamp(
+        (variances.mean() * self.truncation_threshold).long(),
+        1,
+        self.n_quantiles,
+      )
     else:
       adaptive_truncation_threshold = self.truncation_threshold
 
@@ -122,10 +136,21 @@ class TRPOQ2(TRPO):
       actor_params, policy_objective_gradients, grad_kl, grad_shape = self._compute_actor_grad(kl_div, policy_objective)
 
       search_direction = conjugate_gradient_solver(
-        partial(self.hessian_vector_product, actor_params, grad_kl), policy_objective_gradients, max_iter=self.cg_max_steps
+        partial(self.hessian_vector_product, actor_params, grad_kl),
+        policy_objective_gradients,
+        max_iter=self.cg_max_steps,
       )
 
-      step_size = 2 * self.target_kl / (th.matmul(search_direction, self.hessian_vector_product(actor_params, grad_kl, search_direction)))
+      step_size = (
+        2
+        * self.target_kl
+        / (
+          th.matmul(
+            search_direction,
+            self.hessian_vector_product(actor_params, grad_kl, search_direction),
+          )
+        )
+      )
       step_size = th.sqrt(step_size)
 
       # Line search with KL constraint

@@ -41,7 +41,15 @@ class WalkEnv(gym.Env):
 
   metadata = {"render_modes": [None, "human", "ansi"], "render_fps": 5}
 
-  def __init__(self, n_states=7, p_stay=0.0, p_backward=0.5, max_blocks=100, render_mode=None, verbose=0):
+  def __init__(
+    self,
+    n_states=7,
+    p_stay=0.0,
+    p_backward=0.5,
+    max_blocks=100,
+    render_mode=None,
+    verbose=0,
+  ):
     # Set the verbosity level for logging messages; higher values may provide more detailed output.
     self.verbose = verbose
 
@@ -250,7 +258,7 @@ class WalkEnv(gym.Env):
     for i in range(self.shape[1] - 2):
       cell_x = i * self.cell_width
       cell_rect = pygame.Rect(cell_x, 50, self.cell_width, 100)
-      color = LEFT_TERMINAL_COLOR if i == 0 else TERMINAL_COLOR if i == self.nS - 1 else AGENT_COLOR if i == self.s else CELL_COLOR
+      color = LEFT_TERMINAL_COLOR if i == 0 else (TERMINAL_COLOR if i == self.nS - 1 else AGENT_COLOR if i == self.s else CELL_COLOR)
       pygame.draw.rect(surface, color, cell_rect)
       pygame.draw.rect(surface, (0, 0, 0), cell_rect, 2)
 
@@ -320,7 +328,14 @@ def plot_transition_matrix(env):
   # Plot transition probabilities for each action
   fig, axes = plt.subplots(1, n_actions, figsize=(15, 5))
   for a in range(n_actions):
-    sns.heatmap(transition_probs[:, a, :], annot=True, fmt=".2f", cmap="Blues", cbar=True, ax=axes[a])
+    sns.heatmap(
+      transition_probs[:, a, :],
+      annot=True,
+      fmt=".2f",
+      cmap="Blues",
+      cbar=True,
+      ax=axes[a],
+    )
     axes[a].set_title(f"Action {a}: Transition Probabilities")
     axes[a].set_xlabel("Next State")
     axes[a].set_ylabel("Current State")

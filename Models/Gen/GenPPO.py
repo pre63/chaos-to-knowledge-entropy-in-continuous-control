@@ -15,7 +15,15 @@ class GenPPO(PPO):
     Proximal Policy Optimization with Generative Replay Buffer and entropy regularization.
     """
 
-  def __init__(self, entropy_coef=0.01, sampling_coef=0.5, buffer_capacity=10000, batch_size=64, normalize_advantage=True, **kwargs):
+  def __init__(
+    self,
+    entropy_coef=0.01,
+    sampling_coef=0.5,
+    buffer_capacity=10000,
+    batch_size=64,
+    normalize_advantage=True,
+    **kwargs,
+  ):
     super().__init__(**kwargs)
     self.entropy_coef = entropy_coef
     self.sampling_coef = sampling_coef
@@ -83,12 +91,23 @@ class GenPPO(PPO):
     # Determine replay sample size based on entropy
     distribution = self.policy.get_distribution(on_policy_obs)
     entropy_mean = distribution.entropy().mean().item()
-    num_replay_samples = sampling_strategy(entropy=entropy_mean, sampling_coef=self.sampling_coef, min_samples=0, max_samples=self.batch_size)
+    num_replay_samples = sampling_strategy(
+      entropy=entropy_mean,
+      sampling_coef=self.sampling_coef,
+      min_samples=0,
+      max_samples=self.batch_size,
+    )
 
     if num_replay_samples > 0:
       replay_samples = self.replay_buffer.sample(num_replay_samples)
       if replay_samples:
-        replay_obs, replay_actions, replay_returns, replay_advantages, replay_old_log_prob = zip(*replay_samples)
+        (
+          replay_obs,
+          replay_actions,
+          replay_returns,
+          replay_advantages,
+          replay_old_log_prob,
+        ) = zip(*replay_samples)
         replay_obs = th.stack(replay_obs).to(self.device)
         replay_actions = th.stack(replay_actions).to(self.device)
         replay_returns = th.stack(replay_returns).to(self.device)

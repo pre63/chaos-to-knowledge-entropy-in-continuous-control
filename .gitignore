@@ -35,3 +35,5 @@ results/results.png
 ppo_humanoid_conv1d_test.zip
 all.txt
 .omega
+runs/
+.omega/

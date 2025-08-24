@@ -46,7 +46,16 @@ class ForwardDynamicsModel(nn.Module):
 
 
 class GenerativeReplayBuffer:
-  def __init__(self, real_capacity, synthetic_capacity, relevance_function, generative_model, batch_size, group_size, env):
+  def __init__(
+    self,
+    real_capacity,
+    synthetic_capacity,
+    relevance_function,
+    generative_model,
+    batch_size,
+    group_size,
+    env,
+  ):
     self.real_capacity = real_capacity
     self.synthetic_capacity = synthetic_capacity
     self.real_buffer = []
@@ -98,7 +107,10 @@ class GenerativeReplayBuffer:
     real_sample_size = num_samples // 2
     synthetic_sample_size = num_samples // 2
     real_sample = random.sample(self.real_buffer, min(real_sample_size, len(self.real_buffer)))
-    synthetic_sample = random.sample(self.synthetic_buffer, min(synthetic_sample_size, len(self.synthetic_buffer)))
+    synthetic_sample = random.sample(
+      self.synthetic_buffer,
+      min(synthetic_sample_size, len(self.synthetic_buffer)),
+    )
     return real_sample + synthetic_sample
 
 
@@ -195,7 +207,12 @@ class GRPO(PPO):
         self.num_timesteps += env.num_envs
         dummy_value = th.zeros(1, device=self.device)
         rollout_buffer.add(
-          self._last_obs, actions[i].cpu().numpy(), rewards[i], self._last_episode_starts if i == 0 else False, dummy_value, log_probs[i]  # Keep as tensor
+          self._last_obs,
+          actions[i].cpu().numpy(),
+          rewards[i],
+          self._last_episode_starts if i == 0 else False,
+          dummy_value,
+          log_probs[i],  # Keep as tensor
         )
 
       self._last_obs = next_obs
@@ -484,11 +501,30 @@ if __name__ == "__main__":
   env = make_vec_env("Pendulum-v1", n_envs=1)
 
   # Test GRPO
-  grpo_model = GRPO(policy="MlpPolicy", env=env, learning_rate=3e-4, n_steps=2048, batch_size=64, n_epochs=10, clip_range=0.2, group_size=4, verbose=1)
+  grpo_model = GRPO(
+    policy="MlpPolicy",
+    env=env,
+    learning_rate=3e-4,
+    n_steps=2048,
+    batch_size=64,
+    n_epochs=10,
+    clip_range=0.2,
+    group_size=4,
+    verbose=1,
+  )
   grpo_model.learn(total_timesteps=100000)
 
   # Test GenGRPO
   gengrpo_model = GenGRPO(
-    policy="MlpPolicy", env=env, learning_rate=3e-4, n_steps=2048, batch_size=64, n_epochs=10, clip_range=0.2, group_size=4, buffer_capacity=10000, verbose=1
+    policy="MlpPolicy",
+    env=env,
+    learning_rate=3e-4,
+    n_steps=2048,
+    batch_size=64,
+    n_epochs=10,
+    clip_range=0.2,
+    group_size=4,
+    buffer_capacity=10000,
+    verbose=1,
   )
   gengrpo_model.learn(total_timesteps=100000)

@@ -149,7 +149,12 @@ def load_and_preprocess_data(data_dir, algorithms, environments):
         print(f"No valid data for {algo} in {env}")
 
     # Statistical significance (1 baseline run, any noise runs)
-    for algo, baseline in [("GenPPO", "PPO"), ("GenTRPO", "TRPO"), ("TRPOR", "TRPO"), ("TRPOER", "TRPO")]:
+    for algo, baseline in [
+      ("GenPPO", "PPO"),
+      ("GenTRPO", "TRPO"),
+      ("TRPOR", "TRPO"),
+      ("TRPOER", "TRPO"),
+    ]:
       baseline_key = (env, baseline, "Baseline")
       if baseline_key not in run_groups or not run_groups[baseline_key]:
         print(f"Skipping t-test for {algo} vs {baseline} in {env}: no baseline runs")
@@ -165,7 +170,12 @@ def load_and_preprocess_data(data_dir, algorithms, environments):
           print(f"Single run comparison for {algo} vs {baseline} in {env}, label={label}: {'outperforms' if p_value == 0.0 else 'does not outperform'}")
         else:
           try:
-            t_stat, p_value = ttest_ind(algo_runs, baseline_rewards, equal_var=False, alternative="greater")
+            t_stat, p_value = ttest_ind(
+              algo_runs,
+              baseline_rewards,
+              equal_var=False,
+              alternative="greater",
+            )
             if np.isnan(p_value):
               p_value = 1.0
               print(f"Warning: NaN p-value for {algo} vs {baseline} in {env}, label={label}. Setting p_value=1.0")
@@ -204,7 +214,13 @@ def load_and_preprocess_data(data_dir, algorithms, environments):
             best_algo = algo
             best_noise = format_label(label)
           print(f"Best model check: {algo} in {env}, label={label}, max_reward={current_max:.2f}")
-    comparison_data[env] = (genppo_prob, gentrpo_prob, best_algo, best_noise, max_reward)
+    comparison_data[env] = (
+      genppo_prob,
+      gentrpo_prob,
+      best_algo,
+      best_noise,
+      max_reward,
+    )
 
   return runs, table_data, significance_data, comparison_data
 
@@ -243,7 +259,7 @@ def plot_algo_pair_comparison(data, algo1, algo2, environments, output_dir, smoo
         (line,) = ax.plot(
           steps,
           rewards,
-          label=f"{format_label(label)}" if format_label(label) not in labels_seen else None,
+          label=(f"{format_label(label)}" if format_label(label) not in labels_seen else None),
           color="black",
           linestyle=linestyle,
           marker=markers[run_idx % len(markers)],
@@ -284,10 +300,21 @@ def plot_algo_pair_comparison(data, algo1, algo2, environments, output_dir, smoo
     if ax.get_legend() is not None:
       ax.get_legend().remove()
   if handles:
-    fig.legend(handles, labels, loc="lower center", bbox_to_anchor=(0.5, -0.05), ncol=len(labels), fontsize=8)
+    fig.legend(
+      handles,
+      labels,
+      loc="lower center",
+      bbox_to_anchor=(0.5, -0.05),
+      ncol=len(labels),
+      fontsize=8,
+    )
   plt.tight_layout(rect=[0, 0.05, 1, 0.95])
   os.makedirs(output_dir, exist_ok=True)
-  fig.savefig(os.path.join(output_dir, f"{algo1}_vs_{algo2}_rewards.png"), dpi=300, bbox_inches="tight")
+  fig.savefig(
+    os.path.join(output_dir, f"{algo1}_vs_{algo2}_rewards.png"),
+    dpi=300,
+    bbox_inches="tight",
+  )
   plt.close(fig)
 
 
@@ -331,7 +358,7 @@ def plot_env_all_algos(data, env, algorithms, output_dir, smooth_window=5, marke
         (line,) = ax_returns.plot(
           steps,
           rewards,
-          label=f"{format_label(label)}" if format_label(label) not in labels_seen else None,
+          label=(f"{format_label(label)}" if format_label(label) not in labels_seen else None),
           color="black",
           linestyle="-",
           marker=markers[run_idx % len(markers)],
@@ -343,7 +370,7 @@ def plot_env_all_algos(data, env, algorithms, output_dir, smooth_window=5, marke
         ax_entropy.plot(
           steps,
           entropies,
-          label=f"{format_label(label)}" if format_label(label) not in labels_seen else None,
+          label=(f"{format_label(label)}" if format_label(label) not in labels_seen else None),
           color="black",
           linestyle="-",
           marker=markers[run_idx % len(markers)],
@@ -368,8 +395,16 @@ def plot_env_all_algos(data, env, algorithms, output_dir, smooth_window=5, marke
       if rewards_range > 0:
         y_ticks = np.concatenate(
           [
-            np.arange(rewards_y_min, rewards_y_min + rewards_range / 4, rewards_range / 20),
-            np.arange(rewards_y_min + rewards_range / 4, rewards_y_max, rewards_range / 10),
+            np.arange(
+              rewards_y_min,
+              rewards_y_min + rewards_range / 4,
+              rewards_range / 20,
+            ),
+            np.arange(
+              rewards_y_min + rewards_range / 4,
+              rewards_y_max,
+              rewards_range / 10,
+            ),
           ]
         )
         y_ticks = np.unique(np.clip(y_ticks, rewards_y_min, rewards_y_max))
@@ -378,8 +413,16 @@ def plot_env_all_algos(data, env, algorithms, output_dir, smooth_window=5, marke
       if entropies_range > 0:
         y_ticks = np.concatenate(
           [
-            np.arange(entropies_y_min, entropies_y_min + entropies_range / 4, entropies_range / 20),
-            np.arange(entropies_y_min + entropies_range / 4, entropies_y_max, entropies_range / 10),
+            np.arange(
+              entropies_y_min,
+              entropies_y_min + entropies_range / 4,
+              entropies_range / 20,
+            ),
+            np.arange(
+              entropies_y_min + entropies_range / 4,
+              entropies_y_max,
+              entropies_range / 10,
+            ),
           ]
         )
         y_ticks = np.unique(np.clip(y_ticks, entropies_y_min, entropies_y_max))
@@ -402,10 +445,21 @@ def plot_env_all_algos(data, env, algorithms, output_dir, smooth_window=5, marke
     if ax.get_legend() is not None:
       ax.get_legend().remove()
   if handles:
-    fig.legend(handles, labels, loc="lower center", bbox_to_anchor=(0.5, -0.05), ncol=len(labels), fontsize=8)
+    fig.legend(
+      handles,
+      labels,
+      loc="lower center",
+      bbox_to_anchor=(0.5, -0.05),
+      ncol=len(labels),
+      fontsize=8,
+    )
   plt.tight_layout(rect=[0, 0.05, 1, 0.95])
   os.makedirs(output_dir, exist_ok=True)
-  fig.savefig(os.path.join(output_dir, f"{env}_rewards_entropy_vs_steps_all_algos.png"), dpi=300, bbox_inches="tight")
+  fig.savefig(
+    os.path.join(output_dir, f"{env}_rewards_entropy_vs_steps_all_algos.png"),
+    dpi=300,
+    bbox_inches="tight",
+  )
   plt.close(fig)
 
 
@@ -448,7 +502,7 @@ def plot_algo_across_envs(data, algo, environments, output_dir, smooth_window=5,
         (line,) = ax_returns.plot(
           steps,
           rewards,
-          label=f"{format_label(label)}" if format_label(label) not in labels_seen else None,
+          label=(f"{format_label(label)}" if format_label(label) not in labels_seen else None),
           color="black",
           linestyle="-",
           marker=markers[run_idx % len(markers)],
@@ -460,7 +514,7 @@ def plot_algo_across_envs(data, algo, environments, output_dir, smooth_window=5,
         ax_entropy.plot(
           steps,
           entropies,
-          label=f"{format_label(label)}" if format_label(label) not in labels_seen else None,
+          label=(f"{format_label(label)}" if format_label(label) not in labels_seen else None),
           color="black",
           linestyle="-",
           marker=markers[run_idx % len(markers)],
@@ -485,8 +539,16 @@ def plot_algo_across_envs(data, algo, environments, output_dir, smooth_window=5,
       if rewards_range > 0:
         y_ticks = np.concatenate(
           [
-            np.arange(rewards_y_min, rewards_y_min + rewards_range / 4, rewards_range / 20),
-            np.arange(rewards_y_min + rewards_range / 4, rewards_y_max, rewards_range / 10),
+            np.arange(
+              rewards_y_min,
+              rewards_y_min + rewards_range / 4,
+              rewards_range / 20,
+            ),
+            np.arange(
+              rewards_y_min + rewards_range / 4,
+              rewards_y_max,
+              rewards_range / 10,
+            ),
           ]
         )
         y_ticks = np.unique(np.clip(y_ticks, rewards_y_min, rewards_y_max))
@@ -495,8 +557,16 @@ def plot_algo_across_envs(data, algo, environments, output_dir, smooth_window=5,
       if entropies_range > 0:
         y_ticks = np.concatenate(
           [
-            np.arange(entropies_y_min, entropies_y_min + entropies_range / 4, entropies_range / 20),
-            np.arange(entropies_y_min + entropies_range / 4, entropies_y_max, entropies_range / 10),
+            np.arange(
+              entropies_y_min,
+              entropies_y_min + entropies_range / 4,
+              entropies_range / 20,
+            ),
+            np.arange(
+              entropies_y_min + entropies_range / 4,
+              entropies_y_max,
+              entropies_range / 10,
+            ),
           ]
         )
         y_ticks = np.unique(np.clip(y_ticks, entropies_y_min, entropies_y_max))
@@ -519,10 +589,21 @@ def plot_algo_across_envs(data, algo, environments, output_dir, smooth_window=5,
     if ax.get_legend() is not None:
       ax.get_legend().remove()
   if handles:
-    fig.legend(handles, labels, loc="lower center", bbox_to_anchor=(0.5, -0.05), ncol=len(labels), fontsize=8)
+    fig.legend(
+      handles,
+      labels,
+      loc="lower center",
+      bbox_to_anchor=(0.5, -0.05),
+      ncol=len(labels),
+      fontsize=8,
+    )
   plt.tight_layout(rect=[0, 0.05, 1, 0.95])
   os.makedirs(output_dir, exist_ok=True)
-  fig.savefig(os.path.join(output_dir, f"{algo}_rewards_entropy_vs_steps.png"), dpi=300, bbox_inches="tight")
+  fig.savefig(
+    os.path.join(output_dir, f"{algo}_rewards_entropy_vs_steps.png"),
+    dpi=300,
+    bbox_inches="tight",
+  )
   plt.close(fig)
 
 
@@ -584,7 +665,12 @@ def generate_latex_outputs(table_data, significance_data, comparison_data, outpu
     "This section evaluates the statistical significance of each algorithm’s performance compared to its baseline (PPO for GenPPO, TRPO for GenTRPO, TRPOR, TRPOER) using a two-sample t-test. The p-value indicates the likelihood that a noise-trained run outperforms the baseline. For single-run comparisons, a deterministic outcome is reported."
   )
 
-  for algo, baseline in [("GenPPO", "PPO"), ("GenTRPO", "TRPO"), ("TRPOR", "TRPO"), ("TRPOER", "TRPO")]:
+  for algo, baseline in [
+    ("GenPPO", "PPO"),
+    ("GenTRPO", "TRPO"),
+    ("TRPOR", "TRPO"),
+    ("TRPOER", "TRPO"),
+  ]:
     latex_content.append(f"\\subsection{{{algo} vs. {baseline}}}")
     for env in environments:
       if not significance_data[algo][env]:
@@ -623,9 +709,19 @@ def generate_latex_outputs(table_data, significance_data, comparison_data, outpu
 if __name__ == "__main__":
   print("Starting Plot.py execution")
   parser = argparse.ArgumentParser(description="Generate publication-quality RL plots and LaTeX results for MuJoCo.")
-  parser.add_argument("--data_dir", type=str, required=True, help="Directory with YAML files (e.g., '.noise/2025-04-19_18-19-45')")
+  parser.add_argument(
+    "--data_dir",
+    type=str,
+    required=True,
+    help="Directory with YAML files (e.g., '.noise/2025-04-19_18-19-45')",
+  )
   parser.add_argument("--smooth_window", type=int, default=5, help="Smoothing window size for curves")
-  parser.add_argument("--markers_per_line", type=int, default=10, help="Number of markers to show per line (default: 10)")
+  parser.add_argument(
+    "--markers_per_line",
+    type=int,
+    default=10,
+    help="Number of markers to show per line (default: 10)",
+  )
   args = parser.parse_args()
 
   if not os.path.exists(args.data_dir):
@@ -637,7 +733,15 @@ if __name__ == "__main__":
 
   sns.set(style="whitegrid", palette="gray")
 
-  environments = ["HalfCheetah-v5", "Hopper-v5", "Humanoid-v5", "HumanoidStandup-v5", "Pusher-v5", "Reacher-v5", "Swimmer-v5"]
+  environments = [
+    "HalfCheetah-v5",
+    "Hopper-v5",
+    "Humanoid-v5",
+    "HumanoidStandup-v5",
+    "Pusher-v5",
+    "Reacher-v5",
+    "Swimmer-v5",
+  ]
   algorithms = ["PPO", "GenPPO", "TRPO", "GenTRPO", "TRPOR", "TRPOER"]
 
   # Load and preprocess data upfront
@@ -645,12 +749,35 @@ if __name__ == "__main__":
 
   # Generate comparison plots
   if any(run[1] == "PPO" for run in runs) and any(run[1] == "GenPPO" for run in runs):
-    plot_algo_pair_comparison(runs, "PPO", "GenPPO", environments, output_dir, args.smooth_window, args.markers_per_line)
+    plot_algo_pair_comparison(
+      runs,
+      "PPO",
+      "GenPPO",
+      environments,
+      output_dir,
+      args.smooth_window,
+      args.markers_per_line,
+    )
   if any(run[1] == "GenTRPO" for run in runs) and any(run[1] == "TRPO" for run in runs):
-    plot_algo_pair_comparison(runs, "GenTRPO", "TRPO", environments, output_dir, args.smooth_window, args.markers_per_line)
+    plot_algo_pair_comparison(
+      runs,
+      "GenTRPO",
+      "TRPO",
+      environments,
+      output_dir,
+      args.smooth_window,
+      args.markers_per_line,
+    )
 
   for algo in algorithms:
-    plot_algo_across_envs(runs, algo, environments, output_dir, args.smooth_window, args.markers_per_line)
+    plot_algo_across_envs(
+      runs,
+      algo,
+      environments,
+      output_dir,
+      args.smooth_window,
+      args.markers_per_line,
+    )
 
   for env in environments:
     plot_env_all_algos(runs, env, algorithms, output_dir, args.smooth_window, args.markers_per_line)
@@ -658,6 +785,13 @@ if __name__ == "__main__":
   # Validate plots against table data
   validate_plots(runs, table_data, environments, algorithms)
 
-  generate_latex_outputs(table_data, significance_data, comparison_data, output_dir, algorithms, environments)
+  generate_latex_outputs(
+    table_data,
+    significance_data,
+    comparison_data,
+    output_dir,
+    algorithms,
+    environments,
+  )
 
   print(f"Plots and LaTeX file saved to '{output_dir}'.")

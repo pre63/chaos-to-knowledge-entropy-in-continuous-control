@@ -20,7 +20,13 @@ class ReplayBuffer:
   def sample(self, batch_size):
     batch = random.sample(self.buffer, batch_size)
     s, a, r, s_prime, d = zip(*batch)
-    return (torch.FloatTensor(s), torch.FloatTensor(a), torch.FloatTensor(r), torch.FloatTensor(s_prime), torch.FloatTensor(d))
+    return (
+      torch.FloatTensor(s),
+      torch.FloatTensor(a),
+      torch.FloatTensor(r),
+      torch.FloatTensor(s_prime),
+      torch.FloatTensor(d),
+    )
 
   def __len__(self):
     return len(self.buffer)
@@ -77,7 +83,11 @@ class DiffusionModel(nn.Module):
     self.state_dim = state_dim
     self.action_dim = action_dim
     self.timesteps = timesteps
-    self.net = nn.Sequential(nn.Linear(state_dim + action_dim + 1, 128), nn.ReLU(), nn.Linear(128, state_dim))
+    self.net = nn.Sequential(
+      nn.Linear(state_dim + action_dim + 1, 128),
+      nn.ReLU(),
+      nn.Linear(128, state_dim),
+    )
 
   def forward(self, x, cond):
     return self.net(torch.cat([x, cond], dim=-1))
@@ -113,7 +123,11 @@ class GenerativeModel:
 class GaussianPolicy(nn.Module):
   def __init__(self, state_dim, action_dim, hidden_dim=64):
     super().__init__()
-    self.fc_mean = nn.Sequential(nn.Linear(state_dim, hidden_dim), nn.ReLU(), nn.Linear(hidden_dim, action_dim))
+    self.fc_mean = nn.Sequential(
+      nn.Linear(state_dim, hidden_dim),
+      nn.ReLU(),
+      nn.Linear(hidden_dim, action_dim),
+    )
     self.log_std = nn.Parameter(torch.zeros(action_dim))
 
   def forward(self, state):
@@ -132,7 +146,11 @@ class GaussianPolicy(nn.Module):
 class QNetwork(nn.Module):
   def __init__(self, state_dim, action_dim, hidden_dim=64):
     super().__init__()
-    self.net = nn.Sequential(nn.Linear(state_dim + action_dim, hidden_dim), nn.ReLU(), nn.Linear(hidden_dim, 1))
+    self.net = nn.Sequential(
+      nn.Linear(state_dim + action_dim, hidden_dim),
+      nn.ReLU(),
+      nn.Linear(hidden_dim, 1),
+    )
 
   def forward(self, s, a):
     return self.net(torch.cat([s, a], dim=-1))
@@ -244,10 +262,24 @@ def main():
         gen_s = generative.generate(ha, torch.FloatTensor(scores[idx]), len(hs))
         gen_s = gen_s.cpu()
         for i in range(gen_s.size(0)):
-          syn_buffer.push(hs[i].numpy(), ha[i].numpy(), hr[i].item(), gen_s[i].numpy(), hd[i].item())
+          syn_buffer.push(
+            hs[i].numpy(),
+            ha[i].numpy(),
+            hr[i].item(),
+            gen_s[i].numpy(),
+            hd[i].item(),
+          )
 
     if len(real_buffer) > batch_size and len(syn_buffer) > batch_size:
-      train_agent(policy, q_net, optimizer_q, real_buffer, syn_buffer, batch_size, gamma=0.99)
+      train_agent(
+        policy,
+        q_net,
+        optimizer_q,
+        real_buffer,
+        syn_buffer,
+        batch_size,
+        gamma=0.99,
+      )
 
   # Print overall statistics
   print("\nTraining Complete")

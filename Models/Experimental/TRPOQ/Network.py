@@ -37,4 +37,8 @@ def optimize_hyperparameters(trial):
 
   n_quantiles = trial.suggest_categorical("n_quantiles", [10, 25, 50, 100])
 
-  return {"net_arch": net_arch, "activation_fn": activation_fn, "n_quantiles": n_quantiles}
+  return {
+    "net_arch": net_arch,
+    "activation_fn": activation_fn,
+    "n_quantiles": n_quantiles,
+  }

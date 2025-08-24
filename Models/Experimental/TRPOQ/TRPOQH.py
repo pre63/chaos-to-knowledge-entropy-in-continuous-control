@@ -13,8 +13,8 @@ from stable_baselines3.common.utils import explained_variance
 from torch import nn
 from torch.nn import functional as F
 
-from Models.SB3 import TRPO
 from Models.Experimental.TRPOQ.Network import QuantileValueNetwork, optimize_hyperparameters
+from Models.SB3 import TRPO
 
 SelfTRPO = TypeVar("SelfTRPO", bound="TRPO")
 
@@ -60,7 +60,10 @@ class TRPOQH(TRPO):
 
     # Shared network backbone for both standard and truncated critics
     self.shared_value_network = QuantileValueNetwork(
-      state_dim=env.observation_space.shape[0], n_quantiles=n_quantiles, net_arch=net_arch, activation_fn=activation_fn
+      state_dim=env.observation_space.shape[0],
+      n_quantiles=n_quantiles,
+      net_arch=net_arch,
+      activation_fn=activation_fn,
     )
 
     # Separate heads for standard and truncated critics
@@ -80,7 +83,11 @@ class TRPOQH(TRPO):
     if self.adaptive_truncation:
       # Adaptive truncation based on variance
       variances = th.var(sorted_quantiles, dim=1)
-      adaptive_truncation_threshold = th.clamp((variances.mean() * self.truncation_threshold).long(), 1, self.n_quantiles)
+      adaptive_truncation_threshold = th.clamp(
+        (variances.mean() * self.truncation_threshold).long(),
+        1,
+        self.n_quantiles,
+      )
     else:
       adaptive_truncation_threshold = self.truncation_threshold
 
@@ -127,10 +134,21 @@ class TRPOQH(TRPO):
       actor_params, policy_objective_gradients, grad_kl, grad_shape = self._compute_actor_grad(kl_div, policy_objective)
 
       search_direction = conjugate_gradient_solver(
-        partial(self.hessian_vector_product, actor_params, grad_kl), policy_objective_gradients, max_iter=self.cg_max_steps
+        partial(self.hessian_vector_product, actor_params, grad_kl),
+        policy_objective_gradients,
+        max_iter=self.cg_max_steps,
       )
 
-      step_size = 2 * self.target_kl / (th.matmul(search_direction, self.hessian_vector_product(actor_params, grad_kl, search_direction)))
+      step_size = (
+        2
+        * self.target_kl
+        / (
+          th.matmul(
+            search_direction,
+            self.hessian_vector_product(actor_params, grad_kl, search_direction),
+          )
+        )
+      )
       step_size = th.sqrt(step_size)
 
       line_search_success = False
@@ -155,7 +173,10 @@ class TRPOQH(TRPO):
         step_size *= self.line_search_shrinking_factor
 
       # Value Update with Quantile Loss
-      for value_network, value_optimizer in zip(self.standard_value_networks + self.truncated_value_networks, self.value_optimizers):
+      for value_network, value_optimizer in zip(
+        self.standard_value_networks + self.truncated_value_networks,
+        self.value_optimizers,
+      ):
         predicted_quantiles = value_network(rollout_data.observations)
         target_quantiles = rollout_data.returns.unsqueeze(1).repeat(1, self.n_quantiles)
         quantile_loss = F.smooth_l1_loss(predicted_quantiles, target_quantiles)
@@ -200,7 +221,12 @@ class TRPOQHO(TRPO):
     self.kl_coef = kl_coef
 
     # Shared Critic Network with Dual Heads
-    self.critic = QuantileValueNetwork(state_dim=env.observation_space.shape[0], n_quantiles=n_quantiles, net_arch=net_arch, activation_fn=activation_fn)
+    self.critic = QuantileValueNetwork(
+      state_dim=env.observation_space.shape[0],
+      n_quantiles=n_quantiles,
+      net_arch=net_arch,
+      activation_fn=activation_fn,
+    )
 
     if callable(learning_rate):
       learning_rate = learning_rate(0)

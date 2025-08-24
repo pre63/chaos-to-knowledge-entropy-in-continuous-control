@@ -159,7 +159,10 @@ class TRPOR(TRPO):
 
       # Maximal step length
       line_search_max_step_size = 2 * self.target_kl
-      line_search_max_step_size /= th.matmul(search_direction, hessian_vector_product_fn(search_direction, retain_graph=False))
+      line_search_max_step_size /= th.matmul(
+        search_direction,
+        hessian_vector_product_fn(search_direction, retain_graph=False),
+      )
       line_search_max_step_size = th.sqrt(line_search_max_step_size)  # type: ignore[assignment, arg-type]
 
       line_search_backtrack_coeff = 1.0

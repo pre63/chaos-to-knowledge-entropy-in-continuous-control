@@ -67,9 +67,9 @@ class SaveBestTrialCallback:
       # Prepare the best trial details
       best_trial_details = {
         "trial_number": int(best_trial.number),
-        "value": int(best_trial.value) if float(best_trial.value).is_integer() else float(best_trial.value),
+        "value": (int(best_trial.value) if float(best_trial.value).is_integer() else float(best_trial.value)),
         "params": {
-          k: int(v) if isinstance(v, (int, float)) and float(v).is_integer() else float(v) if isinstance(v, (int, float)) else v
+          k: (int(v) if isinstance(v, (int, float)) and float(v).is_integer() else float(v) if isinstance(v, (int, float)) else v)
           for k, v in best_trial.params.items()
         },
         "comment": f"Best trial details: {', '.join(f'{k}={v}' for k, v in best_trial.__dict__.items())}",
@@ -233,7 +233,10 @@ class ExperimentManager:
     self.show_progress = show_progress
 
     self.log_path = f"{log_folder}/{self.algo}/"
-    self.save_path = os.path.join(self.log_path, f"{self.env_name}_{get_latest_run_id(self.log_path, self.env_name) + 1}{uuid_str}")
+    self.save_path = os.path.join(
+      self.log_path,
+      f"{self.env_name}_{get_latest_run_id(self.log_path, self.env_name) + 1}{uuid_str}",
+    )
     self.params_path = f"{self.save_path}/{self.env_name}"
     self.best_save_path = f".results/{self.algo}.yml"
 
@@ -292,7 +295,10 @@ class ExperimentManager:
 
     # Special case for ARS
     if self.algo == "ars" and self.n_envs > 1:
-      kwargs["async_eval"] = AsyncEval([lambda: self.create_envs(n_envs=1, no_log=True) for _ in range(self.n_envs)], model.policy)
+      kwargs["async_eval"] = AsyncEval(
+        [lambda: self.create_envs(n_envs=1, no_log=True) for _ in range(self.n_envs)],
+        model.policy,
+      )
 
     try:
       model.learn(self.n_timesteps, **kwargs)
@@ -459,7 +465,11 @@ class ExperimentManager:
 
     # Pre-process policy/buffer keyword arguments
     # Convert to python object if needed
-    for kwargs_key in {"policy_kwargs", "replay_buffer_class", "replay_buffer_kwargs"}:
+    for kwargs_key in {
+      "policy_kwargs",
+      "replay_buffer_class",
+      "replay_buffer_kwargs",
+    }:
       if kwargs_key in hyperparams.keys() and isinstance(hyperparams[kwargs_key], str):
         hyperparams[kwargs_key] = eval(hyperparams[kwargs_key])
 
@@ -502,7 +512,12 @@ class ExperimentManager:
 
     return hyperparams, env_wrapper, callbacks, vec_env_wrapper
 
-  def _preprocess_action_noise(self, hyperparams: Dict[str, Any], saved_hyperparams: Dict[str, Any], env: VecEnv) -> Dict[str, Any]:
+  def _preprocess_action_noise(
+    self,
+    hyperparams: Dict[str, Any],
+    saved_hyperparams: Dict[str, Any],
+    env: VecEnv,
+  ) -> Dict[str, Any]:
     # Parse noise string
     # Note: only off-policy algorithms are supported
     if hyperparams.get("noise_type") is not None:
@@ -748,7 +763,11 @@ class ExperimentManager:
     if sampler_method == "random":
       sampler: BaseSampler = RandomSampler(seed=self.seed)
     elif sampler_method == "tpe":
-      sampler = TPESampler(n_startup_trials=self.n_startup_trials, seed=self.seed, multivariate=True)
+      sampler = TPESampler(
+        n_startup_trials=self.n_startup_trials,
+        seed=self.seed,
+        multivariate=True,
+      )
     elif sampler_method == "skopt":
       from optuna.integration.skopt import SkoptSampler
 
@@ -764,7 +783,10 @@ class ExperimentManager:
     if pruner_method == "halving":
       pruner: BasePruner = SuccessiveHalvingPruner(min_resource=1, reduction_factor=4, min_early_stopping_rate=0)
     elif pruner_method == "median":
-      pruner = MedianPruner(n_startup_trials=self.n_startup_trials, n_warmup_steps=self.n_evaluations // 3)
+      pruner = MedianPruner(
+        n_startup_trials=self.n_startup_trials,
+        n_warmup_steps=self.n_evaluations // 3,
+      )
     elif pruner_method == "none":
       # Do not prune
       pruner = NopPruner()
@@ -839,7 +861,10 @@ class ExperimentManager:
     learn_kwargs = {}
     # Special case for ARS
     if self.algo == "ars" and self.n_envs > 1:
-      learn_kwargs["async_eval"] = AsyncEval([lambda: self.create_envs(n_envs=1, no_log=True) for _ in range(self.n_envs)], model.policy)
+      learn_kwargs["async_eval"] = AsyncEval(
+        [lambda: self.create_envs(n_envs=1, no_log=True) for _ in range(self.n_envs)],
+        model.policy,
+      )
 
     try:
       model.learn(self.n_timesteps, callback=callbacks, **learn_kwargs)  # type: ignore[arg-type]
@@ -925,7 +950,10 @@ class ExperimentManager:
       else:
         print("No limit on the number of trials")
         study.optimize(
-          self.objective, n_jobs=self.n_jobs, n_trials=self.n_trials, callbacks=[SaveBestTrialCallback(self.env_name, yaml_file_path=self.best_save_path)]
+          self.objective,
+          n_jobs=self.n_jobs,
+          n_trials=self.n_trials,
+          callbacks=[SaveBestTrialCallback(self.env_name, yaml_file_path=self.best_save_path)],
         )
     except KeyboardInterrupt:
       pass

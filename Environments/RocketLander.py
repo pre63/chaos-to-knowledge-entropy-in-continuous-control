@@ -175,7 +175,18 @@ class RocketLander(gym.Env):
     self.helipad_y = self.terrainheigth + SHIP_HEIGHT
 
     self.water = self.world.CreateStaticBody(
-      fixtures=fixtureDef(shape=polygonShape(vertices=((0, 0), (W, 0), (W, self.terrainheigth), (0, self.terrainheigth))), friction=0.1, restitution=0.0)
+      fixtures=fixtureDef(
+        shape=polygonShape(
+          vertices=(
+            (0, 0),
+            (W, 0),
+            (W, self.terrainheigth),
+            (0, self.terrainheigth),
+          )
+        ),
+        friction=0.1,
+        restitution=0.0,
+      )
     )
 
     self.ship = self.world.CreateStaticBody(
@@ -200,10 +211,22 @@ class RocketLander(gym.Env):
           fixtures=fixtureDef(
             shape=polygonShape(
               vertices=(
-                (ship_pos + side * 0.95 * SHIP_WIDTH / 2, self.helipad_y),
-                (ship_pos + side * 0.95 * SHIP_WIDTH / 2, self.helipad_y + SHIP_HEIGHT),
-                (ship_pos + side * 0.95 * SHIP_WIDTH / 2 - side * SHIP_HEIGHT, self.helipad_y + SHIP_HEIGHT),
-                (ship_pos + side * 0.95 * SHIP_WIDTH / 2 - side * SHIP_HEIGHT, self.helipad_y),
+                (
+                  ship_pos + side * 0.95 * SHIP_WIDTH / 2,
+                  self.helipad_y,
+                ),
+                (
+                  ship_pos + side * 0.95 * SHIP_WIDTH / 2,
+                  self.helipad_y + SHIP_HEIGHT,
+                ),
+                (
+                  ship_pos + side * 0.95 * SHIP_WIDTH / 2 - side * SHIP_HEIGHT,
+                  self.helipad_y + SHIP_HEIGHT,
+                ),
+                (
+                  ship_pos + side * 0.95 * SHIP_WIDTH / 2 - side * SHIP_HEIGHT,
+                  self.helipad_y,
+                ),
               )
             ),
             friction=0.2,
@@ -218,7 +241,14 @@ class RocketLander(gym.Env):
       position=(initial_x, initial_y),
       angle=0.0,
       fixtures=fixtureDef(
-        shape=polygonShape(vertices=((-ROCKET_WIDTH / 2, 0), (+ROCKET_WIDTH / 2, 0), (ROCKET_WIDTH / 2, +ROCKET_HEIGHT), (-ROCKET_WIDTH / 2, +ROCKET_HEIGHT))),
+        shape=polygonShape(
+          vertices=(
+            (-ROCKET_WIDTH / 2, 0),
+            (+ROCKET_WIDTH / 2, 0),
+            (ROCKET_WIDTH / 2, +ROCKET_HEIGHT),
+            (-ROCKET_WIDTH / 2, +ROCKET_HEIGHT),
+          )
+        ),
         density=1.0,
         friction=0.5,
         categoryBits=0x0010,
@@ -233,7 +263,13 @@ class RocketLander(gym.Env):
         angle=(i * BASE_ANGLE),
         fixtures=fixtureDef(
           shape=polygonShape(
-            vertices=((0, 0), (0, LEG_LENGTH / 25), (i * LEG_LENGTH, 0), (i * LEG_LENGTH, -LEG_LENGTH / 20), (i * LEG_LENGTH / 3, -LEG_LENGTH / 7))
+            vertices=(
+              (0, 0),
+              (0, LEG_LENGTH / 25),
+              (i * LEG_LENGTH, 0),
+              (i * LEG_LENGTH, -LEG_LENGTH / 20),
+              (i * LEG_LENGTH / 3, -LEG_LENGTH / 7),
+            )
           ),
           density=1,
           restitution=0.0,
@@ -274,7 +310,10 @@ class RocketLander(gym.Env):
 
       self.legs.append(leg)
 
-    self.lander.linearVelocity = (-np.random.uniform(0, INITIAL_RANDOM) * START_SPEED * (initial_x - W / 2) / W, -START_SPEED)
+    self.lander.linearVelocity = (
+      -np.random.uniform(0, INITIAL_RANDOM) * START_SPEED * (initial_x - W / 2) / W,
+      -START_SPEED,
+    )
 
     self.lander.angularVelocity = (1 + INITIAL_RANDOM) * np.random.uniform(-1, 1)
 
@@ -309,7 +348,10 @@ class RocketLander(gym.Env):
 
     # control thruster force
     force_pos_c = self.lander.position + THRUSTER_HEIGHT * np.array((np.sin(self.lander.angle), np.cos(self.lander.angle)))
-    force_c = (-self.force_dir * np.cos(self.lander.angle) * SIDE_ENGINE_POWER, self.force_dir * np.sin(self.lander.angle) * SIDE_ENGINE_POWER)
+    force_c = (
+      -self.force_dir * np.cos(self.lander.angle) * SIDE_ENGINE_POWER,
+      self.force_dir * np.sin(self.lander.angle) * SIDE_ENGINE_POWER,
+    )
     self.lander.ApplyLinearImpulse(impulse=force_c, point=force_pos_c, wake=False)
 
     self.world.Step(1.0 / FPS, 60, 60)

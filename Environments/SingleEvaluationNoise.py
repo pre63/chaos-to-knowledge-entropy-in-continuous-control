@@ -58,7 +58,11 @@ class EntropyInjectionWrapper(gym.Wrapper):
       required_keys = {"component", "type", "entropy_level"}
       if not all(key in config for key in required_keys):
         raise ValueError("Each noise_config must include 'component', 'type', and 'entropy_level'.")
-      component, noise_type, entropy_level = config["component"], config["type"], config["entropy_level"]
+      component, noise_type, entropy_level = (
+        config["component"],
+        config["type"],
+        config["entropy_level"],
+      )
       if component not in ["obs", "reward", "action"]:
         raise ValueError("Component must be 'obs', 'reward', or 'action'.")
       if noise_type not in ["gaussian", "uniform", "laplace", "bernoulli"]:
@@ -173,7 +177,19 @@ def save_raw_run(raw_path, noise_key, run_idx, rewards, entropies, config_list, 
     print(f"Error saving raw data to {raw_path}: {e}")
 
 
-def run_training(model_class, env, config, total_timesteps, num_runs, output_path, env_name, noise_key, model_name, config_list, dry_run=False):
+def run_training(
+  model_class,
+  env,
+  config,
+  total_timesteps,
+  num_runs,
+  output_path,
+  env_name,
+  noise_key,
+  model_name,
+  config_list,
+  dry_run=False,
+):
   result_path = f"{output_path}/{env_name}/{model_name}_results.yml"
   raw_path = f"{output_path}/{env_name}/{model_name}_raw.yml"
 
@@ -214,7 +230,15 @@ def run_training(model_class, env, config, total_timesteps, num_runs, output_pat
       run_entropies.append(entropies)
       print(f"Run {run_idx+1}/{num_runs} completed for {noise_key}.")
 
-      save_raw_run(raw_path, noise_key, run_idx, rewards, entropies, config_list, total_timesteps)
+      save_raw_run(
+        raw_path,
+        noise_key,
+        run_idx,
+        rewards,
+        entropies,
+        config_list,
+        total_timesteps,
+      )
 
     max_reward_len = max(len(r) for r in run_rewards) if run_rewards else 1
     max_entropy_len = max(len(e) for e in run_entropies) if run_entropies else 1
@@ -233,7 +257,14 @@ def run_training(model_class, env, config, total_timesteps, num_runs, output_pat
     except (IndexError, KeyError):
       label = f"reward+action_uniform (unknown)"
 
-  training_data = [{"label": label, "rewards": avg_rewards, "entropies": avg_entropies, "model": model_name}]
+  training_data = [
+    {
+      "label": label,
+      "rewards": avg_rewards,
+      "entropies": avg_entropies,
+      "model": model_name,
+    }
+  ]
 
   smoothed_data = smooth_data(training_data)
   new_result = {"noise_type": noise_key, "smoothed_data": smoothed_data}
@@ -324,7 +355,16 @@ def plot_results(smoothed_results, model_name, total_timesteps, num_runs, output
         continue
       x = np.arange(len(rewards))
       mark_every = max(1, len(x) // 10) if len(x) > 0 else 1
-      ax1.plot(x, rewards, label=label, color=color, marker=marker, linewidth=2, markersize=8, markevery=mark_every)
+      ax1.plot(
+        x,
+        rewards,
+        label=label,
+        color=color,
+        marker=marker,
+        linewidth=2,
+        markersize=8,
+        markevery=mark_every,
+      )
 
       entropies = data["entropies"]  # Corrected to use entropies
       if not entropies:
@@ -332,7 +372,16 @@ def plot_results(smoothed_results, model_name, total_timesteps, num_runs, output
         continue
       entropies_len = len(entropies)
       padded_entropies = np.pad(entropies, (0, len(x) - entropies_len), mode="edge") if entropies_len < len(x) else entropies[: len(x)]
-      ax2.plot(x, padded_entropies, label=label, color=color, marker=marker, linewidth=2, markersize=8, markevery=mark_every)
+      ax2.plot(
+        x,
+        padded_entropies,
+        label=label,
+        color=color,
+        marker=marker,
+        linewidth=2,
+        markersize=8,
+        markevery=mark_every,
+      )
 
   ax1.set_title(f"Rewards (Single Run) - {env_name}")
   ax1.set_ylabel("Mean Reward")
@@ -351,7 +400,14 @@ def plot_results(smoothed_results, model_name, total_timesteps, num_runs, output
   return plot_path
 
 
-def is_variant_complete(env_name, model_name, noise_type, total_timesteps, num_runs, output_path=".noise/extras"):
+def is_variant_complete(
+  env_name,
+  model_name,
+  noise_type,
+  total_timesteps,
+  num_runs,
+  output_path=".noise/extras",
+):
   raw_path = f"{output_path}/{env_name}/{model_name}_raw.yml"
   if not os.path.exists(raw_path):
     return False
@@ -423,7 +479,17 @@ if __name__ == "__main__":
     if not is_variant_complete(env_name, model_name, noise_key, total_timesteps, num_runs, output_path):
       print(f"Starting {noise_key} for {model_name} on {env_name}")
       rewards, entropies = run_training(
-        model_class, env, model_hyperparameters[env_name], total_timesteps, num_runs, output_path, env_name, noise_key, model_name, config_list, dry_run
+        model_class,
+        env,
+        model_hyperparameters[env_name],
+        total_timesteps,
+        num_runs,
+        output_path,
+        env_name,
+        noise_key,
+        model_name,
+        config_list,
+        dry_run,
       )
       print(f"Completed {noise_key} for {model_name} on {env_name}")
     else:
@@ -439,7 +505,14 @@ if __name__ == "__main__":
         print(f"Error loading results from {result_path}: {e}")
     if smoothed_results:
       try:
-        plot_path = plot_results(smoothed_results, model_name, total_timesteps, num_runs, output_path, env_name)
+        plot_path = plot_results(
+          smoothed_results,
+          model_name,
+          total_timesteps,
+          num_runs,
+          output_path,
+          env_name,
+        )
         print(f"Plot generated at {plot_path}")
       except Exception as e:
         print(f"Error generating plot for {model_name} on {env_name}: {e}")

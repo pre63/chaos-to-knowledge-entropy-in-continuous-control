@@ -3,7 +3,10 @@ import numpy as np
 
 
 def make_lunar_lander(reward_strategy="default", render_mode=None, continuous=True):
-  env = gym.make("LunarLanderContinuous-v3" if continuous else "LunarLander-v3", render_mode=render_mode)
+  env = gym.make(
+    "LunarLanderContinuous-v3" if continuous else "LunarLander-v3",
+    render_mode=render_mode,
+  )
   env = LunarLanderRewardWrapper(env, reward_strategy)
   env.make_func_name = "make"
   env.name = "LunarLander-v3"
@@ -121,7 +124,14 @@ def combined_reward(state, reward, action, done, info):
   return proximity_weight * proximity + efficiency_weight * efficiency
 
 
-def check_success(observation, terminated, angle_threshold=0.1, landing_pad_threshold=0.2, x_velocity_threshold=0.01, y_velocity_threshold=0.01):
+def check_success(
+  observation,
+  terminated,
+  angle_threshold=0.1,
+  landing_pad_threshold=0.2,
+  x_velocity_threshold=0.01,
+  y_velocity_threshold=0.01,
+):
   """
     Determine if the agent has successfully landed in the Continuous Lunar Lander environment.
 

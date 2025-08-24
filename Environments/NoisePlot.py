@@ -35,7 +35,14 @@ def smooth_data(smoothed_data, window_size=100, pad_mode="edge"):
       padded_entropies = np.pad(entropies, (pad_size, pad_size), mode=pad_mode)
       smoothed_entropies = uniform_filter1d(padded_entropies, size=window_size, mode="nearest")[pad_size : pad_size + len(entropies)]
 
-    re_smoothed_data.append({"label": data["label"], "rewards": smoothed_rewards.tolist(), "entropies": smoothed_entropies.tolist(), "model": data["model"]})
+    re_smoothed_data.append(
+      {
+        "label": data["label"],
+        "rewards": smoothed_rewards.tolist(),
+        "entropies": smoothed_entropies.tolist(),
+        "model": data["model"],
+      }
+    )
 
   return re_smoothed_data
 
@@ -76,7 +83,16 @@ def plot_results(results, run_date, model_name, total_timesteps, num_runs):
       x = np.arange(len(rewards))
       mark_every = max(1, len(x) // 10) if len(x) > 0 else 1
 
-      ax1.plot(x, rewards, label=label, color=color, marker=marker, linewidth=2, markersize=8, markevery=mark_every)
+      ax1.plot(
+        x,
+        rewards,
+        label=label,
+        color=color,
+        marker=marker,
+        linewidth=2,
+        markersize=8,
+        markevery=mark_every,
+      )
 
       entropies = data["entropies"]
       if not entropies:
@@ -84,7 +100,16 @@ def plot_results(results, run_date, model_name, total_timesteps, num_runs):
         continue
       entropies_len = len(entropies)
       padded_entropies = np.pad(entropies, (0, len(x) - entropies_len), mode="edge") if entropies_len < len(x) else entropies[: len(x)]
-      ax2.plot(x, padded_entropies, label=label, color=color, marker=marker, linewidth=2, markersize=8, markevery=mark_every)
+      ax2.plot(
+        x,
+        padded_entropies,
+        label=label,
+        color=color,
+        marker=marker,
+        linewidth=2,
+        markersize=8,
+        markevery=mark_every,
+      )
 
   ax1.set_title(f"Reward+Action Noise - Rewards (Avg of {num_runs} Runs)")
   ax1.set_ylabel("Mean Reward")
