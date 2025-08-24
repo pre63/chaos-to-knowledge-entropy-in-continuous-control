@@ -207,6 +207,14 @@ class TRPOR(SKRL_TRPO_WITH_COLLECT):
     log_prob = dist.log_prob(actions).sum(-1)
     entropy = dist.entropy().sum(-1)
     ratio = th.exp(log_prob - log_prob_old)
+    # Entropy regularization added to the surrogate objective to encourage exploration
+    # References:
+    # - EnTRPO: Trust Region Policy Optimization Method with Entropy Regularization (arXiv:2110.13373, 2021)
+    #   Adds entropy to the advantage over pi in TRPO for better policy uncertainty and exploration.
+    # - ERO-TRPO: Trust region policy optimization via entropy regularization for reinforcement learning (ScienceDirect, 2024)
+    #   Introduces ERO-TRPO, adding an entropy regularizer to the surrogate objective in TRPO to increase policy uncertainty.
+    # - Soft Actor-Critic (SAC) also uses entropy regularization, though in an off-policy setting (arXiv:1812.05905, 2018)
+    # This modification promotes exploration by penalizing low-entropy (deterministic) policies.
     surrogate = ratio * advantages + self.ent_coef * entropy
     surrogate_loss = surrogate.mean()
 
