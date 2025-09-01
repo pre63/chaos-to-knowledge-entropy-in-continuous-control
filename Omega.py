@@ -65,6 +65,8 @@ class AutoPlotProgressWrapper(gym.Wrapper):
       "trpo_with_noise",
       "trpor_no_noise",
       "trpor_with_noise",
+      "trponr_no_noise",
+      "trponr_with_noise",
     ]
     for cfg in configs:
       path = os.path.join(self.log_dir, f"rewards_{self.env_id}_{cfg}.yaml")
@@ -189,10 +191,15 @@ class TRPOR(SKRL_TRPO_WITH_COLLECT):
     self.ent_coef = ent_coef
     self.value_optimizer = th.optim.Adam(self.models["value"].parameters(), lr=self.cfg.get("value_learning_rate", 1e-3))
 
-  def _update(self):
+  def act(self, states, timestep=0, timesteps=1):
+    return super().act(states, timestep, timesteps)
+
+  def _update(self, timestep, timesteps):
     # get full rollout data
     states = self.memory.get_tensor_by_name("states").view(-1, self.observation_space.shape[0])
     actions = self.memory.get_tensor_by_name("actions").view(-1, self.action_space.shape[0])
+    if "log_probs" not in self.memory.tensors:
+      return
     log_prob_old = self.memory.get_tensor_by_name("log_probs").view(-1)
     returns = self.memory.get_tensor_by_name("returns").view(-1)
     advantages = self.memory.get_tensor_by_name("advantages").view(-1)
@@ -276,6 +283,82 @@ class TRPOR(SKRL_TRPO_WITH_COLLECT):
         self.value_optimizer.step()
 
 
+class TRPONR(TRPOR):
+  def __init__(
+    self,
+    models,
+    memory=None,
+    cfg=None,
+    observation_space=None,
+    action_space=None,
+    device=None,
+    ent_coef=0.0,
+    noise_type="uniform",
+    noise_level=0.0,
+  ):
+    super().__init__(
+      models=models,
+      memory=memory,
+      cfg=cfg,
+      observation_space=observation_space,
+      action_space=action_space,
+      device=device,
+      ent_coef=ent_coef,
+    )
+    self.noise_type = noise_type
+    self.noise_level = noise_level
+    self.base_std = 1.0
+    self.base_range = 1.0
+    self.base_scale = 1.0
+    self.base_p = 0.5
+
+  def _update(self, timestep, timesteps):
+    super()._update(timestep, timesteps)
+
+  def act(self, states, timestep=0, timesteps=1):
+    actions, log_prob, infos = super().act(states, timestep, timesteps)
+    if self.noise_level > 0:
+      actions = self._add_noise(actions, "action")
+      actions = th.clamp(actions, th.tensor(self.action_space.low, device=self.device), th.tensor(self.action_space.high, device=self.device))
+    return actions, log_prob, infos
+
+  def record_transition(self, states, actions, rewards, next_states, terminated, truncated, infos, timesteps, role=""):
+    if self.noise_level > 0:
+      rewards = self._add_noise(rewards, "reward")
+    super().record_transition(states, actions, rewards, next_states, terminated, truncated, infos, timesteps, role)
+
+  def _add_noise(self, value, component):
+    entropy_level = abs(self.noise_level)
+    noise_type = self.noise_type
+    if component == "action":
+      if noise_type == "bernoulli":
+        return value
+      if noise_type == "gaussian":
+        std = entropy_level * self.base_std
+        return value + th.normal(0, std, size=value.shape, device=self.device)
+      elif noise_type == "uniform":
+        range_val = entropy_level * self.base_range
+        return value + th.empty(size=value.shape, device=self.device).uniform_(-range_val, range_val)
+      elif noise_type == "laplace":
+        scale = entropy_level * self.base_scale
+        return value + th.distributions.laplace.Laplace(0, scale).sample(value.shape).to(self.device)
+    elif component == "reward":
+      if noise_type == "gaussian":
+        std = entropy_level * self.base_std
+        return value + th.normal(0, std, size=value.shape, device=self.device)
+      elif noise_type == "uniform":
+        range_val = entropy_level * self.base_range
+        return value + th.empty(size=value.shape, device=self.device).uniform_(-range_val, range_val)
+      elif noise_type == "laplace":
+        scale = entropy_level * self.base_scale
+        return value + th.distributions.laplace.Laplace(0, scale).sample(value.shape).to(self.device)
+      elif noise_type == "bernoulli":
+        p = entropy_level * self.base_p
+        mask = (th.rand(value.shape, device=self.device) < p).float()
+        return value * (1 - mask)
+    return value
+
+
 class TRPOWrapper:
   def __init__(
     self,
@@ -297,6 +380,9 @@ class TRPOWrapper:
     device="cuda",
     ent_coef=0.0,
     is_trpor=False,
+    noise_type="uniform",
+    noise_level=0.0,
+    is_trponr=False,
     **kwargs,
   ):
     self.env = env
@@ -317,6 +403,9 @@ class TRPOWrapper:
     self.device = th.device("cuda")
     self.ent_coef = ent_coef
     self.is_trpor = is_trpor
+    self.noise_type = noise_type
+    self.noise_level = noise_level
+    self.is_trponr = is_trponr
 
     self._setup_model()
 
@@ -417,8 +506,20 @@ class TRPOWrapper:
     cfg["value_clip"] = False
     cfg["clip_actions"] = False
 
-    agent_class = TRPOR if self.is_trpor else SKRL_TRPO_WITH_COLLECT
-    if self.is_trpor:
+    agent_class = TRPONR if self.is_trponr else TRPOR if self.is_trpor else SKRL_TRPO_WITH_COLLECT
+    if self.is_trponr:
+      self.agent = agent_class(
+        models=models,
+        memory=memory,
+        cfg=cfg,
+        observation_space=self.env.observation_space,
+        action_space=self.env.action_space,
+        device=self.device,
+        ent_coef=self.ent_coef,
+        noise_type=self.noise_type,
+        noise_level=self.noise_level,
+      )
+    elif self.is_trpor:
       self.agent = agent_class(
         models=models,
         memory=memory,
@@ -522,11 +623,17 @@ def create_param_samplers(n_timesteps):
     }
     return params
 
-  return sample_trpor_params, sample_trpo_params
+  def sample_trponr_params(trial):
+    params = sample_trpor_params(trial)
+    params["noise_type"] = trial.suggest_categorical("noise_type", ["uniform", "gaussian", "laplace", "bernoulli"])
+    params["noise_level"] = trial.suggest_float("noise_level", 0.0, 1.0)
+    return params
+
+  return sample_trpor_params, sample_trpo_params, sample_trponr_params
 
 
 def objective(trial, config, env_id, n_timesteps, device, log_dir):
-  entropy_level = -0.3 if "with_noise" in config else 0.0
+  entropy_level = -0.3 if "with_noise" in config and "trponr" not in config else 0.0
 
   env = gym.make(env_id)
   if entropy_level != 0:
@@ -537,9 +644,14 @@ def objective(trial, config, env_id, n_timesteps, device, log_dir):
     env = EntropyInjectionWrapper(env, noise_configs=noise_configs)
   env = AutoPlotProgressWrapper(env, config, env_id, log_dir=log_dir)
 
-  sample_trpor_params, sample_trpo_params = create_param_samplers(n_timesteps)
+  sample_trpor_params, sample_trpo_params, sample_trponr_params = create_param_samplers(n_timesteps)
 
-  if "trpor" in config:
+  if "trponr" in config:
+    params = sample_trponr_params(trial)
+    if "no_noise" in config:
+      params["noise_level"] = 0
+    model = TRPOWrapper(env=env, device=device, is_trpor=True, is_trponr=True, **params)
+  elif "trpor" in config:
     params = sample_trpor_params(trial)
     model = TRPOWrapper(env=env, device=device, is_trpor=True, **params)
   else:
@@ -548,7 +660,9 @@ def objective(trial, config, env_id, n_timesteps, device, log_dir):
 
   model.learn(total_timesteps=n_timesteps)
 
-  max_reward = max(model.agent.rewards) if model.agent.rewards else float("-inf")
+  rewards = model.agent.rewards
+  valid_rewards = [r for r in rewards if not np.isnan(r) and not np.isinf(r)]
+  max_reward = max(valid_rewards) if valid_rewards else -1e6
 
   env.close()
   return max_reward
@@ -611,10 +725,16 @@ def compare_max_rewards(
     batch_number += 1
 
     # Save final results for this config
-    results = {
-      "best_params": study.best_params,
-      "best_value": study.best_value,
-    }
+    if len(study.get_trials(states=[TrialState.COMPLETE])) > 0:
+      results = {
+        "best_params": study.best_params,
+        "best_value": study.best_value,
+      }
+    else:
+      results = {
+        "best_params": {},
+        "best_value": None,
+      }
     config_name = config.upper().replace("_", " ")
     path = os.path.join(log_dir, f"{config_name}.yaml")
     with open(path, "w") as f:
@@ -622,11 +742,17 @@ def compare_max_rewards(
 
   # Print final summary for this config
   print(f"\nFinal Best Trial Stats for {config.upper().replace('_', ' ')}:")
-  print(f"  Best Parameters: {study.best_params}")
-  print(f"  Best Value: {study.best_value:.2f}")
-  max_rewards[config] = study.best_value
+  if len(study.get_trials(states=[TrialState.COMPLETE])) > 0:
+    print(f"  Best Parameters: {study.best_params}")
+    print(f"  Best Value: {study.best_value:.2f}")
+    max_rewards[config] = study.best_value
+  else:
+    print("  No completed trials.")
+    max_rewards[config] = None
 
-  print(f"\nMax Reward for {config.upper().replace('_', ' ')}: {max_rewards[config]:.2f}")
+  reward = max_rewards[config]
+  reward_str = f"{reward:.2f}" if reward is not None else "N/A"
+  print(f"\nMax Reward for {config.upper().replace('_', ' ')}: {reward_str}")
 
 
 def main():
@@ -640,6 +766,8 @@ def main():
       "trpo_with_noise",
       "trpor_no_noise",
       "trpor_with_noise",
+      "trponr_no_noise",
+      "trponr_with_noise",
     ],
     help="The model configuration to run.",
   )
