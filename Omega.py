@@ -1,6 +1,9 @@
 import argparse
+import copy
 import os
+from typing import Any, Mapping, Optional, Tuple, Union
 
+import gymnasium
 import gymnasium as gym
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,18 +11,27 @@ import optuna
 import optuna.pruners
 import optuna.samplers
 import optuna.storages
+import torch
 import torch as th
 import torch.nn as nn
+import torch.nn.functional as F
 import yaml
 from optuna.storages import JournalStorage
 from optuna.storages.journal import JournalFileBackend
 from optuna.trial import TrialState
+from skrl import config, logger
+from skrl.agents.torch import Agent
+from skrl.agents.torch.trpo import TRPO
 from skrl.agents.torch.trpo import TRPO as SKRL_TRPO
 from skrl.agents.torch.trpo import TRPO_DEFAULT_CONFIG
 from skrl.envs.wrappers.torch import wrap_env
-from skrl.memories.torch import RandomMemory
+from skrl.memories.torch import Memory, RandomMemory
 from skrl.models.torch import Model
 from skrl.trainers.torch import SequentialTrainer
+from torch import nn
+from torch.nn import functional as F
+from torch.nn.utils import parameters_to_vector, vector_to_parameters
+from torch.nn.utils.convert_parameters import parameters_to_vector, vector_to_parameters
 
 from Environments.Noise import EntropyInjectionWrapper
 
@@ -170,117 +182,236 @@ class SKRL_TRPO_WITH_COLLECT(SKRL_TRPO):
 
 
 class TRPOR(SKRL_TRPO_WITH_COLLECT):
+
   def __init__(
     self,
-    models,
-    memory=None,
-    cfg=None,
-    observation_space=None,
-    action_space=None,
-    device=None,
-    ent_coef=0.0,
-  ):
+    models: Mapping[str, Model],
+    memory: Optional[Union[Memory, Tuple[Memory]]] = None,
+    observation_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+    action_space: Optional[Union[int, Tuple[int], gymnasium.Space]] = None,
+    device: Optional[Union[str, torch.device]] = None,
+    cfg: Optional[dict] = None,
+  ) -> None:
+    """TRPO with entropy regularization in the surrogate loss
+
+        :param models: Models used by the agent
+        :type models: dictionary of skrl.models.torch.Model
+        :param memory: Memory to storage the transitions
+        :type memory: skrl.memory.torch.Memory, list of skrl.memory.torch.Memory or None
+        :param observation_space: Observation/state space or shape (default: ``None``)
+        :type observation_space: int, tuple or list of int, gymnasium.Space or None, optional
+        :param action_space: Action space or shape (default: ``None``)
+        :type action_space: int, tuple or list of int, gymnasium.Space or None, optional
+        :param device: Device on which a tensor/array is or will be allocated (default: ``None``)
+        :type device: str or torch.device, optional
+        :param cfg: Configuration dictionary
+        :type cfg: dict
+        """
+    _cfg = copy.deepcopy(TRPO_DEFAULT_CONFIG)
+    _cfg.update(cfg if cfg is not None else {})
+    # Add entropy coefficient to config (default value can be tuned)
+    _cfg["entropy_coef"] = _cfg.get("entropy_coef", 0.01)
+
     super().__init__(
       models=models,
       memory=memory,
-      cfg=cfg,
       observation_space=observation_space,
       action_space=action_space,
       device=device,
+      cfg=_cfg,
     )
-    self.ent_coef = ent_coef
-    self.value_optimizer = th.optim.Adam(self.models["value"].parameters(), lr=self.cfg.get("value_learning_rate", 1e-3))
+    self._entropy_coef = self.cfg["entropy_coef"]
 
-  def act(self, states, timestep=0, timesteps=1):
-    return super().act(states, timestep, timesteps)
+  def _update(self, timestep: int, timesteps: int) -> None:
+    """Algorithm's main update step with entropy regularization
 
-  def _update(self, timestep, timesteps):
-    # get full rollout data
-    states = self.memory.get_tensor_by_name("states").view(-1, self.observation_space.shape[0])
-    actions = self.memory.get_tensor_by_name("actions").view(-1, self.action_space.shape[0])
-    if "log_probs" not in self.memory.tensors:
-      return
-    log_prob_old = self.memory.get_tensor_by_name("log_probs").view(-1)
-    returns = self.memory.get_tensor_by_name("returns").view(-1)
-    advantages = self.memory.get_tensor_by_name("advantages").view(-1)
+        :param timestep: Current timestep
+        :type timestep: int
+        :param timesteps: Number of timesteps
+        :type timesteps: int
+        """
 
-    if self.cfg["normalize_advantage"]:
+    def compute_gae(
+      rewards: torch.Tensor,
+      dones: torch.Tensor,
+      values: torch.Tensor,
+      next_values: torch.Tensor,
+      discount_factor: float = 0.99,
+      lambda_coefficient: float = 0.95,
+    ) -> torch.Tensor:
+      """Compute the Generalized Advantage Estimator (GAE)"""
+      advantage = 0
+      advantages = torch.zeros_like(rewards)
+      not_dones = dones.logical_not()
+      memory_size = rewards.shape[0]
+
+      for i in reversed(range(memory_size)):
+        next_values = values[i + 1] if i < memory_size - 1 else last_values
+        advantage = rewards[i] - values[i] + discount_factor * not_dones[i] * (next_values + lambda_coefficient * advantage)
+        advantages[i] = advantage
+      returns = advantages + values
       advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+      return returns, advantages
 
-    # policy update with TRPO + entropy
-    mean, log_std, _ = self.models["policy"].compute({"states": states}, role="policy")
-    log_std = th.clamp(log_std, -20, 2)
-    dist = th.distributions.Normal(mean, log_std.exp())
-    log_prob = dist.log_prob(actions).sum(-1)
-    entropy = dist.entropy().sum(-1)
-    ratio = th.exp(log_prob - log_prob_old)
-    # Entropy regularization added to the surrogate objective to encourage exploration
-    # References:
-    # - EnTRPO: Trust Region Policy Optimization Method with Entropy Regularization (arXiv:2110.13373, 2021)
-    #   Adds entropy to the advantage over pi in TRPO for better policy uncertainty and exploration.
-    # - ERO-TRPO: Trust region policy optimization via entropy regularization for reinforcement learning (ScienceDirect, 2024)
-    #   Introduces ERO-TRPO, adding an entropy regularizer to the surrogate objective in TRPO to increase policy uncertainty.
-    # - Soft Actor-Critic (SAC) also uses entropy regularization, though in an off-policy setting (arXiv:1812.05905, 2018)
-    # This modification promotes exploration by penalizing low-entropy (deterministic) policies.
-    surrogate = ratio * advantages + self.ent_coef * entropy
-    surrogate_loss = surrogate.mean()
+    def surrogate_loss(policy: Model, states: torch.Tensor, actions: torch.Tensor, log_prob: torch.Tensor, advantages: torch.Tensor) -> torch.Tensor:
+      """Compute the surrogate objective (policy loss) with entropy regularization"""
+      _, new_log_prob, outputs = policy.act({"states": states, "taken_actions": actions}, role="policy")
+      surrogate = (advantages * torch.exp(new_log_prob - log_prob.detach())).mean()
 
-    KL = (log_prob_old - log_prob).mean()
+      # Compute Shannon entropy for Gaussian policy
+      logstd = policy.get_log_std(role="policy")
+      action_dim = logstd.shape[-1]
+      entropy = 0.5 * action_dim * (torch.log(2 * torch.pi * torch.e)) + logstd.sum(dim=-1)
+      entropy = entropy.mean()
 
-    parameters = list(self.models["policy"].parameters())
-    g = flat_grad(surrogate_loss, parameters, retain_graph=True)
-    d_kl = flat_grad(KL, parameters, create_graph=True)
+      return surrogate + self._entropy_coef * entropy
 
-    def HVP(v):
-      return flat_grad(d_kl @ v, parameters, retain_graph=True) + self.cfg["damping"] * v
+    def conjugate_gradient(
+      policy: Model,
+      states: torch.Tensor,
+      b: torch.Tensor,
+      num_iterations: float = 10,
+      residual_tolerance: float = 1e-10,
+    ) -> torch.Tensor:
+      """Conjugate gradient algorithm to solve Ax = b"""
+      x = torch.zeros_like(b)
+      r = b.clone()
+      p = b.clone()
+      rr_old = torch.dot(r, r)
+      for _ in range(num_iterations):
+        hv = fisher_vector_product(policy, states, p, damping=self._damping)
+        alpha = rr_old / torch.dot(p, hv)
+        x += alpha * p
+        r -= alpha * hv
+        rr_new = torch.dot(r, r)
+        if rr_new < residual_tolerance:
+          break
+        p = r + rr_new / rr_old * p
+        rr_old = rr_new
+      return x
 
-    search_dir = conjugate_gradient(HVP, g, max_iterations=self.cfg["conjugate_gradient_iterations"])
+    def fisher_vector_product(policy: Model, states: torch.Tensor, vector: torch.Tensor, damping: float = 0.1) -> torch.Tensor:
+      """Compute the Fisher vector product"""
+      kl = kl_divergence(policy, policy, states)
+      kl_gradient = torch.autograd.grad(kl, policy.parameters(), create_graph=True)
+      flat_kl_gradient = torch.cat([gradient.view(-1) for gradient in kl_gradient])
+      hessian_vector_gradient = torch.autograd.grad((flat_kl_gradient * vector).sum(), policy.parameters())
+      flat_hessian_vector_gradient = torch.cat([gradient.contiguous().view(-1) for gradient in hessian_vector_gradient])
+      return flat_hessian_vector_gradient + damping * vector
 
-    step_length = th.sqrt(2 * self.cfg["kl_threshold"] / (search_dir @ HVP(search_dir) + 1e-8))
-    max_step = step_length * search_dir
+    def kl_divergence(policy_1: Model, policy_2: Model, states: torch.Tensor) -> torch.Tensor:
+      """Compute the KL divergence between two distributions"""
+      mu_1 = policy_1.act({"states": states}, role="policy")[2]["mean_actions"]
+      logstd_1 = policy_1.get_log_std(role="policy")
+      mu_1, logstd_1 = mu_1.detach(), logstd_1.detach()
 
-    old_flat_params = get_flat_params(self.models["policy"])
+      mu_2 = policy_2.act({"states": states}, role="policy")[2]["mean_actions"]
+      logstd_2 = policy_2.get_log_std(role="policy")
 
-    success = False
-    for i in range(self.cfg["line_search_iterations"]):
-      step = (self.cfg["backtrack_ratio"] ** i) * max_step
-      set_flat_params(self.models["policy"], old_flat_params + step)
+      kl = logstd_1 - logstd_2 + 0.5 * (torch.square(logstd_1.exp()) + torch.square(mu_1 - mu_2)) / torch.square(logstd_2.exp()) - 0.5
+      return torch.sum(kl, dim=-1).mean()
 
-      with th.no_grad():
-        mean_new, log_std_new, _ = self.models["policy"].compute({"states": states}, role="policy")
-        log_std_new = th.clamp(log_std_new, -20, 2)
-        dist_new = th.distributions.Normal(mean_new, log_std_new.exp())
-        log_prob_new = dist_new.log_prob(actions).sum(-1)
-        entropy_new = dist_new.entropy().sum(-1)
-        ratio_new = th.exp(log_prob_new - log_prob_old)
-        surrogate_new = ratio_new * advantages + self.ent_coef * entropy_new
-        surrogate_loss_new = surrogate_new.mean()
-        KL_new = (log_prob_old - log_prob_new).mean()
-        improvement = surrogate_loss_new - surrogate_loss
+    # compute returns and advantages
+    with torch.no_grad():
+      self.value.train(False)
+      last_values, _, _ = self.value.act({"states": self._state_preprocessor(self._current_next_states.float())}, role="value")
+      self.value.train(True)
+    last_values = self._value_preprocessor(last_values, inverse=True)
 
-      if improvement > 0 and KL_new <= self.cfg["kl_threshold"]:
-        success = True
+    values = self.memory.get_tensor_by_name("values")
+    returns, advantages = compute_gae(
+      rewards=self.memory.get_tensor_by_name("rewards"),
+      dones=self.memory.get_tensor_by_name("terminated") | self.memory.get_tensor_by_name("truncated"),
+      values=values,
+      next_values=last_values,
+      discount_factor=self._discount_factor,
+      lambda_coefficient=self._lambda,
+    )
+
+    self.memory.set_tensor_by_name("values", self._value_preprocessor(values, train=True))
+    self.memory.set_tensor_by_name("returns", self._value_preprocessor(returns, train=True))
+    self.memory.set_tensor_by_name("advantages", advantages)
+
+    # sample all from memory
+    sampled_states, sampled_actions, sampled_log_prob, sampled_advantages = self.memory.sample_all(names=self._tensors_names_policy, mini_batches=1)[0]
+
+    sampled_states = self._state_preprocessor(sampled_states, train=True)
+
+    # compute policy loss gradient
+    policy_loss = surrogate_loss(self.policy, sampled_states, sampled_actions, sampled_log_prob, sampled_advantages)
+    policy_loss_gradient = torch.autograd.grad(policy_loss, self.policy.parameters())
+    flat_policy_loss_gradient = torch.cat([gradient.view(-1) for gradient in policy_loss_gradient])
+
+    # compute the search direction using the conjugate gradient algorithm
+    search_direction = conjugate_gradient(self.policy, sampled_states, flat_policy_loss_gradient.data, num_iterations=self._conjugate_gradient_steps)
+
+    # compute step size and full step
+    xHx = (search_direction * fisher_vector_product(self.policy, sampled_states, search_direction, self._damping)).sum(0, keepdim=True)
+    step_size = torch.sqrt(2 * self._max_kl_divergence / xHx)[0]
+    full_step = step_size * search_direction
+
+    # backtracking line search
+    restore_policy_flag = True
+    self.backup_policy.update_parameters(self.policy)
+    params = parameters_to_vector(self.policy.parameters())
+
+    expected_improvement = (flat_policy_loss_gradient * full_step).sum(0, keepdim=True)
+
+    for alpha in [self._step_fraction * 0.5**i for i in range(self._max_backtrack_steps)]:
+      new_params = params + alpha * full_step
+      vector_to_parameters(new_params, self.policy.parameters())
+
+      expected_improvement *= alpha
+      kl = kl_divergence(self.backup_policy, self.policy, sampled_states)
+      loss = surrogate_loss(self.policy, sampled_states, sampled_actions, sampled_log_prob, sampled_advantages)
+
+      if kl < self._max_kl_divergence and (loss - policy_loss) / expected_improvement > self._accept_ratio:
+        restore_policy_flag = False
         break
-      else:
-        set_flat_params(self.models["policy"], old_flat_params)
 
-    if not success:
-      print("Line search failed")
+    if restore_policy_flag:
+      self.policy.update_parameters(self.backup_policy)
 
-    # value update
-    num_samples = states.size(0)
-    for _ in range(self.cfg.get("learning_epochs", 8)):
-      perm = th.randperm(num_samples)
-      for b in range(0, num_samples, self.cfg["batch_size"]):
-        indices = perm[b : b + self.cfg["batch_size"]]
-        states_b = states[indices]
-        returns_b = returns[indices]
-        value = self.models["value"].compute({"states": states_b}, role="value")
-        value = value.view(-1)
-        value_loss = (value - returns_b).pow(2).mean()
+    if config.torch.is_distributed:
+      self.policy.reduce_parameters()
+
+    # sample mini-batches from memory
+    sampled_batches = self.memory.sample_all(names=self._tensors_names_value, mini_batches=self._mini_batches)
+
+    cumulative_value_loss = 0
+
+    # learning epochs
+    for epoch in range(self._learning_epochs):
+      for sampled_states, sampled_returns in sampled_batches:
+        sampled_states = self._state_preprocessor(sampled_states, train=not epoch)
+
+        # compute value loss
+        predicted_values, _, _ = self.value.act({"states": sampled_states}, role="value")
+
+        value_loss = self._value_loss_scale * F.mse_loss(sampled_returns, predicted_values)
+
+        # optimization step (value)
         self.value_optimizer.zero_grad()
         value_loss.backward()
+        if config.torch.is_distributed:
+          self.value.reduce_parameters()
+        if self._grad_norm_clip > 0:
+          nn.utils.clip_grad_norm_(self.value.parameters(), self._grad_norm_clip)
         self.value_optimizer.step()
+
+        cumulative_value_loss += value_loss.item()
+
+      if self._learning_rate_scheduler:
+        self.value_scheduler.step()
+
+    # record data
+    self.track_data("Loss / Policy loss", policy_loss.item())
+    self.track_data("Loss / Value loss", cumulative_value_loss / (self._learning_epochs * self._mini_batches))
+
+    self.track_data("Policy / Standard deviation", self.policy.distribution(role="policy").stddev.mean().item())
+
+    if self._learning_rate_scheduler:
+      self.track_data("Learning / Value learning rate", self.value_scheduler.get_last_lr()[0])
 
 
 class TRPONR(TRPOR):
@@ -296,14 +427,17 @@ class TRPONR(TRPOR):
     noise_type="uniform",
     noise_level=0.0,
   ):
+    _cfg = copy.deepcopy(TRPO_DEFAULT_CONFIG)
+    _cfg.update(cfg if cfg is not None else {})
+    _cfg["entropy_coef"] = ent_coef
+
     super().__init__(
       models=models,
       memory=memory,
-      cfg=cfg,
+      cfg=_cfg,
       observation_space=observation_space,
       action_space=action_space,
       device=device,
-      ent_coef=ent_coef,
     )
     self.noise_type = noise_type
     self.noise_level = noise_level
