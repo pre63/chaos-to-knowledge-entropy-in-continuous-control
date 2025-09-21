@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 OS := $(shell uname -s)
 
-DEVICE=cpu
+DEVICE=auto
 
 n_jobs=15 # Default number of jobs to run in parallel
 model=trpo # Default model to train
@@ -74,10 +74,38 @@ clean:
 	@rm -rf __pycache__/
 	@rm -rf .venv
 
-ablation: fix
+train_Humanoid-v5_trpo: fix
 	@source .venv/bin/activate; \
-	PYTHONPATH=. python -m scripts.ablation
+	PYTHONPATH=. python -m scripts.ablation --env Humanoid-v5 --model trpo --device $(DEVICE)
+
+train_Humanoid-v5_gentrpo: fix
+	@source .venv/bin/activate; \
+	PYTHONPATH=. python -m scripts.ablation --env Humanoid-v5 --model gentrpo --device $(DEVICE)
+
+train_Humanoid-v5_grentrpo-ne: fix
+	@source .venv/bin/activate; \
+	PYTHONPATH=. python -m scripts.ablation --env Humanoid-v5 --model grentrpo-ne --device $(DEVICE)
+
+train_HumanoidStandup-v5_trpo: fix
+	@source .venv/bin/activate; \
+	PYTHONPATH=. python -m scripts.ablation --env HumanoidStandup-v5 --model trpo --device $(DEVICE)
+
+train_HumanoidStandup-v5_gentrpo: fix
+	@source .venv/bin/activate; \
+	PYTHONPATH=. python -m scripts.ablation --env HumanoidStandup-v5 --model gentrpo --device $(DEVICE)
+
+train_HumanoidStandup-v5_grentrpo-ne: fix
+	@source .venv/bin/activate; \
+	PYTHONPATH=. python -m scripts.ablation --env HumanoidStandup-v5 --model grentrpo-ne --device $(DEVICE)
+
+ablation: train_Humanoid-v5_trpo train_HumanoidStandup-v5_trpo train_Humanoid-v5_gentrpo  train_HumanoidStandup-v5_gentrpo train_HumanoidStandup-v5_grentrpo-ne train_Humanoid-v5_grentrpo-ne
 
 plots: fix
 	@source .venv/bin/activate; \
 	PYTHONPATH=. python -m scripts.plots
+
+tables: fix
+	@source .venv/bin/activate; \
+	PYTHONPATH=. python -m scripts.tables
+
+report: plots tables

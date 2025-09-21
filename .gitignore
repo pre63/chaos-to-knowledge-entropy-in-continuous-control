@@ -37,3 +37,4 @@ all.txt
 .omega
 runs/
 .omega/
+MUJOCO_LOG.TXT

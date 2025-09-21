@@ -28,9 +28,9 @@ class ForwardDynamicsModel(nn.Module):
     )
 
   def forward(self, state, action):
-    state = state.view(state.size(0), -1)  # Ensure correct shape
+    state = state.reshape(-1, self.state_dim)  # Flatten to (effective_batch, state_dim)
+    action = action.reshape(-1, self.action_dim)  # Flatten to (effective_batch, action_dim)
     h_s = self.encoder(state)
-    action = action.view(action.size(0), -1)  # Ensure action is 2D
     x = th.cat([h_s, action], dim=-1)
     pred_h_next = self.forward_model(x)
     return h_s, pred_h_next
@@ -45,6 +45,7 @@ class GenerativeReplayBuffer:
     generative_model,
     batch_size,
     device,
+    action_dim,
   ):
     self.real_capacity = real_capacity
     self.synthetic_capacity = synthetic_capacity
@@ -54,21 +55,30 @@ class GenerativeReplayBuffer:
     self.generative_model = generative_model
     self.batch_size = batch_size
     self.device = device
+    self.action_dim = action_dim
 
   def add_real(self, transition):
-    obs, action, returns, advantages, old_log_prob = transition
+    obs, action, return_, advantages, old_log_prob = transition
     if not isinstance(obs, th.Tensor):
       obs = th.as_tensor(obs, dtype=th.float32)
+    obs = obs.view(-1)
+    if obs.numel() == 0:
+      obs = th.zeros(self.generative_model.observation_space.shape[0], dtype=th.float32)
+
     if not isinstance(action, th.Tensor):
       action = th.as_tensor(action, dtype=th.float32)
-    if not isinstance(returns, th.Tensor):
-      returns = th.as_tensor(returns, dtype=th.float32)
+    action = action.view(-1)
+    if action.numel() == 0:
+      action = th.zeros(self.action_dim, dtype=th.float32)
+
+    if not isinstance(return_, th.Tensor):
+      return_ = th.as_tensor(return_, dtype=th.float32)
     if not isinstance(advantages, th.Tensor):
       advantages = th.as_tensor(advantages, dtype=th.float32)
     if not isinstance(old_log_prob, th.Tensor):
       old_log_prob = th.as_tensor(old_log_prob, dtype=th.float32)
 
-    self.real_buffer.append((obs, action, returns, advantages, old_log_prob))
+    self.real_buffer.append((obs, action, return_, advantages, old_log_prob))
     if len(self.real_buffer) > self.real_capacity:
       self.real_buffer.pop(0)
 
@@ -80,12 +90,18 @@ class GenerativeReplayBuffer:
     sampled_real = scored_samples[:10]
 
     synthetic_transitions = []
-    for obs, action, returns, advantages, old_log_prob in sampled_real:
+    for obs, action, return_, advantages, old_log_prob in sampled_real:
+      obs = obs.to(self.device)
       with th.no_grad():
-        obs = obs.to(self.device)
-        dist = self.generative_model.get_distribution(obs.unsqueeze(0))
-        synthetic_action = dist.sample()[0]
-      synthetic_transitions.append((obs, synthetic_action, returns, advantages, old_log_prob))
+        _, _, outputs = self.generative_model.act({"states": obs.unsqueeze(0)}, role="policy")
+      mean = outputs["mean_actions"]
+      std = outputs["log_std"].exp()
+      dist = th.distributions.Normal(mean, std)
+      synthetic_action = dist.sample().squeeze(0)
+      synthetic_action = synthetic_action.view(-1)
+      if synthetic_action.numel() == 0:
+        synthetic_action = th.zeros(self.action_dim, device=self.device)
+      synthetic_transitions.append((obs, synthetic_action, return_, advantages, old_log_prob))
 
     self.synthetic_buffer.extend(synthetic_transitions)
     self.synthetic_buffer = self.synthetic_buffer[-self.synthetic_capacity :]
@@ -104,22 +120,22 @@ class GenerativeReplayBuffer:
       (
         obs.to(self.device),
         action.to(self.device),
-        returns.to(self.device),
+        return_.to(self.device),
         advantages.to(self.device),
         old_log_prob.to(self.device),
       )
-      for obs, action, returns, advantages, old_log_prob in real_sample
+      for obs, action, return_, advantages, old_log_prob in real_sample
     ]
 
     synthetic_sample = [
       (
         obs.to(self.device),
         action.to(self.device),
-        returns.to(self.device),
+        return_.to(self.device),
         advantages.to(self.device),
         old_log_prob.to(self.device),
       )
-      for obs, action, returns, advantages, old_log_prob in synthetic_sample
+      for obs, action, return_, advantages, old_log_prob in synthetic_sample
     ]
 
     return real_sample + synthetic_sample

@@ -10,8 +10,8 @@ import torch.nn.functional as F
 from skrl.models.torch import Model
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 
-from models.gen_trpo import GEN_TRPO
-from models.strategy import sampling_strategy
+from skrli.gen_trpo import GEN_TRPO
+from skrli.strategy import sampling_strategy
 
 
 # GenTRPO-NE: Generative TRPO with entropy regularization and noise injection
@@ -55,15 +55,15 @@ class GEN_TRPO_NE(GEN_TRPO):
 
   def act(self, states, timestep=0, timesteps=1):
     actions, log_prob, infos = super().act(states, timestep, timesteps)
-    if self.noise_level > 0:
+    if self.noise_level != 0:
       actions = self._add_noise(actions, "action")
       actions = th.clamp(actions, th.tensor(self.action_space.low, device=self.device), th.tensor(self.action_space.high, device=self.device))
     return actions, log_prob, infos
 
-  def record_transition(self, states, actions, rewards, next_states, terminated, truncated, infos, timesteps, role=""):
-    if self.noise_level > 0:
+  def record_transition(self, states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps):
+    if self.noise_level != 0:
       rewards = self._add_noise(rewards, "reward")
-    super().record_transition(states, actions, rewards, next_states, terminated, truncated, infos, timesteps, role)
+    super().record_transition(states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps)
 
   def _add_noise(self, value, component):
     entropy_level = abs(self.noise_level)
