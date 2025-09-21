@@ -74,99 +74,10 @@ clean:
 	@rm -rf __pycache__/
 	@rm -rf .venv
 
-train:
-	@echo "Will train model $(model) on environment $(env) and we will optimize hyperparameters: $(optimize), for $(trials) trials."
-	@mkdir -p .logs
-	@mkdir -p .optuna-zoo
-	@mkdir -p ".optuna-zoo/$(model)_$(env)"
-	@. .venv/bin/activate; PYTHONPATH=. python -u Zoo/Train.py --model=$(model) --env=$(env) --optimize=$(optimize) --n_jobs=$(n_jobs) --trials=$(trials) --max_trials=$(max_trials) --device=$(DEVICE) 2>&1 | tee -a .logs/zoo-$(model)-$(env)-$(shell date +"%Y%m%d").log
-
-eval:
-	@echo "Will evaluate model $(model) on environment $(env)"
-	@. .venv/bin/activate; PYTHONPATH=. python -u Zoo/Eval.py --n_timesteps=$(n_eval_timesteps) --model=$(model) --env=$(env) 2>&1 | tee -a .logs/eval-$(model)-$(env)-$(shell date +"%Y%m%d").log
-
-report:
-	@$(MAKE) fix
-	@. .venv/bin/activate; PYTHONPATH=. python -u Zoo/Report.py
-
-list:
-	@# List all zoo models and environments combinations
-	@echo "Listing all model and environment combinations:"
-	@for env in $(zoologyenvs); do \
-		for model in $(zoology); do \
-			echo "$$env - $$model"; \
-		done; \
-	done
-	@# Calculate and print the total number of combinations
-	@zoologyenvs_count=$$(echo "$(zoologyenvs)" | wc -w); \
-	zoology_count=$$(echo "$(zoology)" | wc -w); \
-	trials=$(trials); \
-	total_combinations=$$(echo "$$zoologyenvs_count * $$zoology_count * $$trials" | bc); \
-	echo "Total number of combinations: $$total_combinations"
-
-noise:
-	@. .venv/bin/activate; CUDA_VISIBLE_DEVICES="" python -m Environments.Noise
-
-noise-plot:
-	@. .venv/bin/activate; python -m Environments.NoisePlot
-
-tune:
-	#PPO for HalfCheetah-v5 Hopper-v5 Humanoid-v5 HumanoidStandup-v5 Reacher-v5 Swimmer-v5
-	$(MAKE) train model=ppo env=HalfCheetah-v5 n_jobs=5 optimize=True
-	$(MAKE) train model=ppo env=Hopper-v5 n_jobs=5 optimize=True
-	$(MAKE) train model=ppo env=Humanoid-v5 n_jobs=5 optimize=True
-	$(MAKE) train model=ppo env=HumanoidStandup-v5 n_jobs=5 optimize=True
-	$(MAKE) train model=ppo env=Reacher-v5 n_jobs=5 optimize=True
-	$(MAKE) train model=ppo env=Swimmer-v5 n_jobs=5 optimize=True
-
-	#TRPO for HalfCheetah-v5 Hopper-v5 Humanoid-v5 HumanoidStandup-v5 Reacher-v5 Swimmer-v5
-	$(MAKE) train model=trpo env=HalfCheetah-v5 n_jobs=5 optimize=True
-	$(MAKE) train model=trpo env=Hopper-v5 n_jobs=5 optimize=True
-	$(MAKE) train model=trpo env=Humanoid-v5 n_jobs=5 optimize=True
-	$(MAKE) train model=trpo env=HumanoidStandup-v5 n_jobs=5 optimize=True
-	$(MAKE) train model=trpo env=Reacher-v5 n_jobs=5 optimize=True
-	$(MAKE) train model=trpo env=Swimmer-v5 n_jobs=5 optimize=True
-
-
-plot:
-	@rm -rf .plots
-	@python Reports/Plot.py --data_dir .noise/final --smooth_window 30 --markers_per_line 4
-
-
-.PHONY: run
-run:
-	#@$(MAKE) noise MODEL=trpor
-	#@$(MAKE) noise MODEL=trpoer
-	@$(MAKE) noise MODEL=genppo
-	@$(MAKE) noise MODEL=gentrpo
-	#@$(MAKE) noise MODEL=ppo
-
-single:
-	@. .venv/bin/activate; PYTHONPATH=. python -u Environments/SingleEvaluationNoise.py
-
-new:
-	$(MAKE) train model=trpor env=Humanoid-v5 n_jobs=5 optimize=True
-	$(MAKE) train model=trpor env=HumanoidStandup-v5 n_jobs=5 optimize=True
-
-new_eval:
-	@$(MAKE) noise MODEL=trpo
-	@$(MAKE) noise MODEL=trpor
-
-
-
-omega: fix
+ablation: fix
 	@source .venv/bin/activate; \
-	PYTHONPATH=. python -m Omega --config=trpor_with_noise --n_trials=20 --n_timesteps=1000000 --env_id=HumanoidStandup-v5; \
-	\
-	PYTHONPATH=. python -m Omega --config=trpo_with_noise --n_trials=20 --n_timesteps=1000000 --env_id=HumanoidStandup-v5; \
-	PYTHONPATH=. python -m Omega --config=trpor_no_noise --n_trials=20 --n_timesteps=1000000 --env_id=HumanoidStandup-v5; \
-	PYTHONPATH=. python -m Omega --config=trpo_no_noise --n_trials=20 --n_timesteps=1000000 --env_id=HumanoidStandup-v5; \
-	echo "Done!"
+	PYTHONPATH=. python -m scripts.ablation
 
-omegas: fix
+plots: fix
 	@source .venv/bin/activate; \
-	PYTHONPATH=. python -m Omega --config=trpo_no_noise --n_trials=100 --n_timesteps=100000 --env_id=HumanoidStandup-v5; \
-	PYTHONPATH=. python -m Omega --config=trpo_with_noise --n_trials=100 --n_timesteps=100000 --env_id=HumanoidStandup-v5; \
-	PYTHONPATH=. python -m Omega --config=trponr_no_noise --n_trials=1 --n_timesteps=100000 --env_id=HumanoidStandup-v5; \
-	PYTHONPATH=. python -m Omega --config=trponr_with_noise --n_trials=1 --n_timesteps=100000 --env_id=HumanoidStandup-v5; \
-	echo "Done!"
+	PYTHONPATH=. python -m scripts.plots
