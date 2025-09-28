@@ -4,6 +4,9 @@ This repo supports the paper *Chaos to Knowledge: Entropy in Continuous Control*
 
 All commands to run and reproduce the experiments are in the Makefile. Training, evaluation, and hyperparameter tuning are fully automated. 
 
+
+**Find the Model Performance Report [here](Report.pdf).**
+
 ## Citation
 
 If you use this work, please cite it as:

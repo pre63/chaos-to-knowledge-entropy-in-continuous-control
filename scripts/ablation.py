@@ -1,5 +1,3 @@
-add a flag sb3 or skrl
-
 import argparse
 import os
 from datetime import datetime
@@ -12,19 +10,18 @@ import torch.nn.functional as F
 import yaml
 from gymnasium.vector import SyncVectorEnv
 from skrl.agents.torch.trpo import TRPO_DEFAULT_CONFIG
-from skrl.envs.wrappers.torch import wrap_env 
+from skrl.envs.wrappers.torch import wrap_env
 from skrl.memories.torch import RandomMemory
 from skrl.models.torch import Model
 from skrl.trainers.torch import SequentialTrainer
 
-from skrli.gen_trpo import GEN_TRPO as GEN_TRPO_SKRL 
-from skrli.trpo import SKRL_TRPO_WITH_COLLECT
-
 from sb3.gen_trpo import GEN_TRPO as GEN_TRPO_SB3
 from sb3.trpo import TRPO as TRPO_SB3
+from skrli.gen_trpo import GEN_TRPO as GEN_TRPO_SKRL
+from skrli.trpo import SKRL_TRPO_WITH_COLLECT
 
 th.backends.cudnn.benchmark = True
-th.set_float32_matmul_precision("high") 
+th.set_float32_matmul_precision("high")
 
 TIMESTEPS = 1000000
 BUFFER_CAPACITY = 3072

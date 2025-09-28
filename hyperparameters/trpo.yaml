@@ -1,0 +1,43 @@
+Humanoid-v5:
+  policy: 'MlpPolicy'
+  batch_size: 512
+  n_steps: 1024
+  gamma: 0.98
+  learning_rate: 0.0001001422334677667
+  line_search_shrinking_factor: 0.7
+  n_critic_updates: 25
+  cg_max_steps: 25
+  cg_damping: 0.5
+  target_kl: 0.1
+  gae_lambda: 0.99
+  net_arch: small
+  log_std_init: -1.1830649974937577
+  sde_sample_freq: 128
+  ortho_init: 0
+  activation_fn: relu
+  lr_schedule: linear
+  n_timesteps: 100000
+  n_envs: 2
+
+HumanoidStandup-v5:
+  policy: 'MlpPolicy'
+  normalize: true
+  n_envs: 2
+  n_timesteps: 100000
+  batch_size: 128
+  n_steps: 1024
+  gamma: 0.99
+  gae_lambda: 0.95
+  sub_sampling_factor: 1
+  cg_max_steps: 25
+  cg_damping: 0.1
+  n_critic_updates: 20
+  learning_rate: !!float 1e-3
+  line_search_shrinking_factor: 0.7
+  target_kl: 0.1
+  net_arch: small
+  log_std_init: 0.8744241148020431
+  sde_sample_freq: 128
+  ortho_init: 1
+  activation_fn: relu
+  lr_schedule: constant

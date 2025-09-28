@@ -100,12 +100,23 @@ train_HumanoidStandup-v5_grentrpo-ne: fix
 
 ablation: train_Humanoid-v5_trpo train_HumanoidStandup-v5_trpo train_Humanoid-v5_gentrpo  train_HumanoidStandup-v5_gentrpo train_HumanoidStandup-v5_grentrpo-ne train_Humanoid-v5_grentrpo-ne
 
-plots: fix
+
+plots_no_fix: 
 	@source .venv/bin/activate; \
 	PYTHONPATH=. python -m scripts.plots
 
-tables: fix
+plots: fix plots_no_fix
+
+tables_no_fix: 
 	@source .venv/bin/activate; \
 	PYTHONPATH=. python -m scripts.tables
 
-report: plots tables
+tables: fix tables_no_fix
+
+gen_report_no_fix: 
+	@source .venv/bin/activate; \
+	PYTHONPATH=. python -m scripts.report
+
+gen_report: fix gen_report_no_fix
+
+report: fix plots_no_fix tables_no_fix gen_report_no_fix
