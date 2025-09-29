@@ -32,7 +32,7 @@ def resample_data(data, aggregator="mean", num_points=200):
 def plot_results(log_dir, ntimesteps):
   envs = ["Humanoid-v5", "HumanoidStandup-v5"]
   variants = ["trpo", "gentrpo", "gentrpo-ne"]
-  variant_labels = {"trpo": "TRPO", "gentrpo": "GenTRPO (Noise=0)", "gentrpo-ne": "GenTRPO (Noise=0.1)"}
+  variant_labels = {"trpo": "TRPO", "gentrpo": "GenTRPO (Noise=0)", "gentrpo-ne": "GenTRPO"}
   all_variant_data = {env: {} for env in envs}
 
   # Ensure .debug directory exists

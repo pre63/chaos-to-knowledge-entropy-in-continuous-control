@@ -17,6 +17,7 @@ __pycache__
 .optuna-zoo
 .optuna-zoo2
 .assets/raw_data.csv
+.debug
 
 Models/sb3_trpo.py
 results/results.png

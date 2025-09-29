@@ -32,7 +32,6 @@ def compute_end_slope(rewards, fraction=0.0005):
 
   end_rewards = rewards[-num_points:]
   slope, _, _, _, _ = linregress(range(len(end_rewards)), end_rewards)
-  print(num_points, slope)
   return slope
 
 
@@ -187,7 +186,7 @@ if __name__ == "__main__":
   log_dir = "results"
   envs = ["Humanoid-v5", "HumanoidStandup-v5"]
   variants = ["trpo", "gentrpo", "gentrpo-ne"]
-  variant_labels = {"trpo": "TRPO", "gentrpo": "GenTRPO (Noise=0)", "gentrpo-ne": "GenTRPO (Noise=0.1)"}
+  variant_labels = {"trpo": "TRPO", "gentrpo": "GenTRPO (Noise=0)", "gentrpo-ne": "GenTRPO"}
 
   # Load results from CSV
   results = {}
@@ -207,6 +206,41 @@ if __name__ == "__main__":
         "std_reward": float(std_r_str) if std_r_str else None,
         "timestep_at_max": float(time_max_str) if time_max_str else None,
       }
+
+  # Compute additional metrics for all pairs
+  detailed_metrics = {}
+  for env_id in envs:
+    detailed_metrics[env_id] = {}
+    for cfg in variants:
+      path = os.path.join(log_dir, f"rewards_{env_id}_{cfg}.yaml")
+      if os.path.exists(path):
+        with open(path, "r") as f:
+          data = yaml.safe_load(f)
+        rewards = data.get("rewards", [])
+        entropies = data.get("entropies", [])
+        if rewards:
+          max_index = np.argmax(rewards)
+          entropy_trend, entropy_rate = analyze_entropy(entropies, max_index)
+          end_slope = compute_end_slope(rewards)
+          detailed_metrics[env_id][cfg] = {
+            "max_reward": results.get(env_id, {}).get(cfg, {}).get("max_reward", "N/A"),
+            "mean_reward": results.get(env_id, {}).get(cfg, {}).get("mean_reward", "N/A"),
+            "std_reward": results.get(env_id, {}).get(cfg, {}).get("std_reward", "N/A"),
+            "timestep_at_max": results.get(env_id, {}).get(cfg, {}).get("timestep_at_max", "N/A"),
+            "end_slope": end_slope,
+            "entropy_trend": entropy_trend,
+            "entropy_rate": entropy_rate,
+          }
+        else:
+          detailed_metrics[env_id][cfg] = {
+            "max_reward": "N/A",
+            "mean_reward": "N/A",
+            "std_reward": "N/A",
+            "timestep_at_max": "N/A",
+            "end_slope": "N/A",
+            "entropy_trend": "N/A",
+            "entropy_rate": "N/A",
+          }
 
   # Generate pivoted LaTeX table from results
   latex_table = r"\begin{table}[htbp]" + "\n"
@@ -361,6 +395,56 @@ if __name__ == "__main__":
     annex_text += r"\includegraphics[width=0.8\textwidth]{grid_env_" + env_id + r".png}" + "\n"
     annex_text += r"\captionof{figure}{Grid of plots for " + env_id + r" across all models.}" + "\n"
     annex_text += r"\end{center}" + "\n\n"
+
+  # Add detailed metrics table to annex
+  annex_text += r"\subsection{Detailed Metrics Table}" + "\n"
+  annex_text += "The following table presents detailed metrics for all model-environment pairs, including maximum reward, mean reward with standard deviation, timestep at maximum reward, end slope of the reward curve, entropy trend, and entropy rate at maximum reward point.\n\n"
+
+  detailed_table = r"\begin{table}[htbp]" + "\n"
+  detailed_table += r"\centering" + "\n"
+  detailed_table += r"\caption{Detailed Metrics for All Model-Environment Pairs}" + "\n"
+  detailed_table += r"\resizebox{\textwidth}{!}{" + "\n"
+  detailed_table += r"\begin{tabular}{|l|l|c|c|c|c|l|c|}" + "\n"
+  detailed_table += r"\hline" + "\n"
+  detailed_table += (
+    r"Environment & Variant & Max Reward & Mean Reward ($\pm$ std) & Timestep at Max & End Slope & Entropy Trend & Entropy Rate at Max \\" + "\n"
+  )
+  detailed_table += r"\hline" + "\n"
+
+  for env_id in envs:
+    for cfg in variants:
+      metrics = detailed_metrics.get(env_id, {}).get(cfg, {})
+      row = env_id + r" & " + variant_labels[cfg]
+
+      val_max = metrics.get("max_reward", "-")
+      row += f" & {val_max:.2f}" if val_max != "N/A" and val_max != "-" else " & -"
+
+      val_mean = metrics.get("mean_reward", "-")
+      val_std = metrics.get("std_reward", "-")
+      cell = f"${val_mean:.2f} \\pm {val_std:.2f}$" if val_mean != "N/A" and val_mean != "-" else "-"
+      row += " & " + cell
+
+      val_time = metrics.get("timestep_at_max", "-")
+      row += f" & {val_time:.0f}" if val_time != "N/A" and val_time != "-" else " & -"
+
+      end_slope = metrics.get("end_slope", "-")
+      row += f" & {end_slope:.4f}" if end_slope != "N/A" and end_slope != "-" else " & -"
+
+      entropy_trend = metrics.get("entropy_trend", "-")
+      row += " & " + entropy_trend if entropy_trend != "N/A" else " & -"
+
+      entropy_rate = metrics.get("entropy_rate", "-")
+      row += f" & {entropy_rate:.4f}" if entropy_rate != "N/A" and entropy_rate != "-" else " & -"
+
+      row += r" \\"
+      detailed_table += row + "\n"
+    detailed_table += r"\hline" + "\n"
+
+  detailed_table += r"\end{tabular}" + "\n"
+  detailed_table += r"}" + "\n"
+  detailed_table += r"\end{table}" + "\n"
+
+  annex_text += detailed_table
 
   # Full LaTeX document
   latex_doc = r"\documentclass{svproc}" + "\n"
