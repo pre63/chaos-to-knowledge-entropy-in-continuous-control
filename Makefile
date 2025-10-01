@@ -113,10 +113,16 @@ tables_no_fix:
 
 tables: fix tables_no_fix
 
+correlation_no_fix:
+	@source .venv/bin/activate; \
+	PYTHONPATH=. python -m scripts.correlation
+
+correlation: fix correlation_no_fix
+
 gen_report_no_fix: 
 	@source .venv/bin/activate; \
 	PYTHONPATH=. python -m scripts.report
 
 gen_report: fix gen_report_no_fix
 
-report: fix plots_no_fix tables_no_fix gen_report_no_fix
+report: fix plots_no_fix tables_no_fix correlation_no_fix gen_report_no_fix

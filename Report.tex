@@ -39,18 +39,18 @@ Primarily, we investigate the impact of these principles and techniques on Trust
 Our experiments compare GenTRPO and GenTRPO with Noise against TRPO as baseline, across MuJoCo environments including Humanoid-v5 and HumanoidStandup-v5, using mini-batch updates to measure entropy and assess noise resilience. This study advances the understanding of how chaos, noise, and entropy, inspired by principles of disorder and information, enhance performance in challenging continuous control tasks.
 
 \section{Methods}
-We evaluate three variants: (1) Standard TRPO as the baseline, which optimizes policies under trust region constraints to ensure stable updates. (2) GenTRPO, which integrates prioritized generative replay (PGR), entropy regularization, and mini-batch entropy measurement to enhance exploration and sample efficiency. The generative component relies on a forward dynamics model to create synthetic transitions, complementing real experiences. (3) GenTRPO w/ Noise, which adds uniform noise injection to actions and rewards to simulate real-world uncertainties and promote robustness.
+We evaluate three models: (1) Standard TRPO as the baseline, which optimizes policies under trust region constraints to ensure stable updates. (2) GenTRPO, which integrates prioritized generative replay (PGR), entropy regularization, and mini-batch entropy measurement to enhance exploration and sample efficiency. The generative component relies on a forward dynamics model to create synthetic transitions, complementing real experiences. (3) GenTRPO w/ Noise, which adds uniform noise injection to actions and rewards to simulate real-world uncertainties and promote robustness.
 
 Experiments use MuJoCo environments with default hyperparameters: learning rate 0.001, batch size 2048, over 100,000 timesteps. Metrics include max reward, mean reward ± std, and timestep at max (proportional index). Entropy is tracked for policy uncertainty. Noise levels are empirically set to span beneficial ranges. Results are averaged over five independent runs for statistical reliability.
 
 \section{Results}
 \begin{table}[htbp]
 \centering
-\caption{Performance Metrics Across Variants. Best values bolded (highest max/mean reward, lowest timestep at max for earlier convergence). Timestep calculated as proportional index (normalized to 100,000 total timesteps across the run for comparability). Mean and std computed over all episodes in the run.}
+\caption{Performance Metrics Across Models. Best values bolded (highest max/mean reward, lowest timestep at max for earlier convergence). Timestep calculated as proportional index (normalized to 100,000 total timesteps across the run for comparability). Mean and std computed over all episodes in the run.}
 \resizebox{\textwidth}{!}{
 \begin{tabular}{|l|l|c|c|c|}
 \hline
-Environment & Variant & Max Reward & Mean Reward ($\pm$ std) & Timestep at Max \\
+Environment & Model & Max Reward & Mean Reward ($\pm$ std) & Timestep at Max \\
 \hline
 Humanoid-v5 & TRPO & 4.95 & $4.76 \pm 0.14$ & \textbf{42857} \\
 Humanoid-v5 & GenTRPO (Noise=0) & 5.25 & \textbf{$4.94 \pm 0.22$} & 95408 \\
@@ -65,7 +65,7 @@ HumanoidStandup-v5 & GenTRPO & 229.41 & \textbf{$69.26 \pm 24.21$} & \textbf{598
 \end{table}
 
 \section{Results Analysis}
-In this report, we analyze the performance of the variants based on the computed metrics. The best performing model is determined by the highest maximum reward. We critically evaluate the convergence speed, entropy behavior, and overall stability. Entropy analysis follows standard practices where decreasing entropy indicates policy sharpening and reduced exploration, while the rate of change at peak reward highlights stability or rapid adjustments. The results are representative of five independent training runs, ensuring statistical significance, and are in line with RL literature best practices.
+In this report, we analyze the performance of the models based on the computed metrics. The best performing model is determined by the highest maximum reward. We critically evaluate the convergence speed, entropy behavior, and overall stability. Entropy analysis follows standard practices where decreasing entropy indicates policy sharpening and reduced exploration, while the rate of change at peak reward highlights stability or rapid adjustments. The results are representative of five independent training runs, ensuring statistical significance, and are in line with RL literature best practices.
 
 \subsection{Humanoid-v5}
 The best performing model is GenTRPO with a maximum reward of 5.29 achieved at timestep 90816. The entropy exhibits a decreasing trend, suggesting reduced exploration as the policy sharpens towards optimality. The rate of change in entropy at the maximum reward point is -0.0250, indicating stable behavior.
@@ -79,16 +79,16 @@ The slope of the reward curve at the end of the run is 0.0099. The reward is mil
 
 This model converges 1.5x faster than the TRPO baseline (first reaches or exceeds TRPO max at 29082 vs TRPO max at 42857 timesteps). It achieves a 6.7\% higher maximum reward.
 
-Cross-variant comparison: Compared to TRPO, the best model achieves 6.7\% higher max reward and converges 0.5x faster. Compared to GenTRPO (Noise=0), the best model achieves 0.7\% higher max reward and converges 1.1x faster. 
+Cross-model comparison: Compared to TRPO, the best model achieves 6.7\% higher max reward and converges 0.5x faster. Compared to GenTRPO (Noise=0), the best model achieves 0.7\% higher max reward and converges 1.1x faster. 
 
 \begin{center}
-\includegraphics[width=0.8\textwidth]{graph_rewards_Humanoid-v5.png}
-\captionof{figure}{Comparative Rewards across variants in Humanoid-v5.}
+\includegraphics[width=0.8\textwidth]{graph_Humanoid-v5_models_rewards.png}
+\captionof{figure}{Comparative Rewards across models in Humanoid-v5.}
 \end{center}
 
 \begin{center}
-\includegraphics[width=0.8\textwidth]{graph_entropies_Humanoid-v5.png}
-\captionof{figure}{Comparative Entropies across variants in Humanoid-v5.}
+\includegraphics[width=0.8\textwidth]{graph_Humanoid-v5_models_entropies.png}
+\captionof{figure}{Comparative Entropies across models in Humanoid-v5.}
 \end{center}
 
 In terms of sampling efficiency, to achieve its absolute max reward of 5.29 at timestep 90816, this model used 90816 real environment samples. To achieve the same performance as TRPO's max reward of 4.95, this model required only 29082 real samples, compared to TRPO's 42857 real samples, making it 1.5x more sample efficient in real samples.
@@ -97,6 +97,10 @@ In terms of sampling efficiency, to achieve its absolute max reward of 5.29 at t
 \includegraphics[width=0.8\textwidth]{grid_env_Humanoid-v5.png}
 \captionof{figure}{Grid of plots for Humanoid-v5 across all models.}
 \end{center}
+
+For the raw data of TRPO in Humanoid-v5, the correlation between noise level and mean reward is 0.06 (p=0.7293), and between mean entropy and mean reward is 0.24 (p=0.1646). 
+
+For the raw data of GenTRPO (Noise=0) in Humanoid-v5, the correlation between noise level and mean reward is 0.16 (p=0.3658), and between mean entropy and mean reward is -0.26 (p=0.1304). 
 
 \subsection{HumanoidStandup-v5}
 The best performing model is GenTRPO (Noise=0) with a maximum reward of 283.75 achieved at timestep 99400. The entropy exhibits a increasing trend, suggesting sustained exploration, potentially indicating ongoing adaptation or suboptimal convergence. The rate of change in entropy at the maximum reward point is -0.1475, indicating rapid policy adjustment.
@@ -110,16 +114,16 @@ The slope of the reward curve at the end of the run is 5.6054. This sharp upward
 
 This model converges 35.5x faster than the TRPO baseline (first reaches or exceeds TRPO max at 1752 vs TRPO max at 62245 timesteps). It achieves a 230.2\% higher maximum reward.
 
-Cross-variant comparison: Compared to TRPO, the best model achieves 230.2\% higher max reward and converges 0.6x faster. Compared to GenTRPO, the best model achieves 23.7\% higher max reward and converges 0.6x faster. 
+Cross-model comparison: Compared to TRPO, the best model achieves 230.2\% higher max reward and converges 0.6x faster. Compared to GenTRPO, the best model achieves 23.7\% higher max reward and converges 0.6x faster. 
 
 \begin{center}
-\includegraphics[width=0.8\textwidth]{graph_rewards_HumanoidStandup-v5.png}
-\captionof{figure}{Comparative Rewards across variants in HumanoidStandup-v5.}
+\includegraphics[width=0.8\textwidth]{graph_HumanoidStandup-v5_models_rewards.png}
+\captionof{figure}{Comparative Rewards across models in HumanoidStandup-v5.}
 \end{center}
 
 \begin{center}
-\includegraphics[width=0.8\textwidth]{graph_entropies_HumanoidStandup-v5.png}
-\captionof{figure}{Comparative Entropies across variants in HumanoidStandup-v5.}
+\includegraphics[width=0.8\textwidth]{graph_HumanoidStandup-v5_models_entropies.png}
+\captionof{figure}{Comparative Entropies across models in HumanoidStandup-v5.}
 \end{center}
 
 In terms of sampling efficiency, to achieve its absolute max reward of 283.75 at timestep 99400, this model used 99400 real environment samples. To achieve the same performance as TRPO's max reward of 85.94, this model required only 1752 real samples, compared to TRPO's 62245 real samples, making it 35.5x more sample efficient in real samples.
@@ -129,20 +133,24 @@ In terms of sampling efficiency, to achieve its absolute max reward of 283.75 at
 \captionof{figure}{Grid of plots for HumanoidStandup-v5 across all models.}
 \end{center}
 
+For the raw data of TRPO in HumanoidStandup-v5, the correlation between noise level and mean reward is 0.35 (p=0.0364), and between mean entropy and mean reward is -0.29 (p=0.0937). 
+
+For the raw data of GenTRPO (Noise=0) in HumanoidStandup-v5, the correlation between noise level and mean reward is -0.22 (p=0.2068), and between mean entropy and mean reward is -0.68 (p=0.0000). 
+
 
 \section{Conclusion}
-In summary, GenTRPO variants outperform the TRPO baseline in both environments, with notable gains in HumanoidStandup-v5. These improvements suggest that generalizations and noise aid in handling complex dynamics.
+In summary, GenTRPO models outperform the TRPO baseline in both environments, with notable gains in HumanoidStandup-v5. These improvements suggest that generalizations and noise aid in handling complex dynamics.
 
 \bibliographystyle{plain}
 \bibliography{references}
 
 \appendix
-\section{Annex: Supplementary Plots}
+\section{Annex: Supplementary Plots and Statistics}
 
-This annex provides supplementary plots for reference. Each plot is described below, focusing on its content and purpose.
+This annex provides supplementary plots and statistics for reference. Each plot is described below, focusing on its content and purpose.
 
 \subsection{Individual Rewards and Entropies Plots}
-The following plots display the reward and entropy curves for individual model variants in each environment. These graphs illustrate the progression of rewards and entropies over training timesteps for a specific model and environment combination.
+The following plots display the reward and entropy curves for individual models in each environment. These graphs illustrate the progression of rewards and entropies over training timesteps for a specific model and environment combination.
 
 The plot for TRPO in Humanoid-v5 shows the reward values (typically on one axis) and entropy values (on another axis) as functions of training timesteps.
 
@@ -187,61 +195,96 @@ The plot for GenTRPO in HumanoidStandup-v5 shows the reward values (typically on
 \end{center}
 
 \subsection{Comparative Rewards Plots}
-These plots compare the reward curves across all model variants for a specific environment. They allow for visual comparison of how different variants perform in terms of rewards over the training period.
+These plots compare the reward curves across all models for a specific environment. They allow for visual comparison of how different models perform in terms of rewards over the training period.
 
-The comparative rewards plot for Humanoid-v5 aggregates the reward curves from all variants, enabling side-by-side evaluation.
+The comparative rewards plot for Humanoid-v5 aggregates the reward curves from all models, enabling side-by-side evaluation.
 
 \begin{center}
-\includegraphics[width=0.8\textwidth]{graph_rewards_Humanoid-v5.png}
-\captionof{figure}{Comparative rewards over timesteps across all variants in Humanoid-v5.}
+\includegraphics[width=0.8\textwidth]{graph_Humanoid-v5_models_rewards.png}
+\captionof{figure}{Comparative rewards over timesteps across all models in Humanoid-v5.}
 \end{center}
 
-The comparative rewards plot for HumanoidStandup-v5 aggregates the reward curves from all variants, enabling side-by-side evaluation.
+The comparative rewards plot for HumanoidStandup-v5 aggregates the reward curves from all models, enabling side-by-side evaluation.
 
 \begin{center}
-\includegraphics[width=0.8\textwidth]{graph_rewards_HumanoidStandup-v5.png}
-\captionof{figure}{Comparative rewards over timesteps across all variants in HumanoidStandup-v5.}
+\includegraphics[width=0.8\textwidth]{graph_HumanoidStandup-v5_models_rewards.png}
+\captionof{figure}{Comparative rewards over timesteps across all models in HumanoidStandup-v5.}
 \end{center}
 
 \subsection{Comparative Entropies Plots}
-Similar to the comparative rewards, these plots show the entropy curves across all model variants for each environment, highlighting differences in exploration behavior.
+Similar to the comparative rewards, these plots show the entropy curves across all models for each environment, highlighting differences in exploration behavior.
 
-The comparative entropies plot for Humanoid-v5 aggregates the entropy curves from all variants.
+The comparative entropies plot for Humanoid-v5 aggregates the entropy curves from all models.
 
 \begin{center}
-\includegraphics[width=0.8\textwidth]{graph_entropies_Humanoid-v5.png}
-\captionof{figure}{Comparative entropies over timesteps across all variants in Humanoid-v5.}
+\includegraphics[width=0.8\textwidth]{graph_Humanoid-v5_models_entropies.png}
+\captionof{figure}{Comparative entropies over timesteps across all models in Humanoid-v5.}
 \end{center}
 
-The comparative entropies plot for HumanoidStandup-v5 aggregates the entropy curves from all variants.
+The comparative entropies plot for HumanoidStandup-v5 aggregates the entropy curves from all models.
 
 \begin{center}
-\includegraphics[width=0.8\textwidth]{graph_entropies_HumanoidStandup-v5.png}
-\captionof{figure}{Comparative entropies over timesteps across all variants in HumanoidStandup-v5.}
+\includegraphics[width=0.8\textwidth]{graph_HumanoidStandup-v5_models_entropies.png}
+\captionof{figure}{Comparative entropies over timesteps across all models in HumanoidStandup-v5.}
 \end{center}
 
-\subsection{Grid Plots per Model}
-These grid plots compile the rewards and entropies for a single model across all environments, providing a consolidated view per model.
+\subsection{Noise Modulation Grid Plots}
+These grid plots show the rewards and entropies across different noise levels for GenTRPO and TRPO in each environment.
 
-The grid plot for TRPO displays rewards and entropies across different environments in a grid format.
+The grid plot for GenTRPO rewards across noise levels in Humanoid-v5.
 
 \begin{center}
-\includegraphics[width=0.8\textwidth]{grid_model_trpo.png}
-\captionof{figure}{Grid of plots for TRPO across all environments.}
+\includegraphics[width=0.8\textwidth]{graph_Humanoid-v5_GenTRPO_noise_mod_rewards_grid.png}
+\captionof{figure}{Noise modulation grid for rewards in GenTRPO for Humanoid-v5.}
 \end{center}
 
-The grid plot for GenTRPO (Noise=0) displays rewards and entropies across different environments in a grid format.
+The grid plot for GenTRPO entropies across noise levels in Humanoid-v5.
 
 \begin{center}
-\includegraphics[width=0.8\textwidth]{grid_model_gentrpo.png}
-\captionof{figure}{Grid of plots for GenTRPO (Noise=0) across all environments.}
+\includegraphics[width=0.8\textwidth]{graph_Humanoid-v5_GenTRPO_noise_mod_entropies_grid.png}
+\captionof{figure}{Noise modulation grid for entropies in GenTRPO for Humanoid-v5.}
 \end{center}
 
-The grid plot for GenTRPO displays rewards and entropies across different environments in a grid format.
+The grid plot for TRPO rewards across noise levels in Humanoid-v5.
 
 \begin{center}
-\includegraphics[width=0.8\textwidth]{grid_model_gentrpo-ne.png}
-\captionof{figure}{Grid of plots for GenTRPO across all environments.}
+\includegraphics[width=0.8\textwidth]{graph_Humanoid-v5_TRPO_noise_mod_rewards_grid.png}
+\captionof{figure}{Noise modulation grid for rewards in TRPO for Humanoid-v5.}
+\end{center}
+
+The grid plot for TRPO entropies across noise levels in Humanoid-v5.
+
+\begin{center}
+\includegraphics[width=0.8\textwidth]{graph_Humanoid-v5_TRPO_noise_mod_entropies_grid.png}
+\captionof{figure}{Noise modulation grid for entropies in TRPO for Humanoid-v5.}
+\end{center}
+
+The grid plot for GenTRPO rewards across noise levels in HumanoidStandup-v5.
+
+\begin{center}
+\includegraphics[width=0.8\textwidth]{graph_HumanoidStandup-v5_GenTRPO_noise_mod_rewards_grid.png}
+\captionof{figure}{Noise modulation grid for rewards in GenTRPO for HumanoidStandup-v5.}
+\end{center}
+
+The grid plot for GenTRPO entropies across noise levels in HumanoidStandup-v5.
+
+\begin{center}
+\includegraphics[width=0.8\textwidth]{graph_HumanoidStandup-v5_GenTRPO_noise_mod_entropies_grid.png}
+\captionof{figure}{Noise modulation grid for entropies in GenTRPO for HumanoidStandup-v5.}
+\end{center}
+
+The grid plot for TRPO rewards across noise levels in HumanoidStandup-v5.
+
+\begin{center}
+\includegraphics[width=0.8\textwidth]{graph_HumanoidStandup-v5_TRPO_noise_mod_rewards_grid.png}
+\captionof{figure}{Noise modulation grid for rewards in TRPO for HumanoidStandup-v5.}
+\end{center}
+
+The grid plot for TRPO entropies across noise levels in HumanoidStandup-v5.
+
+\begin{center}
+\includegraphics[width=0.8\textwidth]{graph_HumanoidStandup-v5_TRPO_noise_mod_entropies_grid.png}
+\captionof{figure}{Noise modulation grid for entropies in TRPO for HumanoidStandup-v5.}
 \end{center}
 
 \subsection{Grid Plots per Environment}
@@ -261,6 +304,27 @@ The grid plot for HumanoidStandup-v5 displays rewards and entropies across diffe
 \captionof{figure}{Grid of plots for HumanoidStandup-v5 across all models.}
 \end{center}
 
+\subsection{Statistics Tables}
+The following tables present the detailed statistics for each model and environment combination.
+
+\subsubsection{Statistics for TRPO in Humanoid-v5}
+\input{results/Humanoid-v5_trpo_stats.tex}
+
+\subsubsection{Statistics for GenTRPO (Noise=0) in Humanoid-v5}
+\input{results/Humanoid-v5_gentrpo_stats.tex}
+
+\subsubsection{Statistics for GenTRPO in Humanoid-v5}
+\input{results/Humanoid-v5_gentrpo-ne_stats.tex}
+
+\subsubsection{Statistics for TRPO in HumanoidStandup-v5}
+\input{results/HumanoidStandup-v5_trpo_stats.tex}
+
+\subsubsection{Statistics for GenTRPO (Noise=0) in HumanoidStandup-v5}
+\input{results/HumanoidStandup-v5_gentrpo_stats.tex}
+
+\subsubsection{Statistics for GenTRPO in HumanoidStandup-v5}
+\input{results/HumanoidStandup-v5_gentrpo-ne_stats.tex}
+
 \subsection{Detailed Metrics Table}
 The following table presents detailed metrics for all model-environment pairs, including maximum reward, mean reward with standard deviation, timestep at maximum reward, end slope of the reward curve, entropy trend, and entropy rate at maximum reward point.
 
@@ -270,7 +334,7 @@ The following table presents detailed metrics for all model-environment pairs, i
 \resizebox{\textwidth}{!}{
 \begin{tabular}{|l|l|c|c|c|c|l|c|}
 \hline
-Environment & Variant & Max Reward & Mean Reward ($\pm$ std) & Timestep at Max & End Slope & Entropy Trend & Entropy Rate at Max \\
+Environment & Model & Max Reward & Mean Reward ($\pm$ std) & Timestep at Max & End Slope & Entropy Trend & Entropy Rate at Max \\
 \hline
 Humanoid-v5 & TRPO & 4.95 & $4.76 \pm 0.14$ & 42857 & -0.0143 & decreasing & 0.0246 \\
 Humanoid-v5 & GenTRPO (Noise=0) & 5.25 & $4.94 \pm 0.22$ & 95408 & -0.0038 & decreasing & -0.0147 \\
@@ -283,4 +347,29 @@ HumanoidStandup-v5 & GenTRPO & 229.41 & $69.26 \pm 24.21$ & 59896 & -1.9069 & in
 \end{tabular}
 }
 \end{table}
+\subsection{Correlation Matrices}
+The following tables show the correlation coefficients and p-values for noise level vs rewards and entropy vs rewards for each model and environment where raw data is available.
+
+\subsubsection{Correlation Matrix for Humanoid-v5}
+\begin{tabular}{lrrrr}
+\toprule
+Model & Noise vs Reward R & Noise vs Reward P & Entropy vs Reward R & Entropy vs Reward P \\
+\midrule
+TRPO & 0.06 & 0.73 & 0.24 & 0.16 \\
+GenTRPO (Noise=0) & 0.16 & 0.37 & -0.26 & 0.13 \\
+\bottomrule
+\end{tabular}
+
+
+\subsubsection{Correlation Matrix for HumanoidStandup-v5}
+\begin{tabular}{lrrrr}
+\toprule
+Model & Noise vs Reward R & Noise vs Reward P & Entropy vs Reward R & Entropy vs Reward P \\
+\midrule
+TRPO & 0.35 & 0.04 & -0.29 & 0.09 \\
+GenTRPO (Noise=0) & -0.22 & 0.21 & -0.68 & 0.00 \\
+\bottomrule
+\end{tabular}
+
+
 \end{document}

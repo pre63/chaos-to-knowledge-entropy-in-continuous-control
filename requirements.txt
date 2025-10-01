@@ -23,3 +23,4 @@ scipy
 git+https://github.com/pre63/black.git
 skrl
 skrl[torch]
+statsmodels

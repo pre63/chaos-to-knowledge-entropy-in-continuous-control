@@ -98,6 +98,6 @@ class SKRL_TRPO_WITH_COLLECT(SKRL_TRPO):
     log_dir = self.kwargs.get("log_dir", "runs")
     env_id = self.kwargs.get("env_id", "env")
 
-    path = os.path.join(log_dir, f"rewards_{env_id}_{variant}.yaml")
+    path = os.path.join(log_dir, f"{env_id}_{variant}.yaml")
     with open(path, "w") as f:
       yaml.safe_dump({"rewards": self.rewards}, f, default_flow_style=False)

@@ -2,8 +2,11 @@ import csv
 import os
 
 import numpy as np
+import pandas as pd
 import yaml
 from scipy.stats import linregress
+
+from .tables import process_raw_file
 
 
 def analyze_entropy(entropies, max_index):
@@ -38,13 +41,13 @@ def compute_end_slope(rewards, fraction=0.0005):
 def generate_report(log_dir, results, envs, variants, variant_labels):
   analysis_text = r"\section{Results Analysis}" + "\n"
   analysis_text += (
-    "In this report, we analyze the performance of the variants based on the computed metrics. The best performing model is determined by the highest maximum reward. We critically evaluate the convergence speed, entropy behavior, and overall stability. Entropy analysis follows standard practices where decreasing entropy indicates policy sharpening and reduced exploration, while the rate of change at peak reward highlights stability or rapid adjustments. The results are representative of five independent training runs, ensuring statistical significance, and are in line with RL literature best practices."
+    "In this report, we analyze the performance of the models based on the computed metrics. The best performing model is determined by the highest maximum reward. We critically evaluate the convergence speed, entropy behavior, and overall stability. Entropy analysis follows standard practices where decreasing entropy indicates policy sharpening and reduced exploration, while the rate of change at peak reward highlights stability or rapid adjustments. The results are representative of five independent training runs, ensuring statistical significance, and are in line with RL literature best practices."
     + "\n\n"
   )
 
   for env_id in envs:
     analysis_text += r"\subsection{" + env_id + "}" + "\n"
-    max_rewards = [results[env_id].get(cfg, {}).get("max_reward", float("-inf")) for cfg in variants]
+    max_rewards = [results[env_id].get(cfg, {}).get("Maximum Reward", float("-inf")) for cfg in variants]
     valid_max = [x for x in max_rewards if np.isfinite(x)]
     if not valid_max:
       analysis_text += "No data available for this environment." + "\n\n"
@@ -53,11 +56,11 @@ def generate_report(log_dir, results, envs, variants, variant_labels):
     best_cfg = variants[best_idx]
     best_label = variant_labels[best_cfg]
     best_max = max_rewards[best_idx]
-    best_timestep = results[env_id][best_cfg].get("timestep_at_max", None)
-    trpo_max = results[env_id].get("trpo", {}).get("max_reward", None)
-    trpo_timestep = results[env_id].get("trpo", {}).get("timestep_at_max", None)
+    best_timestep = results[env_id][best_cfg].get("Timestep at Maximum", None)
+    trpo_max = results[env_id].get("trpo", {}).get("Maximum Reward", None)
+    trpo_timestep = results[env_id].get("trpo", {}).get("Timestep at Maximum", None)
 
-    path = os.path.join(log_dir, f"rewards_{env_id}_{best_cfg}.yaml")
+    path = os.path.join(log_dir, f"{env_id}_{best_cfg}.yaml")
     entropy_trend = "insufficient data"
     entropy_rate = 0.0
     best_convergence_timestep = best_timestep
@@ -77,10 +80,10 @@ def generate_report(log_dir, results, envs, variants, variant_labels):
         if first_exceed_index is not None:
           best_convergence_timestep = (first_exceed_index / len(rewards)) * 100000
 
-    # Load data for all variants for cross-comparison
+    # Load data for all models for cross-comparison
     variant_data = {}
     for cfg in variants:
-      path = os.path.join(log_dir, f"rewards_{env_id}_{cfg}.yaml")
+      path = os.path.join(log_dir, f"{env_id}_{cfg}.yaml")
       if os.path.exists(path):
         with open(path, "r") as f:
           data = yaml.safe_load(f)
@@ -99,13 +102,13 @@ def generate_report(log_dir, results, envs, variants, variant_labels):
     else:
       comparison = "TRPO baseline data unavailable for comparison."
 
-    # Add cross-variant comparisons
-    cross_comp = "Cross-variant comparison: "
+    # Add cross-model comparisons
+    cross_comp = "Cross-model comparison: "
     for cfg in variants:
       if cfg != best_cfg and cfg in results[env_id]:
         cfg_label = variant_labels[cfg]
-        cfg_max = results[env_id][cfg].get("max_reward", None)
-        cfg_timestep = results[env_id][cfg].get("timestep_at_max", None)
+        cfg_max = results[env_id][cfg].get("Maximum Reward", None)
+        cfg_timestep = results[env_id][cfg].get("Timestep at Maximum", None)
         if cfg_max is not None and cfg_timestep is not None:
           rel_reward = ((best_max - cfg_max) / cfg_max * 100) if cfg_max != 0 else 0
           rel_time = cfg_timestep / best_timestep if best_timestep > 0 else 1
@@ -150,13 +153,13 @@ def generate_report(log_dir, results, envs, variants, variant_labels):
 
     # Place comparative graphs after comparisons using non-float
     analysis_text += r"\begin{center}" + "\n"
-    analysis_text += r"\includegraphics[width=0.8\textwidth]{graph_rewards_" + env_id + r".png}" + "\n"
-    analysis_text += r"\captionof{figure}{Comparative Rewards across variants in " + env_id + ".}" + "\n"
+    analysis_text += r"\includegraphics[width=0.8\textwidth]{graph_" + env_id + r"_models_rewards.png}" + "\n"
+    analysis_text += r"\captionof{figure}{Comparative Rewards across models in " + env_id + ".}" + "\n"
     analysis_text += r"\end{center}" + "\n\n"
 
     analysis_text += r"\begin{center}" + "\n"
-    analysis_text += r"\includegraphics[width=0.8\textwidth]{graph_entropies_" + env_id + r".png}" + "\n"
-    analysis_text += r"\captionof{figure}{Comparative Entropies across variants in " + env_id + ".}" + "\n"
+    analysis_text += r"\includegraphics[width=0.8\textwidth]{graph_" + env_id + r"_models_entropies.png}" + "\n"
+    analysis_text += r"\captionof{figure}{Comparative Entropies across models in " + env_id + ".}" + "\n"
     analysis_text += r"\end{center}" + "\n\n"
 
     # Sampling efficiency paragraph (updated to remove synthetic samples mention)
@@ -179,6 +182,22 @@ def generate_report(log_dir, results, envs, variants, variant_labels):
     analysis_text += r"\captionof{figure}{Grid of plots for " + env_id + r" across all models.}" + "\n"
     analysis_text += r"\end{center}" + "\n\n"
 
+    # Add correlation analysis for raw variants if available
+    for raw_cfg in ["trpo_raw", "gentrpo_raw"]:
+      if raw_cfg in results[env_id]:
+        raw_stats = results[env_id][raw_cfg]
+        noise_r = raw_stats.get("Noise vs Reward Correlation Coefficient", None)
+        noise_p = raw_stats.get("Noise vs Reward P Value", None)
+        entropy_r = raw_stats.get("Entropy vs Reward Correlation Coefficient", None)
+        entropy_p = raw_stats.get("Entropy vs Reward P Value", None)
+        corr_text = f"For the raw data of {variant_labels[raw_cfg.split('_')[0]]} in {env_id}, "
+        if noise_r is not None:
+          corr_text += f"the correlation between noise level and mean reward is {noise_r:.2f} (p={noise_p:.4f}), "
+        if entropy_r is not None:
+          corr_text += f"and between mean entropy and mean reward is {entropy_r:.2f} (p={entropy_p:.4f}). "
+        if noise_r is not None or entropy_r is not None:
+          analysis_text += corr_text + "\n\n"
+
   return analysis_text
 
 
@@ -191,28 +210,38 @@ if __name__ == "__main__":
   # Load results from CSV
   results = {}
   csv_path = os.path.join(log_dir, "tables.csv")
-  with open(csv_path, "r") as csvfile:
-    reader = csv.reader(csvfile)
-    next(reader)  # Skip header
-    for row in reader:
-      if len(row) < 6:
-        continue
-      env_id, cfg, max_r_str, mean_r_str, std_r_str, time_max_str = row
-      if env_id not in results:
-        results[env_id] = {}
+  df = pd.read_csv(csv_path)
+  for _, row in df.iterrows():
+    env_id = row["Environment"]
+    cfg = row["Variant"]
+    if env_id not in results:
+      results[env_id] = {}
+    if "Max Reward" in row and pd.notna(row["Max Reward"]):
+      max_r = row["Max Reward"]
+      mean_r = row["Mean Reward"]
+      std_r = row["Std Reward"]
+      time_max = row["Timestep at Max"]
       results[env_id][cfg] = {
-        "max_reward": float(max_r_str) if max_r_str else None,
-        "mean_reward": float(mean_r_str) if mean_r_str else None,
-        "std_reward": float(std_r_str) if std_r_str else None,
-        "timestep_at_max": float(time_max_str) if time_max_str else None,
+        "Maximum Reward": float(max_r) if max_r != "-" else None,
+        "Mean Reward": float(mean_r) if mean_r != "-" else None,
+        "Reward Standard Deviation": float(std_r) if std_r != "-" else None,
+        "Timestep at Maximum": float(time_max) if time_max != "-" else None,
       }
+
+  # Load raw stats for correlations (since they are in level_stats)
+  for env_id in envs:
+    for raw_cfg in ["trpo_raw", "gentrpo_raw"]:
+      path = os.path.join(log_dir, f"{env_id}_{raw_cfg}.yaml")
+      if os.path.exists(path):
+        level_stats = process_raw_file(path, env_id, raw_cfg)
+        results[env_id][raw_cfg] = level_stats
 
   # Compute additional metrics for all pairs
   detailed_metrics = {}
   for env_id in envs:
     detailed_metrics[env_id] = {}
     for cfg in variants:
-      path = os.path.join(log_dir, f"rewards_{env_id}_{cfg}.yaml")
+      path = os.path.join(log_dir, f"{env_id}_{cfg}.yaml")
       if os.path.exists(path):
         with open(path, "r") as f:
           data = yaml.safe_load(f)
@@ -223,20 +252,20 @@ if __name__ == "__main__":
           entropy_trend, entropy_rate = analyze_entropy(entropies, max_index)
           end_slope = compute_end_slope(rewards)
           detailed_metrics[env_id][cfg] = {
-            "max_reward": results.get(env_id, {}).get(cfg, {}).get("max_reward", "N/A"),
-            "mean_reward": results.get(env_id, {}).get(cfg, {}).get("mean_reward", "N/A"),
-            "std_reward": results.get(env_id, {}).get(cfg, {}).get("std_reward", "N/A"),
-            "timestep_at_max": results.get(env_id, {}).get(cfg, {}).get("timestep_at_max", "N/A"),
+            "Maximum Reward": results.get(env_id, {}).get(cfg, {}).get("Maximum Reward", "N/A"),
+            "Mean Reward": results.get(env_id, {}).get(cfg, {}).get("Mean Reward", "N/A"),
+            "Reward Standard Deviation": results.get(env_id, {}).get(cfg, {}).get("Reward Standard Deviation", "N/A"),
+            "Timestep at Maximum": results.get(env_id, {}).get(cfg, {}).get("Timestep at Maximum", "N/A"),
             "end_slope": end_slope,
             "entropy_trend": entropy_trend,
             "entropy_rate": entropy_rate,
           }
         else:
           detailed_metrics[env_id][cfg] = {
-            "max_reward": "N/A",
-            "mean_reward": "N/A",
-            "std_reward": "N/A",
-            "timestep_at_max": "N/A",
+            "Maximum Reward": "N/A",
+            "Mean Reward": "N/A",
+            "Reward Standard Deviation": "N/A",
+            "Timestep at Maximum": "N/A",
             "end_slope": "N/A",
             "entropy_trend": "N/A",
             "entropy_rate": "N/A",
@@ -246,51 +275,53 @@ if __name__ == "__main__":
   latex_table = r"\begin{table}[htbp]" + "\n"
   latex_table += r"\centering" + "\n"
   latex_table += (
-    r"\caption{Performance Metrics Across Variants. Best values bolded (highest max/mean reward, lowest timestep at max for earlier convergence). Timestep calculated as proportional index (normalized to 100,000 total timesteps across the run for comparability). Mean and std computed over all episodes in the run.}"
+    r"\caption{Performance Metrics Across Models. Best values bolded (highest max/mean reward, lowest timestep at max for earlier convergence). Timestep calculated as proportional index (normalized to 100,000 total timesteps across the run for comparability). Mean and std computed over all episodes in the run.}"
     + "\n"
   )
   latex_table += r"\resizebox{\textwidth}{!}{" + "\n"
   latex_table += r"\begin{tabular}{|l|l|c|c|c|}" + "\n"
   latex_table += r"\hline" + "\n"
-  latex_table += r"Environment & Variant & Max Reward & Mean Reward ($\pm$ std) & Timestep at Max \\" + "\n"
+  latex_table += r"Environment & Model & Max Reward & Mean Reward ($\pm$ std) & Timestep at Max \\" + "\n"
   latex_table += r"\hline" + "\n"
 
   for env_id in envs:
     # Find bests per env
-    max_rewards = [results[env_id].get(cfg, {}).get("max_reward", "-") for cfg in variants]
-    valid_max = [x for x in max_rewards if x != "-"]
+    max_rewards = [results[env_id].get(cfg, {}).get("Maximum Reward", "-") for cfg in variants if cfg in results[env_id]]
+    valid_max = [x for x in max_rewards if x is not None]
     best_max = max(valid_max) if valid_max else None
 
-    mean_rewards = [results[env_id].get(cfg, {}).get("mean_reward", "-") for cfg in variants]
-    valid_mean = [x for x in mean_rewards if x != "-"]
+    mean_rewards = [results[env_id].get(cfg, {}).get("Mean Reward", "-") for cfg in variants if cfg in results[env_id]]
+    valid_mean = [x for x in mean_rewards if x is not None]
     best_mean = max(valid_mean) if valid_mean else None
 
-    timesteps = [results[env_id].get(cfg, {}).get("timestep_at_max", "-") for cfg in variants]
-    valid_times = [x for x in timesteps if x != "-"]
+    timesteps = [results[env_id].get(cfg, {}).get("Timestep at Maximum", "-") for cfg in variants if cfg in results[env_id]]
+    valid_times = [x for x in timesteps if x is not None]
     best_time = min(valid_times) if valid_times else None
 
     for cfg in variants:
+      if cfg not in results[env_id]:
+        continue
       row = env_id + r" & " + variant_labels[cfg]
 
-      val_max = results[env_id].get(cfg, {}).get("max_reward", "-")
-      if val_max != "-" and val_max == best_max:
+      val_max = results[env_id][cfg].get("Maximum Reward", "-")
+      if val_max is not None and val_max == best_max:
         row += r" & \textbf{" + f"{val_max:.2f}" + "}"
       else:
-        row += f" & {val_max:.2f}" if val_max != "-" else " & -"
+        row += f" & {val_max:.2f}" if val_max is not None else " & -"
 
-      val_mean = results[env_id].get(cfg, {}).get("mean_reward", "-")
-      val_std = results[env_id].get(cfg, {}).get("std_reward", "-")
-      cell = f"${val_mean:.2f} \\pm {val_std:.2f}$" if val_mean != "-" else "-"
-      if val_mean != "-" and val_mean == best_mean:
+      val_mean = results[env_id][cfg].get("Mean Reward", "-")
+      val_std = results[env_id][cfg].get("Reward Standard Deviation", "-")
+      cell = f"${val_mean:.2f} \\pm {val_std:.2f}$" if val_mean is not None else "-"
+      if val_mean is not None and val_mean == best_mean:
         row += r" & \textbf{" + cell + "}"
       else:
         row += " & " + cell
 
-      val_time = results[env_id].get(cfg, {}).get("timestep_at_max", "-")
-      if val_time != "-" and val_time == best_time:
+      val_time = results[env_id][cfg].get("Timestep at Maximum", "-")
+      if val_time is not None and val_time == best_time:
         row += r" & \textbf{" + f"{val_time:.0f}" + "}"
       else:
-        row += f" & {val_time:.0f}" if val_time != "-" else " & -"
+        row += f" & {val_time:.0f}" if val_time is not None else " & -"
 
       row += r" \\"
       latex_table += row + "\n"
@@ -324,7 +355,7 @@ if __name__ == "__main__":
   # Condensed Methods
   methods_text = r"\section{Methods}" + "\n"
   methods_text += (
-    "We evaluate three variants: (1) Standard TRPO as the baseline, which optimizes policies under trust region constraints to ensure stable updates. (2) GenTRPO, which integrates prioritized generative replay (PGR), entropy regularization, and mini-batch entropy measurement to enhance exploration and sample efficiency. The generative component relies on a forward dynamics model to create synthetic transitions, complementing real experiences. (3) GenTRPO w/ Noise, which adds uniform noise injection to actions and rewards to simulate real-world uncertainties and promote robustness."
+    "We evaluate three models: (1) Standard TRPO as the baseline, which optimizes policies under trust region constraints to ensure stable updates. (2) GenTRPO, which integrates prioritized generative replay (PGR), entropy regularization, and mini-batch entropy measurement to enhance exploration and sample efficiency. The generative component relies on a forward dynamics model to create synthetic transitions, complementing real experiences. (3) GenTRPO w/ Noise, which adds uniform noise injection to actions and rewards to simulate real-world uncertainties and promote robustness."
     + "\n\n"
   )
   methods_text += (
@@ -335,7 +366,7 @@ if __name__ == "__main__":
   # New Conclusion Section
   conclusion_text = r"\section{Conclusion}" + "\n"
   conclusion_text += (
-    "In summary, GenTRPO variants outperform the TRPO baseline in both environments, with notable gains in HumanoidStandup-v5. These improvements suggest that generalizations and noise aid in handling complex dynamics."
+    "In summary, GenTRPO models outperform the TRPO baseline in both environments, with notable gains in HumanoidStandup-v5. These improvements suggest that generalizations and noise aid in handling complex dynamics."
     + "\n\n"
   )
 
@@ -345,11 +376,11 @@ if __name__ == "__main__":
 
   # Annex for all plots, using non-float, with explanatory paragraphs
   annex_text = r"\appendix" + "\n"
-  annex_text += r"\section{Annex: Supplementary Plots}" + "\n\n"
-  annex_text += "This annex provides supplementary plots for reference. Each plot is described below, focusing on its content and purpose.\n\n"
+  annex_text += r"\section{Annex: Supplementary Plots and Statistics}" + "\n\n"
+  annex_text += "This annex provides supplementary plots and statistics for reference. Each plot is described below, focusing on its content and purpose.\n\n"
 
   annex_text += r"\subsection{Individual Rewards and Entropies Plots}" + "\n"
-  annex_text += "The following plots display the reward and entropy curves for individual model variants in each environment. These graphs illustrate the progression of rewards and entropies over training timesteps for a specific model and environment combination.\n\n"
+  annex_text += "The following plots display the reward and entropy curves for individual models in each environment. These graphs illustrate the progression of rewards and entropies over training timesteps for a specific model and environment combination.\n\n"
   for env_id in envs:
     for cfg in variants:
       label = variant_labels[cfg]
@@ -360,32 +391,34 @@ if __name__ == "__main__":
       annex_text += r"\end{center}" + "\n\n"
 
   annex_text += r"\subsection{Comparative Rewards Plots}" + "\n"
-  annex_text += "These plots compare the reward curves across all model variants for a specific environment. They allow for visual comparison of how different variants perform in terms of rewards over the training period.\n\n"
+  annex_text += "These plots compare the reward curves across all models for a specific environment. They allow for visual comparison of how different models perform in terms of rewards over the training period.\n\n"
   for env_id in envs:
-    annex_text += f"The comparative rewards plot for {env_id} aggregates the reward curves from all variants, enabling side-by-side evaluation.\n\n"
+    annex_text += f"The comparative rewards plot for {env_id} aggregates the reward curves from all models, enabling side-by-side evaluation.\n\n"
     annex_text += r"\begin{center}" + "\n"
-    annex_text += r"\includegraphics[width=0.8\textwidth]{graph_rewards_" + env_id + r".png}" + "\n"
-    annex_text += r"\captionof{figure}{Comparative rewards over timesteps across all variants in " + env_id + ".}" + "\n"
+    annex_text += r"\includegraphics[width=0.8\textwidth]{graph_" + env_id + r"_models_rewards.png}" + "\n"
+    annex_text += r"\captionof{figure}{Comparative rewards over timesteps across all models in " + env_id + ".}" + "\n"
     annex_text += r"\end{center}" + "\n\n"
 
   annex_text += r"\subsection{Comparative Entropies Plots}" + "\n"
-  annex_text += "Similar to the comparative rewards, these plots show the entropy curves across all model variants for each environment, highlighting differences in exploration behavior.\n\n"
+  annex_text += "Similar to the comparative rewards, these plots show the entropy curves across all models for each environment, highlighting differences in exploration behavior.\n\n"
   for env_id in envs:
-    annex_text += f"The comparative entropies plot for {env_id} aggregates the entropy curves from all variants.\n\n"
+    annex_text += f"The comparative entropies plot for {env_id} aggregates the entropy curves from all models.\n\n"
     annex_text += r"\begin{center}" + "\n"
-    annex_text += r"\includegraphics[width=0.8\textwidth]{graph_entropies_" + env_id + r".png}" + "\n"
-    annex_text += r"\captionof{figure}{Comparative entropies over timesteps across all variants in " + env_id + ".}" + "\n"
+    annex_text += r"\includegraphics[width=0.8\textwidth]{graph_" + env_id + r"_models_entropies.png}" + "\n"
+    annex_text += r"\captionof{figure}{Comparative entropies over timesteps across all models in " + env_id + ".}" + "\n"
     annex_text += r"\end{center}" + "\n\n"
 
-  annex_text += r"\subsection{Grid Plots per Model}" + "\n"
-  annex_text += "These grid plots compile the rewards and entropies for a single model across all environments, providing a consolidated view per model.\n\n"
-  for cfg in variants:
-    label = variant_labels[cfg]
-    annex_text += f"The grid plot for {label} displays rewards and entropies across different environments in a grid format.\n\n"
-    annex_text += r"\begin{center}" + "\n"
-    annex_text += r"\includegraphics[width=0.8\textwidth]{grid_model_" + cfg + r".png}" + "\n"
-    annex_text += r"\captionof{figure}{Grid of plots for " + label + r" across all environments.}" + "\n"
-    annex_text += r"\end{center}" + "\n\n"
+  annex_text += r"\subsection{Noise Modulation Grid Plots}" + "\n"
+  annex_text += "These grid plots show the rewards and entropies across different noise levels for GenTRPO and TRPO in each environment.\n\n"
+  for env_id in envs:
+    for model_type in ["GenTRPO", "TRPO"]:
+      for data_type in ["rewards", "entropies"]:
+        image_name = f"graph_{env_id}_{model_type}_noise_mod_{data_type}_grid.png"
+        annex_text += f"The grid plot for {model_type} {data_type} across noise levels in {env_id}.\n\n"
+        annex_text += r"\begin{center}" + "\n"
+        annex_text += r"\includegraphics[width=0.8\textwidth]{" + image_name + "}" + "\n"
+        annex_text += r"\captionof{figure}{Noise modulation grid for " + data_type + r" in " + model_type + r" for " + env_id + ".}" + "\n"
+        annex_text += r"\end{center}" + "\n\n"
 
   annex_text += r"\subsection{Grid Plots per Environment}" + "\n"
   annex_text += "These grid plots compile the rewards and entropies for a single environment across all models, offering a per-environment overview.\n\n"
@@ -395,6 +428,18 @@ if __name__ == "__main__":
     annex_text += r"\includegraphics[width=0.8\textwidth]{grid_env_" + env_id + r".png}" + "\n"
     annex_text += r"\captionof{figure}{Grid of plots for " + env_id + r" across all models.}" + "\n"
     annex_text += r"\end{center}" + "\n\n"
+
+  # Add statistics tables
+  annex_text += r"\subsection{Statistics Tables}" + "\n"
+  annex_text += "The following tables present the detailed statistics for each model and environment combination.\n\n"
+  for env_id in envs:
+    for cfg in variants + ["trpo_raw", "gentrpo_raw"]:
+      if cfg in variant_labels:
+        label = variant_labels[cfg]
+      else:
+        continue  # Skip if no label
+      annex_text += r"\subsubsection{Statistics for " + label + r" in " + env_id + "}" + "\n"
+      annex_text += r"\input{results/" + env_id + r"_" + cfg + r"_stats.tex}" + "\n\n"
 
   # Add detailed metrics table to annex
   annex_text += r"\subsection{Detailed Metrics Table}" + "\n"
@@ -406,9 +451,7 @@ if __name__ == "__main__":
   detailed_table += r"\resizebox{\textwidth}{!}{" + "\n"
   detailed_table += r"\begin{tabular}{|l|l|c|c|c|c|l|c|}" + "\n"
   detailed_table += r"\hline" + "\n"
-  detailed_table += (
-    r"Environment & Variant & Max Reward & Mean Reward ($\pm$ std) & Timestep at Max & End Slope & Entropy Trend & Entropy Rate at Max \\" + "\n"
-  )
+  detailed_table += r"Environment & Model & Max Reward & Mean Reward ($\pm$ std) & Timestep at Max & End Slope & Entropy Trend & Entropy Rate at Max \\" + "\n"
   detailed_table += r"\hline" + "\n"
 
   for env_id in envs:
@@ -416,15 +459,15 @@ if __name__ == "__main__":
       metrics = detailed_metrics.get(env_id, {}).get(cfg, {})
       row = env_id + r" & " + variant_labels[cfg]
 
-      val_max = metrics.get("max_reward", "-")
+      val_max = metrics.get("Maximum Reward", "-")
       row += f" & {val_max:.2f}" if val_max != "N/A" and val_max != "-" else " & -"
 
-      val_mean = metrics.get("mean_reward", "-")
-      val_std = metrics.get("std_reward", "-")
+      val_mean = metrics.get("Mean Reward", "-")
+      val_std = metrics.get("Reward Standard Deviation", "-")
       cell = f"${val_mean:.2f} \\pm {val_std:.2f}$" if val_mean != "N/A" and val_mean != "-" else "-"
       row += " & " + cell
 
-      val_time = metrics.get("timestep_at_max", "-")
+      val_time = metrics.get("Timestep at Maximum", "-")
       row += f" & {val_time:.0f}" if val_time != "N/A" and val_time != "-" else " & -"
 
       end_slope = metrics.get("end_slope", "-")
@@ -434,7 +477,7 @@ if __name__ == "__main__":
       row += " & " + entropy_trend if entropy_trend != "N/A" else " & -"
 
       entropy_rate = metrics.get("entropy_rate", "-")
-      row += f" & {entropy_rate:.4f}" if entropy_rate != "N/A" and entropy_rate != "-" else " & -"
+      row += f" & {entropy_rate:.4f}" if entropy_rate != "N/A" and end_slope != "-" else " & -"
 
       row += r" \\"
       detailed_table += row + "\n"
@@ -445,6 +488,28 @@ if __name__ == "__main__":
   detailed_table += r"\end{table}" + "\n"
 
   annex_text += detailed_table
+
+  # Add correlation matrix section
+  annex_text += r"\subsection{Correlation Matrices}" + "\n"
+  annex_text += "The following tables show the correlation coefficients and p-values for noise level vs rewards and entropy vs rewards for each model and environment where raw data is available.\n\n"
+  for env_id in envs:
+    corr_rows = []
+    for raw_cfg in ["trpo_raw", "gentrpo_raw"]:
+      if raw_cfg in results[env_id]:
+        raw_stats = results[env_id][raw_cfg]
+        corr_rows.append(
+          {
+            "Model": variant_labels[raw_cfg.split("_")[0]],
+            "Noise vs Reward R": raw_stats.get("Noise vs Reward Correlation Coefficient", "N/A"),
+            "Noise vs Reward P": raw_stats.get("Noise vs Reward P Value", "N/A"),
+            "Entropy vs Reward R": raw_stats.get("Entropy vs Reward Correlation Coefficient", "N/A"),
+            "Entropy vs Reward P": raw_stats.get("Entropy vs Reward P Value", "N/A"),
+          }
+        )
+    if corr_rows:
+      corr_df = pd.DataFrame(corr_rows)
+      annex_text += r"\subsubsection{Correlation Matrix for " + env_id + "}" + "\n"
+      annex_text += corr_df.to_latex(index=False, float_format="%.2f", escape=True) + "\n\n"
 
   # Full LaTeX document
   latex_doc = r"\documentclass{svproc}" + "\n"
