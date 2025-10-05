@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 OS := $(shell uname -s)
 
-DEVICE=auto
+DEVICE=cpu
 
 n_jobs=15 # Default number of jobs to run in parallel
 model=trpo # Default model to train
@@ -74,32 +74,67 @@ clean:
 	@rm -rf __pycache__/
 	@rm -rf .venv
 
-train_Humanoid-v5_trpo: fix
+train_trpo_none_Humanoid-v5: fix
 	@source .venv/bin/activate; \
-	PYTHONPATH=. python -m scripts.ablation --env Humanoid-v5 --model trpo --device $(DEVICE)
+	PYTHONPATH=. python -m scripts.ablation --env Humanoid-v5 --model trpo --framework sb3 --device cpu --noise none
 
-train_Humanoid-v5_gentrpo: fix
+train_trpo_none_HumanoidStandup-v5: fix
 	@source .venv/bin/activate; \
-	PYTHONPATH=. python -m scripts.ablation --env Humanoid-v5 --model gentrpo --device $(DEVICE)
+	PYTHONPATH=. python -m scripts.ablation --env HumanoidStandup-v5 --model trpo --framework sb3 --device cpu --noise none
 
-train_Humanoid-v5_grentrpo-ne: fix
+train_trpo_none: train_trpo_none_Humanoid-v5 train_trpo_none_HumanoidStandup-v5
+
+train_trpo_action_Humanoid-v5: fix
 	@source .venv/bin/activate; \
-	PYTHONPATH=. python -m scripts.ablation --env Humanoid-v5 --model grentrpo-ne --device $(DEVICE)
+	PYTHONPATH=. python -m scripts.ablation --env Humanoid-v5 --model trpo --framework sb3 --device cpu --noise action
 
-train_HumanoidStandup-v5_trpo: fix
+train_trpo_action_HumanoidStandup-v5: fix
 	@source .venv/bin/activate; \
-	PYTHONPATH=. python -m scripts.ablation --env HumanoidStandup-v5 --model trpo --device $(DEVICE)
+	PYTHONPATH=. python -m scripts.ablation --env HumanoidStandup-v5 --model trpo --framework sb3 --device cpu --noise action
 
-train_HumanoidStandup-v5_gentrpo: fix
+train_trpo_action: train_trpo_action_Humanoid-v5 train_trpo_action_HumanoidStandup-v5
+
+train_trpo_both_Humanoid-v5: fix
 	@source .venv/bin/activate; \
-	PYTHONPATH=. python -m scripts.ablation --env HumanoidStandup-v5 --model gentrpo --device $(DEVICE)
+	PYTHONPATH=. python -m scripts.ablation --env Humanoid-v5 --model trpo --framework sb3 --device cpu --noise both
 
-train_HumanoidStandup-v5_grentrpo-ne: fix
+train_trpo_both_HumanoidStandup-v5: fix
 	@source .venv/bin/activate; \
-	PYTHONPATH=. python -m scripts.ablation --env HumanoidStandup-v5 --model grentrpo-ne --device $(DEVICE)
+	PYTHONPATH=. python -m scripts.ablation --env HumanoidStandup-v5 --model trpo --framework sb3 --device cpu --noise both
 
-ablation: train_Humanoid-v5_trpo train_HumanoidStandup-v5_trpo train_Humanoid-v5_gentrpo  train_HumanoidStandup-v5_gentrpo train_HumanoidStandup-v5_grentrpo-ne train_Humanoid-v5_grentrpo-ne
+train_trpo_both: train_trpo_both_Humanoid-v5 train_trpo_both_HumanoidStandup-v5
 
+train_gentrpo_none_Humanoid-v5: fix
+	@source .venv/bin/activate; \
+	PYTHONPATH=. python -m scripts.ablation --env Humanoid-v5 --model gentrpo --framework sb3 --device cpu --noise none
+
+train_gentrpo_none_HumanoidStandup-v5: fix
+	@source .venv/bin/activate; \
+	PYTHONPATH=. python -m scripts.ablation --env HumanoidStandup-v5 --model gentrpo --framework sb3 --device cpu --noise none
+
+train_gentrpo_none: train_gentrpo_none_Humanoid-v5 train_gentrpo_none_HumanoidStandup-v5
+
+train_gentrpo_action_Humanoid-v5: fix
+	@source .venv/bin/activate; \
+	PYTHONPATH=. python -m scripts.ablation --env Humanoid-v5 --model gentrpo --framework sb3 --device cpu --noise action
+
+train_gentrpo_action_HumanoidStandup-v5: fix
+	@source .venv/bin/activate; \
+	PYTHONPATH=. python -m scripts.ablation --env HumanoidStandup-v5 --model gentrpo --framework sb3 --device cpu --noise action
+
+train_gentrpo_action: train_gentrpo_action_Humanoid-v5 train_gentrpo_action_HumanoidStandup-v5
+
+train_gentrpo_both_Humanoid-v5: fix
+	@source .venv/bin/activate; \
+	PYTHONPATH=. python -m scripts.ablation --env Humanoid-v5 --model gentrpo --framework sb3 --device cpu --noise both
+
+train_gentrpo_both_HumanoidStandup-v5: fix
+	@source .venv/bin/activate; \
+	PYTHONPATH=. python -m scripts.ablation --env HumanoidStandup-v5 --model gentrpo --framework sb3 --device cpu --noise both
+
+train_gentrpo_both: train_gentrpo_both_Humanoid-v5 train_gentrpo_both_HumanoidStandup-v5
+
+action_noise: train_trpo_action train_gentrpo_action
 
 plots_no_fix: 
 	@source .venv/bin/activate; \

@@ -19,7 +19,7 @@ from skrli.strategy import sampling_strategy
 from skrli.trpo import SKRL_TRPO_WITH_COLLECT
 
 
-class GEN_TRPO(SKRL_TRPO_WITH_COLLECT):
+class GenTRPO(SKRL_TRPO_WITH_COLLECT):
   def __init__(
     self,
     models: Mapping[str, Model],

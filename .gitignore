@@ -39,3 +39,4 @@ all.txt
 runs/
 .omega/
 MUJOCO_LOG.TXT
+models

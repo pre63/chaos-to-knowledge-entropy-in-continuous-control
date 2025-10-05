@@ -1,14 +1,25 @@
+# sb3/trpo.py
+import copy
+from functools import partial
 from typing import Any, ClassVar, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
+import numpy as np
 import optuna
 import torch as th
 import torch.nn as nn
+from gymnasium import spaces
 from rl_zoo3 import linear_schedule
 from sb3_contrib import TRPO
+from sb3_contrib.common.utils import conjugate_gradient_solver
 from stable_baselines3 import PPO
 from stable_baselines3.common.buffers import RolloutBuffer
+from stable_baselines3.common.distributions import kl_divergence
 from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.type_aliases import GymEnv, Schedule
+from stable_baselines3.common.utils import explained_variance
+from torch.nn import functional as F
+
+from sb3.noise import MonitoredEntropyInjectionWrapper
 
 
 class TRPO(TRPO):
@@ -44,6 +55,7 @@ class TRPO(TRPO):
     seed: Optional[int] = None,
     device: Union[th.device, str] = "cuda",
     _init_setup_model: bool = True,
+    noise_configs=None,
     **kwargs,
   ):
 
@@ -77,6 +89,17 @@ class TRPO(TRPO):
     )
     # Ignore kwargs for compatibility
 
+    self.rollout_metrics = {}
+
+    if noise_configs is not None:
+      if self.env is None:
+        raise ValueError("Environment must be provided when noise_configs is specified.")
+      if hasattr(self.env, "envs"):
+        for i in range(self.env.num_envs):
+          self.env.envs[i] = MonitoredEntropyInjectionWrapper(self.env.envs[i], noise_configs=noise_configs)
+      else:
+        self.env = MonitoredEntropyInjectionWrapper(self.env, noise_configs=noise_configs)
+
     # Print device and verify it is being used
     print(f"Device set to: {device}")
     if isinstance(device, str):
@@ -84,6 +107,258 @@ class TRPO(TRPO):
     elif isinstance(device, th.device):
       device = device if th.cuda.is_available() else th.device("cpu")
     print(f"Using device: {device} (CUDA available: {th.cuda.is_available()})")
+
+  def _compute_policy_objective(self, advantages, ratio, distribution):
+    """Overridable method for computing policy objective."""
+    return (advantages * ratio).mean()
+
+  def _save_rollout_metrics(
+    self,
+    kl_divergences,
+    explained_var,
+    value_losses,
+    policy_std,
+    line_search_results,
+    grad_norm_policy,
+    mean_grad_norm_value,
+    adv_mean,
+    adv_std,
+    entropy,
+    action_deltas,
+    reward_deltas,
+  ):
+    """Overridable method for computing metrics."""
+
+    metrics = {
+      "kl_div": float(kl_divergences[-1] if kl_divergences else 0.0),
+      "explained_variance": float(explained_var),
+      "value_loss": float(np.mean(value_losses)),
+      "policy_std": float(policy_std),
+      "line_search_success": float(np.mean(line_search_results)),
+      "grad_norm_policy": float(grad_norm_policy),
+      "grad_norm_value": float(mean_grad_norm_value),
+      "adv_mean": float(adv_mean),
+      "adv_std": float(adv_std),
+      "entropies": float(entropy),
+      "action_deltas": [float(d) for d in action_deltas],
+      "rewards": [float(d) for d in reward_deltas],
+    }
+
+    if len(self.rollout_metrics) == 0:
+      self.rollout_metrics = {key: [] for key in metrics}
+
+    for key, value in metrics.items():
+      self.rollout_metrics[key].append(value)
+
+  def train(self) -> None:
+    """
+        Update policy using the currently gathered rollout buffer.
+        """
+    # Switch to train mode (this affects batch norm / dropout)
+    self.policy.set_training_mode(True)
+    # Update optimizer learning rate
+    self._update_learning_rate(self.policy.optimizer)
+
+    policy_objective_values = []
+    kl_divergences = []
+    line_search_results = []
+    value_losses = []
+
+    # This will only loop once (get all data in one go)
+    for rollout_data in self.rollout_buffer.get(batch_size=None):
+
+      # Optional: sub-sample data for faster computation
+      if self.sub_sampling_factor > 1:
+        rollout_data = RolloutBufferSamples(
+          rollout_data.observations[:: self.sub_sampling_factor],
+          rollout_data.actions[:: self.sub_sampling_factor],
+          None,  # old values, not used here
+          rollout_data.old_log_prob[:: self.sub_sampling_factor],
+          rollout_data.advantages[:: self.sub_sampling_factor],
+          None,  # returns, not used here
+        )
+
+      actions = rollout_data.actions
+      if isinstance(self.action_space, spaces.Discrete):
+        # Convert discrete action from float to long
+        actions = rollout_data.actions.long().flatten()
+
+      # Re-sample the noise matrix because the log_std has changed
+      if self.use_sde:
+        # batch_size is only used for the value function
+        self.policy.reset_noise(actions.shape[0])
+
+      with th.no_grad():
+        # Note: is copy enough, no need for deepcopy?
+        # If using gSDE and deepcopy, we need to use `old_distribution.distribution.distribution`
+        # directly to avoid PyTorch errors.
+        old_distribution = copy.copy(self.policy.get_distribution(rollout_data.observations))
+
+      distribution = self.policy.get_distribution(rollout_data.observations)
+      log_prob = distribution.log_prob(actions)
+
+      advantages = rollout_data.advantages
+      if self.normalize_advantage:
+        advantages = (advantages - advantages.mean()) / (rollout_data.advantages.std() + 1e-8)
+
+      # ratio between old and new policy, should be one at the first iteration
+      ratio = th.exp(log_prob - rollout_data.old_log_prob)
+
+      # surrogate policy objective
+      policy_objective = self._compute_policy_objective(advantages, ratio, distribution)
+
+      # KL divergence
+      kl_div = kl_divergence(distribution, old_distribution).mean()
+
+      # Surrogate & KL gradient
+      self.policy.optimizer.zero_grad()
+
+      actor_params, policy_objective_gradients, grad_kl, grad_shape = self._compute_actor_grad(kl_div, policy_objective)
+
+      grad_norm_policy = th.norm(policy_objective_gradients).item()
+
+      # Hessian-vector dot product function used in the conjugate gradient step
+      hessian_vector_product_fn = partial(self.hessian_vector_product, actor_params, grad_kl)
+
+      # Computing search direction
+      search_direction = conjugate_gradient_solver(
+        hessian_vector_product_fn,
+        policy_objective_gradients,
+        max_iter=self.cg_max_steps,
+      )
+
+      # Maximal step length
+      line_search_max_step_size = 2 * self.target_kl
+      line_search_max_step_size /= th.matmul(search_direction, hessian_vector_product_fn(search_direction, retain_graph=False))
+      line_search_max_step_size = th.sqrt(line_search_max_step_size)
+
+      line_search_backtrack_coeff = 1.0
+      original_actor_params = [param.detach().clone() for param in actor_params]
+
+      is_line_search_success = False
+      with th.no_grad():
+        # Line-search (backtracking)
+        for _ in range(self.line_search_max_iter):
+
+          start_idx = 0
+          # Applying the scaled step direction
+          for param, original_param, shape in zip(actor_params, original_actor_params, grad_shape):
+            n_params = param.numel()
+            param.data = original_param.data + line_search_backtrack_coeff * line_search_max_step_size * search_direction[
+              start_idx : (start_idx + n_params)
+            ].view(shape)
+            start_idx += n_params
+
+          # Recomputing the policy log-probabilities
+          distribution = self.policy.get_distribution(rollout_data.observations)
+          log_prob = distribution.log_prob(actions)
+
+          # New policy objective
+          ratio = th.exp(log_prob - rollout_data.old_log_prob)
+          new_policy_objective = (advantages * ratio).mean()
+
+          # New KL-divergence
+          kl_div = kl_divergence(distribution, old_distribution).mean()
+
+          # Constraint criteria:
+          # we need to improve the surrogate policy objective
+          # while being close enough (in term of kl div) to the old policy
+          if (kl_div < self.target_kl) and (new_policy_objective > policy_objective):
+            is_line_search_success = True
+            break
+
+          # Reducing step size if line-search wasn't successful
+          line_search_backtrack_coeff *= self.line_search_shrinking_factor
+
+        line_search_results.append(is_line_search_success)
+
+        if not is_line_search_success:
+          # If the line-search wasn't successful we revert to the original parameters
+          for param, original_param in zip(actor_params, original_actor_params):
+            param.data = original_param.data.clone()
+
+          policy_objective_values.append(policy_objective.item())
+          kl_divergences.append(0)
+        else:
+          policy_objective_values.append(new_policy_objective.item())
+          kl_divergences.append(kl_div.item())
+
+    # Critic update
+    value_grad_norms = []
+    for _ in range(self.n_critic_updates):
+      for rollout_data in self.rollout_buffer.get(self.batch_size):
+        values_pred = self.policy.predict_values(rollout_data.observations)
+        value_loss = F.mse_loss(rollout_data.returns, values_pred.flatten())
+        value_losses.append(value_loss.item())
+
+        self.policy.optimizer.zero_grad()
+        value_loss.backward()
+        grad_norm_value = 0.0
+        for p in self.policy.value_net.parameters():
+          if p.grad is not None:
+            grad_norm_value += p.grad.norm(2) ** 2
+        grad_norm_value = grad_norm_value**0.5
+        value_grad_norms.append(grad_norm_value)
+        # Removing gradients of parameters shared with the actor
+        # otherwise it defeats the purposes of the KL constraint
+        for param in actor_params:
+          param.grad = None
+        self.policy.optimizer.step()
+
+    mean_grad_norm_value = np.mean(value_grad_norms)
+
+    self._n_updates += 1
+    explained_var = explained_variance(self.rollout_buffer.values.flatten(), self.rollout_buffer.returns.flatten())
+
+    # Additional metrics
+    kl_div_final = kl_divergences[-1] if kl_divergences else 0.0
+    value_loss_mean = np.mean(value_losses)
+    policy_std = th.exp(self.policy.log_std).mean().item() if hasattr(self.policy, "log_std") else 0.0
+    line_search_success_rate = np.mean(line_search_results)
+    adv_mean = advantages.mean().item()
+    adv_std = advantages.std().item()
+
+    # Entropy
+    distribution = self.policy.get_distribution(rollout_data.observations)
+    entropy = distribution.entropy().mean().item()
+
+    # Noise stats
+    action_deltas = []
+    reward_deltas = []
+    if hasattr(self.env, "envs"):
+      for e in self.env.envs:
+        if isinstance(e, MonitoredEntropyInjectionWrapper):
+          a_deltas, r_deltas = e.get_noise_deltas()
+          action_deltas.extend(a_deltas)
+          reward_deltas.extend(r_deltas)
+    elif isinstance(self.env, MonitoredEntropyInjectionWrapper):
+      action_deltas, reward_deltas = self.env.get_noise_deltas()
+
+    self._save_rollout_metrics(
+      kl_divergences,
+      explained_var,
+      value_losses,
+      policy_std,
+      line_search_results,
+      grad_norm_policy,
+      mean_grad_norm_value,
+      adv_mean,
+      adv_std,
+      entropy,
+      action_deltas,
+      reward_deltas,
+    )
+
+    # Logs
+    self.logger.record("train/policy_objective", np.mean(policy_objective_values))
+    self.logger.record("train/value_loss", np.mean(value_losses))
+    self.logger.record("train/kl_divergence_loss", np.mean(kl_divergences))
+    self.logger.record("train/explained_variance", explained_var)
+    self.logger.record("train/is_line_search_success", np.mean(line_search_results))
+    if hasattr(self.policy, "log_std"):
+      self.logger.record("train/std", th.exp(self.policy.log_std).mean().item())
+
+    self.logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
 
 
 def sample_trpo_params(trial: optuna.Trial, n_actions: int, n_envs: int, additional_args: dict) -> Dict[str, Any]:
