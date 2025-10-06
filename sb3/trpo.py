@@ -101,12 +101,10 @@ class TRPO(TRPO):
         self.env = MonitoredEntropyInjectionWrapper(self.env, noise_configs=noise_configs)
 
     # Print device and verify it is being used
-    print(f"Device set to: {device}")
     if isinstance(device, str):
       device = th.device(device if th.cuda.is_available() else "cpu")
     elif isinstance(device, th.device):
       device = device if th.cuda.is_available() else th.device("cpu")
-    print(f"Using device: {device} (CUDA available: {th.cuda.is_available()})")
 
   def _compute_policy_objective(self, advantages, ratio, distribution):
     """Overridable method for computing policy objective."""
@@ -117,35 +115,54 @@ class TRPO(TRPO):
     kl_divergences,
     explained_var,
     value_losses,
-    policy_std,
+    policy_stds,
     line_search_results,
     grad_norm_policy,
-    mean_grad_norm_value,
-    adv_mean,
-    adv_std,
-    entropy,
+    value_grad_norms,
+    advantages,
+    entropies,
     action_deltas,
     reward_deltas,
+    rewards,
   ):
     """Overridable method for computing metrics."""
 
+    def compute_stats(arr):
+      arr = np.array(arr, dtype=float)
+      if len(arr) == 0:
+        return {"mean": 0.0, "min": 0.0, "max": 0.0, "std": 0.0}
+      return {
+        "mean": float(np.mean(arr)),
+        "min": float(np.min(arr)),
+        "max": float(np.max(arr)),
+        "std": float(np.std(arr)),
+      }
+
     metrics = {
-      "kl_div": float(kl_divergences[-1] if kl_divergences else 0.0),
       "explained_variance": float(explained_var),
-      "value_loss": float(np.mean(value_losses)),
-      "policy_std": float(policy_std),
-      "line_search_success": float(np.mean(line_search_results)),
       "grad_norm_policy": float(grad_norm_policy),
-      "grad_norm_value": float(mean_grad_norm_value),
-      "adv_mean": float(adv_mean),
-      "adv_std": float(adv_std),
-      "entropies": float(entropy),
-      "action_deltas": [float(d) for d in action_deltas],
-      "rewards": [float(d) for d in reward_deltas],
     }
 
-    if len(self.rollout_metrics) == 0:
-      self.rollout_metrics = {key: [] for key in metrics}
+    for prefix, arr in [
+      ("kl_div", kl_divergences),
+      ("value_loss", value_losses),
+      ("line_search_success", [float(r) for r in line_search_results]),
+      ("grad_norm_value", value_grad_norms),
+      ("adv", advantages),
+      ("entropy", entropies),
+      ("action_delta", action_deltas),
+      ("reward_delta", reward_deltas),
+      ("policy_std", policy_stds),
+      ("reward", rewards),
+    ]:
+      stats = compute_stats(arr)
+      for stat_name, value in stats.items():
+        metrics[f"{prefix}_{stat_name}"] = value
+
+    # in every pass ensure the self.rollout_metrics has all the keys initialized
+    for key in metrics.keys():
+      if key not in self.rollout_metrics:
+        self.rollout_metrics[key] = []
 
     for key, value in metrics.items():
       self.rollout_metrics[key].append(value)
@@ -305,22 +322,18 @@ class TRPO(TRPO):
           param.grad = None
         self.policy.optimizer.step()
 
-    mean_grad_norm_value = np.mean(value_grad_norms)
-
     self._n_updates += 1
     explained_var = explained_variance(self.rollout_buffer.values.flatten(), self.rollout_buffer.returns.flatten())
 
     # Additional metrics
-    kl_div_final = kl_divergences[-1] if kl_divergences else 0.0
-    value_loss_mean = np.mean(value_losses)
-    policy_std = th.exp(self.policy.log_std).mean().item() if hasattr(self.policy, "log_std") else 0.0
-    line_search_success_rate = np.mean(line_search_results)
-    adv_mean = advantages.mean().item()
-    adv_std = advantages.std().item()
+    if hasattr(self.policy, "log_std"):
+      policy_stds = th.exp(self.policy.log_std).detach().cpu().numpy()
+    else:
+      policy_stds = np.array([0.0])
 
     # Entropy
     distribution = self.policy.get_distribution(rollout_data.observations)
-    entropy = distribution.entropy().mean().item()
+    entropies = distribution.entropy().detach().cpu().numpy()
 
     # Noise stats
     action_deltas = []
@@ -334,19 +347,23 @@ class TRPO(TRPO):
     elif isinstance(self.env, MonitoredEntropyInjectionWrapper):
       action_deltas, reward_deltas = self.env.get_noise_deltas()
 
+    advantages_numpy = advantages.detach().cpu().numpy()
+
+    rewards = self.rollout_buffer.rewards.flatten()
+
     self._save_rollout_metrics(
       kl_divergences,
       explained_var,
       value_losses,
-      policy_std,
+      policy_stds,
       line_search_results,
       grad_norm_policy,
-      mean_grad_norm_value,
-      adv_mean,
-      adv_std,
-      entropy,
+      value_grad_norms,
+      advantages_numpy,
+      entropies,
       action_deltas,
       reward_deltas,
+      rewards,
     )
 
     # Logs

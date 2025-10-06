@@ -40,3 +40,4 @@ runs/
 .omega/
 MUJOCO_LOG.TXT
 models
+.optuna_fd

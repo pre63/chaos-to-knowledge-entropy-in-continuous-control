@@ -118,29 +118,9 @@ def compute_stats(rewards, entropies, ntimesteps=100000, epsilon=1e-5, threshold
   }
 
 
-def process_single_file(path, env_id, cfg):
-  """
-    Process a single non-raw YAML file and compute stats.
-
-    Args:
-      path (str): Path to YAML file.
-      env_id (str): Environment ID.
-      cfg (str): Variant/config name.
-
-    Returns:
-      dict: Stats or None.
-    """
-  with open(path, "r") as f:
-    data = yaml.safe_load(f)
-  rewards = data.get("rewards", [])
-  entropies = data.get("entropies", [])
-  stats = compute_stats(rewards, entropies)
-  return stats
-
-
 def process_raw_file(path, env_id, cfg):
   """
-    Process a raw YAML file with multiple runs grouped by entropy level.
+    Process a raw YAML file with multiple runs grouped by noise_type.
 
     Args:
       path (str): Path to YAML file.
@@ -156,14 +136,8 @@ def process_raw_file(path, env_id, cfg):
   for run in data:
     if not run.get("completed", False):
       continue
-    entropy_level = None
-    for comp in run.get("config", []):
-      if comp.get("component") == "reward":
-        entropy_level = comp.get("entropy_level")
-        break
-    if entropy_level is None:
-      entropy_level = 0.0  # Default for no noise
-    groups[entropy_level].append(run)
+    noise_type = run.get("noise_type", "none")
+    groups[noise_type].append(run)
   level_stats = {}
   all_means = []
   all_levels = []
@@ -174,8 +148,8 @@ def process_raw_file(path, env_id, cfg):
     level_entropies_means = []
     level_group = []  # Per-run means for ANOVA
     for run in group_runs:
-      rewards = run.get("rewards", [])
-      entropies = run.get("entropies", [])
+      rewards = run.get("reward_mean", [])
+      entropies = run.get("entropy_mean", [])
       if len(rewards) > 0:
         mean_r = np.mean(rewards)
         level_rewards_means.append(mean_r)
@@ -188,8 +162,8 @@ def process_raw_file(path, env_id, cfg):
         all_entropies.append(mean_e)
     if len(level_rewards_means) > 0:
       # Filter runs with rewards/entropies
-      reward_runs = [run.get("rewards", []) for run in group_runs if len(run.get("rewards", [])) > 0]
-      entropy_runs = [run.get("entropies", []) for run in group_runs if len(run.get("entropies", [])) > 0]
+      reward_runs = [run.get("reward_mean", []) for run in group_runs if len(run.get("reward_mean", [])) > 0]
+      entropy_runs = [run.get("entropy_mean", []) for run in group_runs if len(run.get("entropy_mean", [])) > 0]
       # To handle variable lengths, truncate to min length
       if reward_runs:
         min_len = min(len(r) for r in reward_runs)
@@ -217,21 +191,27 @@ def process_raw_file(path, env_id, cfg):
 
   # Effect size (Cohen's d) for pairwise comparisons if >1 level
   if len(levels) > 1:
-    for j in range(1, len(levels)):
-      mean1 = level_stats[levels[0]]["Mean Reward"]
-      mean2 = level_stats[levels[j]]["Mean Reward"]
-      std1 = level_stats[levels[0]]["Reward Standard Deviation"]
-      std2 = level_stats[levels[j]]["Reward Standard Deviation"]
+    base = "none" if "none" in levels else levels[0]
+    for j in range(len(levels)):
+      if levels[j] == base:
+        continue
+      mean1 = level_stats[base].get("Mean Reward", np.nan)
+      mean2 = level_stats[levels[j]].get("Mean Reward", np.nan)
+      std1 = level_stats[base].get("Reward Standard Deviation", np.nan)
+      std2 = level_stats[levels[j]].get("Reward Standard Deviation", np.nan)
       pooled_std = np.sqrt((std1**2 + std2**2) / 2)
       cohen_d = (mean1 - mean2) / pooled_std if pooled_std != 0 else np.nan
-      level_stats[f"Cohen's d vs {levels[0]} and {levels[j]}"] = cohen_d
+      level_stats[f"Cohen's d vs {base} and {levels[j]}"] = cohen_d
 
   # Correlation: noise_level vs rewards
-  all_levels_num = [float(l) for l in all_levels] if len(all_levels) > 0 else []
-  if len(all_levels_num) > 1 and len(all_means) > 1:
-    level_r, level_p = pearsonr(all_levels_num, all_means)
-    level_stats["Noise vs Reward Correlation Coefficient"] = level_r
-    level_stats["Noise vs Reward P Value"] = level_p
+  try:
+    all_levels_num = [float(l) for l in all_levels]
+    if len(all_levels_num) > 1 and len(all_means) > 1:
+      level_r, level_p = pearsonr(all_levels_num, all_means)
+      level_stats["Noise vs Reward Correlation Coefficient"] = level_r
+      level_stats["Noise vs Reward P Value"] = level_p
+  except ValueError:
+    pass  # non-numeric levels
 
   # Correlation: entropy vs rewards (if both present)
   if len(all_entropies) > 1 and len(all_means) > 1 and len(all_entropies) == len(all_means):
@@ -267,7 +247,7 @@ def export_stats_to_files(log_dir, env_id, cfg, stats_data):
       logging.warning(f"No level stats for {env_id}_{cfg}")
       return
     df = pd.DataFrame.from_dict(filtered_stats, orient="index")
-    df.index.name = "Noise Level"
+    df.index.name = "Noise Type"
     # Pivot the table: stats as rows, noise levels as columns
     pivoted_df = df.transpose()
     pivoted_df.index.name = "Statistic"
@@ -288,11 +268,11 @@ def export_stats_to_files(log_dir, env_id, cfg, stats_data):
   logging.info(f"LaTeX table exported to {latex_path}")
 
   if pivoted_df is not None:
-    pivoted_csv_path = os.path.join(log_dir, f"{base_name}.csv")
+    pivoted_csv_path = os.path.join(log_dir, f"{base_name}_pivoted.csv")
     pivoted_df.to_csv(pivoted_csv_path)
     logging.info(f"Pivoted CSV exported to {pivoted_csv_path}")
 
-    pivoted_latex_path = os.path.join(log_dir, f"{base_name}.tex")
+    pivoted_latex_path = os.path.join(log_dir, f"{base_name}_pivoted.tex")
     with open(pivoted_latex_path, "w") as f:
       f.write(pivoted_df.to_latex(escape=True, float_format="%.2f", bold_rows=True))
     logging.info(f"Pivoted LaTeX table exported to {pivoted_latex_path}")
@@ -311,19 +291,9 @@ def export_overall_csv(log_dir, results):
     for cfg in results[env_id]:
       d = results[env_id][cfg]
       row = {"Environment": env_id, "Variant": cfg}
-      # For non-raw
-      if isinstance(d, dict) and "Maximum Reward" in d:
-        row.update(
-          {
-            "Max Reward": d.get("Maximum Reward", "-"),
-            "Mean Reward": d.get("Mean Reward", "-"),
-            "Std Reward": d.get("Reward Standard Deviation", "-"),
-            "Timestep at Max": d.get("Timestep at Maximum", "-"),
-          }
-        )
       # For raw, aggregate over levels (e.g., mean of means)
-      elif isinstance(d, dict) and any(isinstance(v, dict) for v in d.values()):
-        level_means = [v["Mean Reward"] for v in d.values() if isinstance(v, dict)]
+      if isinstance(d, dict) and any(isinstance(v, dict) for v in d.values()):
+        level_means = [v["Mean Reward"] for v in d.values() if isinstance(v, dict) and "Mean Reward" in v]
         if level_means:
           row.update(
             {
@@ -347,26 +317,19 @@ if __name__ == "__main__":
 
   log_dir = "results"
   envs = ["Humanoid-v5", "HumanoidStandup-v5"]
-  variants = ["trpo", "gentrpo", "gentrpo-ne"]
-  raw_variants = ["trpo_raw", "gentrpo_raw"]
+  variants = ["trpo", "gentrpo"]
 
   results = {}
 
   for env_id in envs:
     results[env_id] = {}
     for cfg in variants:
-      path = os.path.join(log_dir, f"{env_id}_{cfg}.yaml")
-      if os.path.exists(path):
-        stats = process_single_file(path, env_id, cfg)
-        if stats:
-          results[env_id][cfg] = stats
-        export_stats_to_files(log_dir, env_id, cfg, stats or {})
-    for cfg in raw_variants:
-      path = os.path.join(log_dir, f"{env_id}_{cfg}.yaml")
+      path = os.path.join(log_dir, f"{env_id}_{cfg}_raw.yaml")
       if os.path.exists(path):
         level_stats = process_raw_file(path, env_id, cfg)
-        results[env_id][cfg] = level_stats  # Store for overall CSV
-        export_stats_to_files(log_dir, env_id, cfg, level_stats)
+        if level_stats:
+          results[env_id][cfg] = level_stats
+        export_stats_to_files(log_dir, env_id, cfg, level_stats or {})
 
   # Export overall tables.csv
   export_overall_csv(log_dir, results)

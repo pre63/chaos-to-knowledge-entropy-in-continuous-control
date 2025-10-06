@@ -92,32 +92,32 @@ class GenTRPO(SKRL_TRPO_WITH_COLLECT):
     super().record_transition(states, actions, rewards, next_states, terminated, truncated, infos, timestep, timesteps)
 
   def _add_noise(self, value, component):
-    entropy_level = abs(self.noise_level)
+    noise_level = abs(self.noise_level)
     noise_type = self.noise_type
     if component == "action":
       if noise_type == "bernoulli":
         return value
       if noise_type == "gaussian":
-        std = entropy_level * self.base_std
+        std = noise_level * self.base_std
         return value + th.normal(0, std, size=value.shape, device=self.device)
       elif noise_type == "uniform":
-        range_val = entropy_level * self.base_range
+        range_val = noise_level * self.base_range
         return value + th.empty(size=value.shape, device=self.device).uniform_(-range_val, range_val)
       elif noise_type == "laplace":
-        scale = entropy_level * self.base_scale
+        scale = noise_level * self.base_scale
         return value + th.distributions.laplace.Laplace(0, scale).sample(value.shape).to(self.device)
     elif component == "reward":
       if noise_type == "gaussian":
-        std = entropy_level * self.base_std
+        std = noise_level * self.base_std
         return value + th.normal(0, std, size=value.shape, device=self.device)
       elif noise_type == "uniform":
-        range_val = entropy_level * self.base_range
+        range_val = noise_level * self.base_range
         return value + th.empty(size=value.shape, device=self.device).uniform_(-range_val, range_val)
       elif noise_type == "laplace":
-        scale = entropy_level * self.base_scale
+        scale = noise_level * self.base_scale
         return value + th.distributions.laplace.Laplace(0, scale).sample(value.shape).to(self.device)
       elif noise_type == "bernoulli":
-        p = entropy_level * self.base_p
+        p = noise_level * self.base_p
         mask = (th.rand(value.shape, device=self.device) < p).float()
         return value * (1 - mask)
     return value

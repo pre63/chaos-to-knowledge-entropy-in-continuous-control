@@ -1,4 +1,3 @@
-import csv
 import os
 
 import numpy as np
@@ -47,7 +46,7 @@ def generate_report(log_dir, results, envs, variants, variant_labels):
 
   for env_id in envs:
     analysis_text += r"\subsection{" + env_id + "}" + "\n"
-    max_rewards = [results[env_id].get(cfg, {}).get("Maximum Reward", float("-inf")) for cfg in variants]
+    max_rewards = [results[env_id].get(cfg, {}).get("none", {}).get("Maximum Reward", float("-inf")) for cfg in variants]
     valid_max = [x for x in max_rewards if np.isfinite(x)]
     if not valid_max:
       analysis_text += "No data available for this environment." + "\n\n"
@@ -56,25 +55,20 @@ def generate_report(log_dir, results, envs, variants, variant_labels):
     best_cfg = variants[best_idx]
     best_label = variant_labels[best_cfg]
     best_max = max_rewards[best_idx]
-    best_timestep = results[env_id][best_cfg].get("Timestep at Maximum", None)
-    trpo_max = results[env_id].get("trpo", {}).get("Maximum Reward", None)
-    trpo_timestep = results[env_id].get("trpo", {}).get("Timestep at Maximum", None)
+    final_reward = results[env_id][best_cfg]["none"].get("Final Reward", None)
+    best_timestep = results[env_id][best_cfg]["none"].get("Timestep at Maximum", None)
+    trpo_max = results[env_id].get("trpo", {}).get("none", {}).get("Maximum Reward", None)
+    trpo_timestep = results[env_id].get("trpo", {}).get("none", {}).get("Timestep at Maximum", None)
 
-    path = os.path.join(log_dir, f"{env_id}_{best_cfg}.yaml")
     entropy_trend = "insufficient data"
     entropy_rate = 0.0
     best_convergence_timestep = best_timestep
-    rewards = []
-    entropies = []
-    end_slope = 0.0
-    if os.path.exists(path):
-      with open(path, "r") as f:
-        data = yaml.safe_load(f)
-      rewards = data.get("rewards", [])
-      entropies = data.get("entropies", [])
+    rewards = results[env_id][best_cfg]["none"].get("avg_rewards", [])
+    entropies = results[env_id][best_cfg]["none"].get("avg_entropies", [])
+    end_slope = compute_end_slope(rewards)
+    if rewards:
       max_index = np.argmax(rewards)
       entropy_trend, entropy_rate = analyze_entropy(entropies, max_index)
-      end_slope = compute_end_slope(rewards)
       if trpo_max is not None and best_cfg != "trpo":
         first_exceed_index = next((i for i, r in enumerate(rewards) if r >= trpo_max), None)  # Changed to >= for achieving same or better
         if first_exceed_index is not None:
@@ -83,11 +77,7 @@ def generate_report(log_dir, results, envs, variants, variant_labels):
     # Load data for all models for cross-comparison
     variant_data = {}
     for cfg in variants:
-      path = os.path.join(log_dir, f"{env_id}_{cfg}.yaml")
-      if os.path.exists(path):
-        with open(path, "r") as f:
-          data = yaml.safe_load(f)
-        variant_data[cfg] = {"rewards": data.get("rewards", []), "entropies": data.get("entropies", [])}
+      variant_data[cfg] = {"rewards": results[env_id][cfg]["none"].get("avg_rewards", []), "entropies": results[env_id][cfg]["none"].get("avg_entropies", [])}
 
     comparison = ""
     if trpo_timestep is not None and trpo_max is not None and best_cfg != "trpo" and best_convergence_timestep is not None:
@@ -105,10 +95,10 @@ def generate_report(log_dir, results, envs, variants, variant_labels):
     # Add cross-model comparisons
     cross_comp = "Cross-model comparison: "
     for cfg in variants:
-      if cfg != best_cfg and cfg in results[env_id]:
+      if cfg != best_cfg and cfg in results[env_id]["none"]:
         cfg_label = variant_labels[cfg]
-        cfg_max = results[env_id][cfg].get("Maximum Reward", None)
-        cfg_timestep = results[env_id][cfg].get("Timestep at Maximum", None)
+        cfg_max = results[env_id][cfg]["none"].get("Maximum Reward", None)
+        cfg_timestep = results[env_id][cfg]["none"].get("Timestep at Maximum", None)
         if cfg_max is not None and cfg_timestep is not None:
           rel_reward = ((best_max - cfg_max) / cfg_max * 100) if cfg_max != 0 else 0
           rel_time = cfg_timestep / best_timestep if best_timestep > 0 else 1
@@ -204,8 +194,8 @@ def generate_report(log_dir, results, envs, variants, variant_labels):
 if __name__ == "__main__":
   log_dir = "results"
   envs = ["Humanoid-v5", "HumanoidStandup-v5"]
-  variants = ["trpo", "gentrpo", "gentrpo-ne"]
-  variant_labels = {"trpo": "TRPO", "gentrpo": "GenTRPO (Noise=0)", "gentrpo-ne": "GenTRPO"}
+  variants = ["trpo", "gentrpo"]
+  variant_labels = {"trpo": "TRPO", "gentrpo": "GenTRPO (Noise=0)"}
 
   # Load results from CSV
   results = {}
@@ -230,46 +220,44 @@ if __name__ == "__main__":
 
   # Load raw stats for correlations (since they are in level_stats)
   for env_id in envs:
-    for raw_cfg in ["trpo_raw", "gentrpo_raw"]:
-      path = os.path.join(log_dir, f"{env_id}_{raw_cfg}.yaml")
+    for raw_cfg in ["trpo", "gentrpo"]:
+      path = os.path.join(log_dir, f"{env_id}_{raw_cfg}_raw.yaml")
       if os.path.exists(path):
         level_stats = process_raw_file(path, env_id, raw_cfg)
-        results[env_id][raw_cfg] = level_stats
+        results[env_id][f"{raw_cfg}_raw"] = level_stats
 
   # Compute additional metrics for all pairs
   detailed_metrics = {}
   for env_id in envs:
     detailed_metrics[env_id] = {}
     for cfg in variants:
-      path = os.path.join(log_dir, f"{env_id}_{cfg}.yaml")
-      if os.path.exists(path):
-        with open(path, "r") as f:
-          data = yaml.safe_load(f)
-        rewards = data.get("rewards", [])
-        entropies = data.get("entropies", [])
-        if rewards:
-          max_index = np.argmax(rewards)
-          entropy_trend, entropy_rate = analyze_entropy(entropies, max_index)
-          end_slope = compute_end_slope(rewards)
-          detailed_metrics[env_id][cfg] = {
-            "Maximum Reward": results.get(env_id, {}).get(cfg, {}).get("Maximum Reward", "N/A"),
-            "Mean Reward": results.get(env_id, {}).get(cfg, {}).get("Mean Reward", "N/A"),
-            "Reward Standard Deviation": results.get(env_id, {}).get(cfg, {}).get("Reward Standard Deviation", "N/A"),
-            "Timestep at Maximum": results.get(env_id, {}).get(cfg, {}).get("Timestep at Maximum", "N/A"),
-            "end_slope": end_slope,
-            "entropy_trend": entropy_trend,
-            "entropy_rate": entropy_rate,
-          }
-        else:
-          detailed_metrics[env_id][cfg] = {
-            "Maximum Reward": "N/A",
-            "Mean Reward": "N/A",
-            "Reward Standard Deviation": "N/A",
-            "Timestep at Maximum": "N/A",
-            "end_slope": "N/A",
-            "entropy_trend": "N/A",
-            "entropy_rate": "N/A",
-          }
+      level_stats = results[env_id].get(f"{cfg}_raw", {})
+      none_stats = level_stats.get("none", {})
+      rewards = none_stats.get("avg_rewards", [])
+      entropies = none_stats.get("avg_entropies", [])
+      if rewards:
+        max_index = np.argmax(rewards)
+        entropy_trend, entropy_rate = analyze_entropy(entropies, max_index)
+        end_slope = compute_end_slope(rewards)
+        detailed_metrics[env_id][cfg] = {
+          "Maximum Reward": none_stats.get("Maximum Reward", None),
+          "Mean Reward": none_stats.get("Mean Reward", None),
+          "Reward Standard Deviation": none_stats.get("Reward Standard Deviation", None),
+          "Timestep at Maximum": none_stats.get("Timestep at Maximum", None),
+          "end_slope": end_slope,
+          "entropy_trend": entropy_trend,
+          "entropy_rate": entropy_rate,
+        }
+      else:
+        detailed_metrics[env_id][cfg] = {
+          "Maximum Reward": None,
+          "Mean Reward": None,
+          "Reward Standard Deviation": None,
+          "Timestep at Maximum": None,
+          "end_slope": 0.0,
+          "entropy_trend": "insufficient data",
+          "entropy_rate": 0.0,
+        }
 
   # Generate pivoted LaTeX table from results
   latex_table = r"\begin{table}[htbp]" + "\n"
@@ -286,42 +274,52 @@ if __name__ == "__main__":
 
   for env_id in envs:
     # Find bests per env
-    max_rewards = [results[env_id].get(cfg, {}).get("Maximum Reward", "-") for cfg in variants if cfg in results[env_id]]
-    valid_max = [x for x in max_rewards if x is not None]
+    max_rewards = [detailed_metrics[env_id][cfg]["Maximum Reward"] or float("-inf") for cfg in variants]
+    valid_max = [x for x in max_rewards if x > float("-inf")]
     best_max = max(valid_max) if valid_max else None
 
-    mean_rewards = [results[env_id].get(cfg, {}).get("Mean Reward", "-") for cfg in variants if cfg in results[env_id]]
-    valid_mean = [x for x in mean_rewards if x is not None]
+    mean_rewards = [detailed_metrics[env_id][cfg]["Mean Reward"] or float("-inf") for cfg in variants]
+    valid_mean = [x for x in mean_rewards if x > float("-inf")]
     best_mean = max(valid_mean) if valid_mean else None
 
-    timesteps = [results[env_id].get(cfg, {}).get("Timestep at Maximum", "-") for cfg in variants if cfg in results[env_id]]
-    valid_times = [x for x in timesteps if x is not None]
+    timesteps = [detailed_metrics[env_id][cfg]["Timestep at Maximum"] or float("inf") for cfg in variants]
+    valid_times = [x for x in timesteps if x < float("inf")]
     best_time = min(valid_times) if valid_times else None
 
     for cfg in variants:
-      if cfg not in results[env_id]:
-        continue
+      metrics = detailed_metrics[env_id][cfg]
       row = env_id + r" & " + variant_labels[cfg]
 
-      val_max = results[env_id][cfg].get("Maximum Reward", "-")
-      if val_max is not None and val_max == best_max:
-        row += r" & \textbf{" + f"{val_max:.2f}" + "}"
+      val_max = metrics["Maximum Reward"]
+      if val_max is not None:
+        cell = f"{val_max:.2f}"
+        if val_max == best_max:
+          row += r" & \textbf{" + cell + "}"
+        else:
+          row += " & " + cell
       else:
-        row += f" & {val_max:.2f}" if val_max is not None else " & -"
+        row += " & -"
 
-      val_mean = results[env_id][cfg].get("Mean Reward", "-")
-      val_std = results[env_id][cfg].get("Reward Standard Deviation", "-")
-      cell = f"${val_mean:.2f} \\pm {val_std:.2f}$" if val_mean is not None else "-"
-      if val_mean is not None and val_mean == best_mean:
-        row += r" & \textbf{" + cell + "}"
+      val_mean = metrics["Mean Reward"]
+      val_std = metrics["Reward Standard Deviation"]
+      if val_mean is not None:
+        cell = f"${val_mean:.2f} \\pm {val_std:.2f}$"
+        if val_mean == best_mean:
+          row += r" & \textbf{" + cell + "}"
+        else:
+          row += " & " + cell
       else:
-        row += " & " + cell
+        row += " & -"
 
-      val_time = results[env_id][cfg].get("Timestep at Maximum", "-")
-      if val_time is not None and val_time == best_time:
-        row += r" & \textbf{" + f"{val_time:.0f}" + "}"
+      val_time = metrics["Timestep at Maximum"]
+      if val_time is not None:
+        cell = f"{val_time:.0f}"
+        if val_time == best_time:
+          row += r" & \textbf{" + cell + "}"
+        else:
+          row += " & " + cell
       else:
-        row += f" & {val_time:.0f}" if val_time is not None else " & -"
+        row += " & -"
 
       row += r" \\"
       latex_table += row + "\n"
@@ -331,7 +329,7 @@ if __name__ == "__main__":
   latex_table += r"}" + "\n"
   latex_table += r"\end{table}" + "\n"
 
-  analysis_text = generate_report(log_dir, results, envs, variants, variant_labels)
+  analysis_text = generate_report(log_dir, detailed_metrics, envs, variants, variant_labels)
 
   # Expanded Introduction sampled from provided
   intro_text = r"\section{Introduction}" + "\n"
@@ -433,12 +431,8 @@ if __name__ == "__main__":
   annex_text += r"\subsection{Statistics Tables}" + "\n"
   annex_text += "The following tables present the detailed statistics for each model and environment combination.\n\n"
   for env_id in envs:
-    for cfg in variants + ["trpo_raw", "gentrpo_raw"]:
-      if cfg in variant_labels:
-        label = variant_labels[cfg]
-      else:
-        continue  # Skip if no label
-      annex_text += r"\subsubsection{Statistics for " + label + r" in " + env_id + "}" + "\n"
+    for cfg in variants:
+      annex_text += r"\subsubsection{Statistics for " + variant_labels[cfg] + r" in " + env_id + "}" + "\n"
       annex_text += r"\input{results/" + env_id + r"_" + cfg + r"_stats.tex}" + "\n\n"
 
   # Add detailed metrics table to annex
@@ -460,24 +454,24 @@ if __name__ == "__main__":
       row = env_id + r" & " + variant_labels[cfg]
 
       val_max = metrics.get("Maximum Reward", "-")
-      row += f" & {val_max:.2f}" if val_max != "N/A" and val_max != "-" else " & -"
+      row += f" & {val_max:.2f}" if val_max is not None else " & -"
 
       val_mean = metrics.get("Mean Reward", "-")
       val_std = metrics.get("Reward Standard Deviation", "-")
-      cell = f"${val_mean:.2f} \\pm {val_std:.2f}$" if val_mean != "N/A" and val_mean != "-" else "-"
+      cell = f"${val_mean:.2f} \\pm {val_std:.2f}$" if val_mean is not None else "-"
       row += " & " + cell
 
       val_time = metrics.get("Timestep at Maximum", "-")
-      row += f" & {val_time:.0f}" if val_time != "N/A" and val_time != "-" else " & -"
+      row += f" & {val_time:.0f}" if val_time is not None else " & -"
 
       end_slope = metrics.get("end_slope", "-")
-      row += f" & {end_slope:.4f}" if end_slope != "N/A" and end_slope != "-" else " & -"
+      row += f" & {end_slope:.4f}" if end_slope is not None else " & -"
 
       entropy_trend = metrics.get("entropy_trend", "-")
-      row += " & " + entropy_trend if entropy_trend != "N/A" else " & -"
+      row += " & " + entropy_trend if entropy_trend != "insufficient data" else " & -"
 
       entropy_rate = metrics.get("entropy_rate", "-")
-      row += f" & {entropy_rate:.4f}" if entropy_rate != "N/A" and end_slope != "-" else " & -"
+      row += f" & {entropy_rate:.4f}" if entropy_rate is not None else " & -"
 
       row += r" \\"
       detailed_table += row + "\n"
@@ -531,7 +525,7 @@ if __name__ == "__main__":
   latex_doc += r"    School of Computing, University of Leeds, UK \\" + "\n"
   latex_doc += r"    \inst{1} MSc, Artificial Intelligence \orcidlink{0009-0000-3537-6890} \\" + "\n"
   latex_doc += r"    \inst{2} Senior Teaching Fellow in Artificial Intelligence \orcidlink{0000-0003-1133-7744} \\" + "\n"
-  latex_doc += r"    \email{simon@pre63.com} \\" + "\n"
+  latex_doc += r"    \email{simongreen@ieee.org} \\" + "\n"
   latex_doc += r"    \email{a.altahhan@leeds.ac.uk}" + "\n"
   latex_doc += r"}" + "\n"
 

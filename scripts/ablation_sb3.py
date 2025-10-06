@@ -1,6 +1,6 @@
-# scripts/ablation_sb3.py
 import argparse
 import os
+import time
 from datetime import datetime
 
 import gymnasium as gym
@@ -27,11 +27,23 @@ class TrainingDataCallback(BaseCallback):
     super(TrainingDataCallback, self).__init__(verbose)
     self.rewards = []
     self.entropies = []
+    self.rollout_start_time = None
+
+  def _on_rollout_start(self) -> None:
+    self.rollout_start_time = time.time()
 
   def _on_step(self) -> bool:
     return True
 
   def _on_rollout_end(self) -> None:
+    if self.rollout_start_time is not None:
+      rollout_time = time.time() - self.rollout_start_time
+      if not hasattr(self.model, "rollout_metrics") or not isinstance(self.model.rollout_metrics, dict):
+        self.model.rollout_metrics = {}
+      if "rollout_times" not in self.model.rollout_metrics:
+        self.model.rollout_metrics["rollout_times"] = []
+      self.model.rollout_metrics["rollout_times"].append(float(rollout_time))
+
     if hasattr(self.model, "rollout_buffer"):
       rewards = self.model.rollout_buffer.rewards
       if rewards.size > 0:
@@ -44,7 +56,7 @@ class TrainingDataCallback(BaseCallback):
         self.entropies.append(float(entropy_mean))  # Convert to float
 
 
-def save_raw_run(raw_path, noise_key, run_idx, metrics, noise_configs, total_timesteps):
+def save_raw_run(raw_path, noise_key, run_idx, metrics, noise_configs, total_timesteps, total_time, time_per_timestep):
   raw_data = []
   if os.path.exists(raw_path):
     try:
@@ -56,12 +68,16 @@ def save_raw_run(raw_path, noise_key, run_idx, metrics, noise_configs, total_tim
   new_entry = {
     "noise_type": noise_key,
     "run_index": run_idx,
-    "metrics": metrics,
     "noise_configs": noise_configs,
     "total_timesteps": total_timesteps,
-    "completed": len(metrics) > 0,
     "timestamp": datetime.now().isoformat(),
+    "total_time": float(total_time),
+    "time_per_timestep": float(time_per_timestep),
   }
+
+  new_entry.update(metrics)
+  new_entry["completed"] = any(len(v) > 0 for v in metrics.values()) if metrics else False
+
   raw_data.append(new_entry)
 
   try:
@@ -137,6 +153,15 @@ def setup_agent_sb3(variant, p, env, env_id, device, noise_preset="none"):
   if variant != "trpo":
     kwargs["buffer_size"] = p.get("buffer_capacity", BUFFER_CAPACITY)
     kwargs["sampling_coef"] = p.get("sampling_coef", 0.5)
+    kwargs["dynamics_updates"] = p.get("dynamics_updates", 5)
+    fd_config = {
+      "hidden_dim": p.get("fd_hidden_dim", 256),  # Updated default to 256 based on ICM
+      "encoder_layers": p.get("fd_encoder_layers", 1),  # Simplified for low-dim states
+      "forward_layers": p.get("fd_forward_layers", 2),  # Matches ICM forward model layers
+      "activation": p.get("fd_activation", "ELU"),  # From ICM
+      "lr": p.get("fd_lr", 1e-3),  # From ICM
+    }
+    kwargs["fd_config"] = fd_config
 
   if "line_search_shrinking_factor" in p:
     if "backtrack_coeff" in dir(TRPO_SB3):  # assume if supported
@@ -144,11 +169,12 @@ def setup_agent_sb3(variant, p, env, env_id, device, noise_preset="none"):
 
   noise_configs = []
   if noise_preset != "none":
-    entropy_level = abs(p.get("epsilon", 0.1))
+    noise_level = abs(p.get("noise_level", 0.1))
+    noise_type = p.get("noise_type", "uniform")
     if noise_preset in ["both", "action"]:
-      noise_configs.append({"component": "action", "type": "uniform", "entropy_level": entropy_level})
+      noise_configs.append({"component": "action", "noise_type": noise_type, "noise_level": noise_level})
     if noise_preset in ["both", "reward"]:
-      noise_configs.append({"component": "reward", "type": "uniform", "entropy_level": entropy_level})
+      noise_configs.append({"component": "reward", "noise_type": noise_type, "noise_level": noise_level})
 
   if noise_configs:
     kwargs["noise_configs"] = noise_configs
@@ -171,7 +197,7 @@ def run_ablation_sb3(single_env=None, single_variant=None, device="cuda" if th.c
   else:
     variants = ["trpo", "gentrpo"]
 
-  runs = 5
+  runs = 10
 
   for env_id in envs:
     for variant in variants:
@@ -196,19 +222,40 @@ def run_ablation_sb3(single_env=None, single_variant=None, device="cuda" if th.c
 
       raw_path = f"results/{env_id}_{variant}_raw.yaml"
 
+      # Load existing raw data to check completed runs
+      raw_data = []
+      if os.path.exists(raw_path):
+        try:
+          with open(raw_path, "r") as file:
+            raw_data = yaml.safe_load(file) or []
+        except Exception as e:
+          print(f"Error loading {raw_path}: {e}")
+
+      completed_runs = set()
+      for entry in raw_data:
+        if entry.get("noise_type") == noise_preset and entry.get("completed", False):
+          completed_runs.add(entry["run_index"])
+
       agent_class, agent_kwargs, noise_configs = setup_agent_sb3(variant, p, env, env_id, device, noise_preset)
       for run in range(runs):
+        if run in completed_runs:
+          print(f"Skipping completed {env_id} {variant} run {run+1}/{runs} with noise {noise_preset}")
+          continue
         callback = TrainingDataCallback()
         agent = agent_class(**agent_kwargs)
         agent.raw_path = raw_path
         agent.run_idx = run
         agent.noise_configs = noise_configs
         agent.noise_preset = noise_preset
-        agent.learn(total_timesteps=p["n_timesteps"], log_interval=1, progress_bar=True, callback=callback)
+        start_time = time.time()
+        print(f"Starting {env_id} {variant} run {run+1}/{runs} with noise {noise_preset}")
+        agent.learn(total_timesteps=p["n_timesteps"], log_interval=10000, progress_bar=True, callback=callback)
+        total_time = time.time() - start_time
+        time_per_timestep = total_time / p["n_timesteps"] if p["n_timesteps"] > 0 else 0.0
         os.makedirs("models", exist_ok=True)
         agent.save(f"models/{env_id}_{variant}_{noise_preset}_run{run}.zip")
 
         # Save final yaml with eval
-        save_raw_run(raw_path, noise_preset, run, agent.rollout_metrics, noise_configs, p["n_timesteps"])
+        save_raw_run(raw_path, noise_preset, run, agent.rollout_metrics, noise_configs, p["n_timesteps"], total_time, time_per_timestep)
 
       env.close()

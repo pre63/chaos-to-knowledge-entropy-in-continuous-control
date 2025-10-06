@@ -74,6 +74,12 @@ clean:
 	@rm -rf __pycache__/
 	@rm -rf .venv
 
+tune:
+	@source .venv/bin/activate; \
+	PYTHONPATH=. python -m scripts.tune --env_id=Humanoid-v5
+	PYTHONPATH=. python -m scripts.tune --env_id=HumanoidStandup-v5
+
+
 train_trpo_none_Humanoid-v5: fix
 	@source .venv/bin/activate; \
 	PYTHONPATH=. python -m scripts.ablation --env Humanoid-v5 --model trpo --framework sb3 --device cpu --noise none
@@ -136,6 +142,11 @@ train_gentrpo_both: train_gentrpo_both_Humanoid-v5 train_gentrpo_both_HumanoidSt
 
 action_noise: train_trpo_action train_gentrpo_action
 
+ablation_gentrpo: train_gentrpo_none train_gentrpo_action train_gentrpo_both
+ablation_trpo: train_trpo_none train_trpo_action train_trpo_both
+
+ablation: train_trpo_none train_trpo_action train_trpo_both train_gentrpo_none train_gentrpo_action train_gentrpo_both
+
 plots_no_fix: 
 	@source .venv/bin/activate; \
 	PYTHONPATH=. python -m scripts.plots
@@ -161,3 +172,7 @@ gen_report_no_fix:
 gen_report: fix gen_report_no_fix
 
 report: fix plots_no_fix tables_no_fix correlation_no_fix gen_report_no_fix
+
+plot_raw:
+	@source .venv/bin/activate; \
+	PYTHONPATH=. python -m scripts.plot_raw 

@@ -18,6 +18,8 @@ Humanoid-v5:
   lr_schedule: linear
   n_timesteps: 100000
   n_envs: 2
+  noise_type: uniform
+  noise_level: 0.1
 
 HumanoidStandup-v5:
   policy: 'MlpPolicy'
@@ -41,3 +43,5 @@ HumanoidStandup-v5:
   ortho_init: 1
   activation_fn: relu
   lr_schedule: constant
+  noise_type: uniform
+  noise_level: -0.5

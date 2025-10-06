@@ -18,6 +18,13 @@ Humanoid-v5:
   n_timesteps: 600000
   n_envs: 6
   normalize_advantage: 1
+  fd_hidden_dim: 256
+  fd_encoder_layers: 1
+  fd_forward_layers: 2
+  fd_activation: ELU
+  fd_lr: 1e-3
+  noise_type: uniform
+  noise_level: 0.1
 
 HumanoidStandup-v5:
   policy: 'MlpPolicy'
@@ -38,3 +45,10 @@ HumanoidStandup-v5:
   n_timesteps: 100000
   n_envs: 4
   normalize_advantage: 0
+  fd_hidden_dim: 256
+  fd_encoder_layers: 1
+  fd_forward_layers: 2
+  fd_activation: ELU
+  fd_lr: 1e-3
+  noise_type: uniform
+  noise_level: -0.5

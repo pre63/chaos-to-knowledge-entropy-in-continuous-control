@@ -1,0 +1,29 @@
+Statistic,none
+Minimum Reward,4.453701507825292
+Maximum Reward,4.872947844875307
+Final Reward,4.81367512498492
+Timestep at Maximum,94897.95918367348
+Mean Reward,4.689556993241362
+Reward Standard Deviation,0.11731874501873578
+Median Reward,4.722915314022794
+Reward Interquartile Range,0.16957079056608126
+Cumulative Reward,919.1531706753069
+Area Under Reward Curve,468968.89054095384
+Normalized Area Under Reward Curve,0.9623925916509664
+Coefficient of Variation Reward,0.025017020837536846
+Volatility,0.02924914232469777
+Steps to Threshold,0.0
+Plateau Length,2.0
+Reward Trend Slope,3.7146247843783104e-06
+Reward Trend R Value,0.918697908870332
+Reward Trend P Value,3.3527803032903647e-80
+Reward Trend Standard Error,1.146556652133723e-07
+ROC AUC,1.0
+Minimum Entropy,23.579356384277343
+Maximum Entropy,24.145505332946776
+Mean Entropy,23.858985031867512
+Entropy Standard Deviation,0.18861888292452317
+Entropy Trend Slope,-6.330835776416473e-06
+Entropy Trend R Value,-0.9738701709584442
+Entropy Trend P Value,7.533691625228343e-127
+Entropy Trend Standard Error,1.059953212119873e-07

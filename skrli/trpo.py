@@ -78,7 +78,6 @@ class SKRL_TRPO_WITH_COLLECT(SKRL_TRPO):
     self.kwargs = kwargs
     if str(self.device) != "cuda":
       raise ValueError("Device must be cuda for GPU acceleration")
-    print(f"Using device: {self.device} for audit purposes")
     self.rewards = []
 
   def post_interaction(self, timestep, timesteps):

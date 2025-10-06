@@ -1,14 +1,2 @@
-Statistic,Value
-max_reward,85.9354248046875
-timestep_at_max,62244.897959183676
-mean_reward,60.1549569344034
-std_reward,11.125797290433876
-median_reward,59.433244705200195
-iqr_reward,11.994847297668457
-cum_reward,5895.185779571533
-reward_trend_slope,0.0002713576730033388
-reward_trend_r_value,0.711298791064717
-mean_entropy,24.04611248872718
-std_entropy,0.21200767849771748
-min_entropy,23.649415969848633
-max_entropy,24.337797164916992
+Noise Type,Minimum Reward,Maximum Reward,Final Reward,Timestep at Maximum,Mean Reward,Reward Standard Deviation,Median Reward,Reward Interquartile Range,Cumulative Reward,Area Under Reward Curve,Normalized Area Under Reward Curve,Coefficient of Variation Reward,Volatility,Steps to Threshold,Plateau Length,Reward Trend Slope,Reward Trend R Value,Reward Trend P Value,Reward Trend Standard Error,ROC AUC,Minimum Entropy,Maximum Entropy,Mean Entropy,Entropy Standard Deviation,Entropy Trend Slope,Entropy Trend R Value,Entropy Trend P Value,Entropy Trend Standard Error
+none,39.341009127534925,86.7646130360663,82.01425880368798,84693.87755102041,65.91336164835234,12.921533439035557,68.61743977116421,21.969953869003803,6459.509441538528,6596671.35306682,0.7602951390245603,0.1960381494115247,2.4159371164316523,72448.97959183673,2,0.00043008906135220135,0.9707009360591213,2.9722913771390158e-61,1.0866121738989536e-05,1.0,38.96722679138183,38.987327575683594,38.97658941697101,0.005186345112110797,-1.470630317834314e-07,-0.8269575368097188,9.64849298481167e-26,1.0205287867586915e-08
