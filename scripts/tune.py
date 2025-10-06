@@ -228,7 +228,7 @@ def run_optuna_fd_study(env_id="Humanoid-v5", device="cpu"):
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Optuna study for FD model in GenTRPO")
   parser.add_argument("--env_id", type=str, default="Humanoid-v5", help="Environment ID")
-  parser.add_argument("--device", type=str, default="cuda" if th.cuda.is_available() else "cpu", help="Device to use")
+  parser.add_argument("--device", type=str, default="cpu", help="Device to use")
   args = parser.parse_args()
 
   run_optuna_fd_study(env_id=args.env_id, device=args.device)
